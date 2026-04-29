@@ -112,7 +112,7 @@ appendix.
 | Phase | Description | Status |
 |---|---|---|
 | **0 — Plan finalization** | All `docs/` frameworks approved and consistent. | ✅ Done |
-| **1 — Pre-generation & scaffolding** | Run ~20,625 LLM API calls to generate 402Pilot-Bench dataset; implement replay environment, scenario scheduler, workload sampler; smoke tests with fixed comparators. | ⬜ Next |
+| **1 — Pre-generation & scaffolding** | Run ~20,600 LLM API calls to generate 402Pilot-Bench dataset; implement replay environment, scenario scheduler, workload sampler; smoke tests with fixed comparators. | ⬜ Next |
 | **2 — Policy zoo + PA-DCTS** | Implement all comparators (Always-P-premium, Budget rule, Oracle) and PA-DCTS with ablations A1–A4; unit-test against pre-generated dataset. | ⬜ |
 | **3 — Full evaluation** | Run 402Pilot-Bench across S1–S3, all comparators and ablations, 30 seeds; produce all figures and tables. | ⬜ |
 | **4 — Paper writing** | Write sections in order per `docs/paper_outline.md`. | ⬜ |

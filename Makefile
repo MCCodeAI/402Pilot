@@ -20,10 +20,10 @@ install:
 	pip install -e ".[dev]"
 
 typecheck:
-	mypy pilot402/
+	mypy pilot402/ scripts/
 
 lint:
-	ruff check pilot402/ tests/
+	ruff check pilot402/ tests/ scripts/
 
 smoke:
 	python -c "from pilot402.core import Task, Policy, ExperimentConfig, SeedSource, LogRecord, PregenRecord; print('OK')"

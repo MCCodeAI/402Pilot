@@ -143,11 +143,15 @@ difficulty-sampling distribution is needed.
 
 | Task                | Dataset      | Pool size | Providers | Versions | API calls    |
 | ------------------- | ------------ | --------- | --------- | -------- | ------------ |
-| Coding              | HumanEval    | 150       | 5         | 5        | 3,750        |
-| Multi-hop QA        | HotpotQA val | 300       | 5         | 5        | 7,500        |
-| Web search — closed | TriviaQA-web | 150       | 5         | 5        | 3,750        |
-| Web search — open   | Custom       | 225       | 5         | 5        | 5,625        |
-| **Total**           |              | **825**   |           |          | **≈ 20,625** |
+| Coding              | HumanEval    | 164       | 5         | 5        | 4,100        |
+| Multi-hop QA        | HotpotQA val | 220       | 5         | 5        | 5,500        |
+| Web search — closed | TriviaQA-web | 220       | 5         | 5        | 5,500        |
+| Web search — open   | OpenAssistant filt. | 220 | 5         | 5        | 5,500        |
+| **Total**           |              | **824**   |           |          | **≈ 20,600** |
+
+The 164 for coding is the full HumanEval test split (no sampling). The
+other three sources are deterministically sampled; per-source seeds are
+defined in their loader modules.
 
 
 ### 1.4 Run length and budget

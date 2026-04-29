@@ -126,7 +126,7 @@ Full design in `docs/experiment_design.md`.
 
 ### 6.1 402Pilot-Bench setup (~0.5 page)
 
-- **Pre-generated dataset.** 825 tasks across T1/T2/T3; 5 response versions
+- **Pre-generated dataset.** 824 tasks across T1/T2/T3; 5 response versions
   per (task, provider) pair from real LLM calls; quality scored at
   pre-generation time. Ensures reproducibility while grounding quality
   signals in real model outputs.

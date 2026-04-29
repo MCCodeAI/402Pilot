@@ -1318,7 +1318,7 @@ LLM routing 领域没有显式处理 agent micropayment、wallet budget、paymen
 
 对于确定性评估器（pass@1、EM/F1），质量分数在预生成阶段就计算并存储。对于 LLM-as-judge，judge 模型 ID 和 seed 一并记录。Provider E 的 20% timeout 事件也在预生成阶段用固定 seed 标注。
 
-预生成总量约 **20,625 次 API 调用**，一次性成本。实验本身零 API 成本。
+预生成总量约 **20,600 次 API 调用**（824 任务 × 5 providers × 5 versions），一次性成本。实验本身零 API 成本。
 
 ---
 

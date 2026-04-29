@@ -108,7 +108,7 @@ pilot402/
 │       └── price_shock.py      # S3: provider price multipliers shift at round 5,000
 │
 ├── pregen/                     # Pre-generation pipeline (Phase 1 only; run once before any experiment)
-│   ├── generator.py            # drives ~20,625 LLM API calls (5 providers × 825 tasks × 5 versions)
+│   ├── generator.py            # drives ~20,600 LLM API calls (5 providers × 824 tasks × 5 versions)
 │   ├── scorer.py               # computes and caches pass@1, EM/F1, and LLM-as-judge scores per response
 │   └── dataset.py              # dataset schema (PregenRecord) + load/query interface used by env/
 │

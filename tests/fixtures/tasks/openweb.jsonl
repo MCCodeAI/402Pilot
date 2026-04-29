@@ -1,0 +1,2 @@
+{"task_id":"openweb/test_001","task_type":"T3b","prompt":"What is the role of mitochondria in cellular respiration?","gold_answer":null,"difficulty":0.5,"metadata":{"source":"test","message_id":"test_001"}}
+{"task_id":"openweb/test_002","task_type":"T3b","prompt":"How does a transformer architecture differ from a recurrent neural network?","gold_answer":null,"difficulty":0.7,"metadata":{"source":"test","message_id":"test_002"}}

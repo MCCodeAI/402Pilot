@@ -28,10 +28,11 @@ node_modules/
 # Misc
 *.log
 
-# 402Pilot bulk artifacts (gitignored, regenerable)
+# 402Pilot bulk artifacts (gitignored, regenerable).
+# data/tasks/ is committed: those JSONL files are small and define the
+# experimental subset; without them, reviewers cannot reproduce the run.
 data/pregen/
 data/calibration/
-data/tasks/
 results/
 
 # Build / tooling caches
