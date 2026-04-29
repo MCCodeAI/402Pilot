@@ -1,0 +1,97 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pilot402"
+version = "0.1.0"
+description = "402Pilot: a finance layer above x402 for agent micropayment service selection."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "402Pilot authors" },
+]
+dependencies = [
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "numpy>=1.26",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "mypy>=1.10",
+    "ruff>=0.5",
+    "types-PyYAML>=6.0",
+]
+# Real LLM backends and dataset downloaders. Only required for Phase 1
+# (pregen). Sandbox tests do not need any of these.
+pregen = [
+    "openai>=1.30",
+    "anthropic>=0.34",
+    "dashscope>=1.20",
+    "datasets>=2.20",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pilot402*"]
+exclude = ["tests*", "experiments*", "scripts*", "data*", "results*", "viz*", "paper*"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra --strict-markers --strict-config"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_decorators = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = [
+    "yaml.*",
+    "datasets",
+    "datasets.*",
+    "openai",
+    "openai.*",
+    "anthropic",
+    "anthropic.*",
+    "dashscope",
+    "dashscope.*",
+]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501",   # line length handled by formatter
+    "UP042",  # `class Foo(str, Enum)` is intentional — StrEnum (3.11+) changes
+              # __str__ semantics and interacts subtly with pydantic serialization;
+              # keeping the explicit (str, Enum) base preserves stable wire values.
+    "UP017",  # `timezone.utc` is intentional — universally compatible across
+              # 3.10/3.11 environments used for sandboxed test runs.
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["N802", "N803"]  # allow non-snake-case in test names where useful

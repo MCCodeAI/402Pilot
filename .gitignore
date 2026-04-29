@@ -27,3 +27,18 @@ node_modules/
 
 # Misc
 *.log
+
+# 402Pilot bulk artifacts (gitignored, regenerable)
+data/pregen/
+data/calibration/
+data/tasks/
+results/
+
+# Build / tooling caches
+build/
+dist/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/

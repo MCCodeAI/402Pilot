@@ -4,7 +4,7 @@
 
 The core algorithm is **PA-DCTS** (Payment-Aware Discounted Contextual Thompson Sampling): a budget-aware, non-stationary contextual bandit policy that learns from reward feedback across irreversible per-call payments.
 
-> Paper target: NeurIPS / ICML / AAAI (9 pages). Status: **pre-implementation — plan and experiment design locked.**
+
 
 ---
 

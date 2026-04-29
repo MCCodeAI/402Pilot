@@ -1,0 +1,65 @@
+# 402Pilot-Bench full sweep — placeholder configuration.
+#
+# This file is loaded by `pilot402.core.config.load_config()` and proves that
+# the YAML schema connects end-to-end. Values are calibrated placeholders; the
+# real numbers are produced by `pilot402.budget.sizing` and the calibration
+# pipeline before the M4 full sweep.
+#
+# Environment-sourced sub-objects (x402, llm_keys, judge) MUST NOT appear here;
+# they are read from `.env`.
+
+run_id: "main_v0_placeholder"
+seed: 0
+num_rounds: 10000
+num_seeds: 30
+
+providers:
+  - provider_id: "P-cheap"
+    model_name: "Qwen3-8B"
+    base_price_usdc: 0.0005
+    tier: "cheap"
+  - provider_id: "P-mid"
+    model_name: "GPT-5.4-mini"
+    base_price_usdc: 0.002
+    tier: "mid"
+  - provider_id: "P-premium"
+    model_name: "GPT-5.4"
+    base_price_usdc: 0.02
+    tier: "premium"
+  - provider_id: "P-adv"
+    model_name: "GPT-5.4-mini"
+    base_price_usdc: 0.002
+    tier: "mid"
+  - provider_id: "P-flaky"
+    model_name: "GPT-5.4-mini"
+    base_price_usdc: 0.002
+    tier: "mid"
+
+scenario:
+  name: "S1"
+  kwargs: {}
+
+budget:
+  # Sized so that Always-P-premium exhausts the wallet near round ~5,000
+  # (PLAN §3.5). Real B is computed by `pilot402.budget.sizing`; this is a
+  # placeholder that satisfies the schema.
+  total_usdc: 100.0
+  lambda_0: 1.0
+  alpha: 2.0
+  target_burn_rate: 0.01
+
+reward:
+  # Constants across the paper to avoid the "you tuned the reward" objection
+  # (system_design §2.6).
+  mu: 0.05
+  nu: 0.5
+
+policy:
+  name: "padcts"
+  kwargs: {}
+
+paths:
+  pregen_dir: "data/pregen"
+  calibration_dir: "data/calibration"
+  tasks_dir: "data/tasks"
+  results_dir: "results"
