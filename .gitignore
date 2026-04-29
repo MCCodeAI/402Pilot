@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary / lock files
+.~*
+*.lock
+
+# Word temp files
+~$*.docx
+~$*.xlsx
+~$*.pptx
+
+# Python
+__pycache__/
+*.py[cod]
+.env
+.venv/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Node
+node_modules/
+
+# Misc
+*.log
