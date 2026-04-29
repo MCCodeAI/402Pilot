@@ -1,182 +1,125 @@
-# ASCK Chatbot — v1.0.0
+# 402Pilot: Learning What to Pay For in Agent Micropayment Markets
 
-A RAG-enabled Q&A chatbot. Uses Weaviate (embedded) for vector search, Pydantic AI for the agent layer, and Ant Design X for the chat UI.
+**402Pilot** is a finance layer that sits above x402-style micropayment protocols. It gives AI agents an online policy for deciding *which* paid service to call — balancing output quality, cost, latency, and reliability under a fixed wallet budget, without prior knowledge of provider behavior.
 
-## Tech Stack
+The core algorithm is **PA-DCTS** (Payment-Aware Discounted Contextual Thompson Sampling): a budget-aware, non-stationary contextual bandit policy that learns from reward feedback across irreversible per-call payments.
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Vite + React + TypeScript + Ant Design X |
-| Backend | Python 3.11+, FastAPI, Uvicorn |
-| Agent | Pydantic AI (RAG tool, streaming) |
-| Vector DB | Weaviate (embedded, port 8090) |
-| Embeddings | VoyageAI `voyage-4` (via Weaviate `text2vec-voyageai` module) |
-| LLM | OpenAI-compatible API |
+> Paper target: NeurIPS / ICML / AAAI (9 pages). Status: **pre-implementation — plan and experiment design locked.**
 
-## Prerequisites
+---
 
-| Tool | Version |
-|------|---------|
-| Python | 3.11+ (via Anaconda or Homebrew) |
-| Node.js | 18+ |
-| pnpm | any — `npm install -g pnpm` |
+## The Problem
 
-## Quick Start
+x402 solves payment *execution*. It does not solve payment *decision*.
 
-### 1. Clone
+An agent with a $10 wallet and five provider options — ranging from cheap-but-unreliable to premium-but-expensive, including one adversarial provider that sounds correct but isn't, and one flaky provider that times out 20% of the time — cannot rely on static rules to allocate spend well. The right choice depends on the task type, remaining budget, and how each provider has been performing lately.
 
-```bash
-git clone https://github.com/yourusername/ASCASK.git
-cd ASCASK
-```
+402Pilot learns this on the fly.
 
-### 2. Initialize (first time only)
+---
 
-```bash
-make init
-```
+## Key Design Points
 
-This creates `backend/.venv`, installs all Python + frontend dependencies, and creates `.env` files from examples.
+**Finance layer, not a protocol fork.** 402Pilot makes its selection decision before the HTTP request hits the paid endpoint. x402 handles settlement unchanged.
 
-### 3. Configure API keys
+**Bandit, not RL.** Only the chosen arm is observed per round (bandit feedback). Payments are irreversible. No long-horizon credit assignment is needed within a single service call.
 
-Edit `backend/.env`:
-
-```env
-OPENAI_API_KEY=sk-...
-VOYAGEAI_APIKEY=pa-...
-```
-
-### 4. Start
-
-```bash
-make dev
-```
-
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:8000 |
-| Weaviate (embedded) | port 8090 (internal, auto-started by backend) |
-
-Logs: `logs/backend.log` and `logs/frontend.log`.
-
-### 5. Stop
-
-```bash
-make stop
-```
-
-## Indexing Documents
-
-Place `.md` files under `structured_docs/`. Then run:
-
-```bash
-make index
-```
-
-Available indexing commands:
-
-| Command | Description |
-|---------|-------------|
-| `make index` | Index everything (structured docs + WMX manual) |
-| `make index-structured` | Structured docs only |
-| `make index-wmx` | WMX manual only |
-| `make index-reset` | Reset schema, then re-index everything |
-
-The indexer scans for new/changed files, generates HTML sidecars, and upserts content into Weaviate. Re-run whenever documents are added or updated.
-
-## Project Structure
+**PA-DCTS reward signal:**
 
 ```
-ASCASK/
-├── backend/
-│   ├── server.py        # FastAPI app, CORS, static file mount, health/version
-│   ├── config.py        # Settings from environment variables
-│   ├── agent.py         # Pydantic AI agent + system prompt
-│   ├── search.py        # Weaviate client singleton + RAG search tool
-│   ├── chat.py          # POST /api/chat endpoint (streaming + non-streaming)
-│   ├── .env             # Your secrets (not committed)
-│   ├── .env.example     # Template
-│   └── requirements.txt
-│
-├── indexer/             # Offline document indexing CLI (python -m indexer)
-│   ├── __main__.py      # CLI entry point
-│   ├── weaviate_client.py
-│   ├── scanner.py       # File scanner + change detection + HTML generation
-│   ├── chunker.py       # Token counting + content splitting
-│   ├── structured.py    # Weaviate schema + batch insert for structured docs
-│   └── wmx_manual.py    # WMX Manual knowledge graph builder
-│
-├── frontend/
-│   └── src/
-│       ├── App.tsx
-│       └── components/chat/
-│           ├── ChatLayout.tsx   # Main component — all state and hooks
-│           ├── Sidebar.tsx      # Conversation list and management
-│           ├── MessageList.tsx  # Bubble list, Markdown rendering, message footer
-│           ├── ChatInput.tsx    # Input box, search engines, file attachments
-│           ├── WelcomeScreen.tsx# Welcome + hot topic shortcuts
-│           ├── context.ts       # Shared ChatContext
-│           ├── types.ts         # ChatMessage type
-│           └── config.ts        # Static constants (prompts, search engines, etc.)
-│
-├── structured_docs/     # Markdown source files for the knowledge base
-├── unstructured_docs/   # Unstructured docs (WMX manual, sample codes)
-├── graph_vis/           # Jupyter notebook for Weaviate graph visualization
-├── Makefile             # All developer commands
-├── docker-compose.yml   # Weaviate Docker config (currently using embedded mode)
-├── VERSION              # Canonical version string
-└── DEV_LOG.md           # Development log
+r_t = q_t − λ_t · c̃_t − μ · l̃_t − ν · f_t
 ```
 
-## How RAG Works
+where `q_t` is task quality, `c̃_t` is normalized cost, `l̃_t` is normalized latency, `f_t` is a failure flag, and `λ_t` is a budget-pressure multiplier that rises as the wallet depletes.
+
+**Non-stationarity via discounted sufficient statistics.** Exponential discount on per-arm posteriors lets the policy adapt to provider drift (quality degradation, price shocks) without forgetting stable arms too quickly.
+
+---
+
+## Benchmark: 402Pilot-Bench
+
+Five heterogeneous provider agents, three task types, three market scenarios, 30 seeds × 10,000 rounds per cell. All responses pre-generated from real LLM calls; experiments replay from fixed fixtures for reproducibility.
+
+| Provider | Model | Special behavior |
+|---|---|---|
+| P-cheap | Qwen3-8B | No tools, parametric memory only |
+| P-mid | GPT-5.4-mini | BM25 retrieval |
+| P-premium | GPT-5.4 | CoT + code execution |
+| P-adv | GPT-5.4-mini | Adversarial system prompt (fluent but wrong) |
+| P-flaky | GPT-5.4-mini | 20% timeout injection |
+
+P-mid, P-adv, and P-flaky share the same cost tier and base model. A rule-based policy cannot distinguish them — PA-DCTS must learn the distinction from reward feedback alone.
+
+| Scenario | Event |
+|---|---|
+| S1 — Stationary | No changes |
+| S2 — Abrupt degradation | P-premium quality drops at round 3,000; P-flaky timeout rate spikes at round 5,000 |
+| S3 — Price shock | P-premium doubles, P-mid halves at round 5,000 |
+
+---
+
+## Repository Layout
 
 ```
-User prompt
-  → Frontend (Ant Design X chat UI)
-  → POST /api/chat (streaming SSE)
-  → Pydantic AI Agent
-      ├─ Decides: search docs or answer directly
-      └─ rag_search_tool(query)
-            → Weaviate hybrid search (75% vector / 25% BM25)
-            → VoyageAI embeddings (via text2vec-voyageai module, transparent)
-            → Returns top-5 chunks with source URLs
-  → Agent composes response with citations
-  → Streams back to frontend
+402Pilot/
+├── docs/               # Design documents
+│   ├── paper_outline.md
+│   ├── system_design.md
+│   ├── experiment_design.md
+│   └── code_structure.md
+├── pilot402/           # Python package (to be implemented)
+├── experiments/        # Experiment configs (YAML)
+├── scripts/            # CLI entry points
+├── viz/                # Interactive explainer (GitHub Pages, writing phase)
+├── paper/              # LaTeX sources (writing phase)
+├── results/            # Run outputs (gitignored)
+└── tests/
 ```
 
-## Environment Variables
+Full module layout: [`docs/code_structure.md`](docs/code_structure.md)
 
-### `backend/.env`
+---
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `OPENAI_API_KEY` | Yes | — | OpenAI (or compatible) API key |
-| `VOYAGEAI_APIKEY` | Yes | — | VoyageAI key (used by Weaviate internally) |
-| `OPENAI_BASE_URL` | No | OpenAI default | Override for local models |
-| `WEAVIATE_URL` | No | `http://localhost:8090` | Weaviate URL |
-| `CORS_ORIGINS` | No | `http://localhost:5173` | Comma-separated allowed origins |
+## Interactive Explainer
 
-### `frontend/.env`
+A companion web app (React + D3, deployed to GitHub Pages) will ship alongside the paper with three sections:
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `VITE_API_URL` | No | `http://localhost:8000/api/chat` | Backend chat endpoint |
+- **Algorithm Explainer** — animated PA-DCTS loop; Thompson Sampling posterior evolution per provider
+- **Simulation Replay** — round-by-round playback with scrubber; P-adv / P-flaky detection events highlighted
+- **Results Dashboard** — cumulative regret curves, ROI evolution, provider selection heatmaps, ablation comparison
 
-## Changelog
+> Status: planned. Implementation follows experiment completion.
 
-### v1.0.0 (2026-04-06)
-- **Major restructure**: flattened `backend/app/` hierarchy → flat files directly in `backend/`
-- **Indexer extracted**: standalone `indexer/` package, run with `python -m indexer`
-- **`unstructured_docs/`** moved from `backend/` to project root
-- **Frontend split**: `Independent.tsx` (1013 lines) → 5 focused components + shared context/types/config
-- **Makefile**: replaces `_init.sh`, `_start.sh`, `_stop.sh`, `_scandocs.sh`
-- **Vercel removed**: dropped `vercel.json` and `backend/api/index.py`
-- **Cleaned `requirements.txt`**: removed unused deps (logfire, ddgs, trafilatura, PyYAML, etc.)
+---
 
-### v0.1.0
-- Initial skeleton: FastAPI backend + Weaviate RAG + Ant Design X chat UI
+## Comparators
+
+| Policy | Type |
+|---|---|
+| Always-P-premium | Fixed (strongest non-adaptive) |
+| Budget rule | Rule-based (strongest hand-crafted) |
+| **PA-DCTS** | **Ours** |
+| Oracle | Offline upper bound (not available online) |
+
+Ablations A1–A4 remove one PA-DCTS component at a time (context, discount, budget-aware λ, failure penalty) to isolate each contribution.
+
+---
+
+## Status
+
+| Component | Status |
+|---|---|
+| Paper outline | ✅ Locked |
+| System design | ✅ Locked |
+| Experiment design | ✅ Locked |
+| Code structure | ✅ Locked |
+| Pre-generation (LLM calls) | ⏳ Pending |
+| Core implementation | ⏳ Pending |
+| Experiments | ⏳ Pending |
+| Interactive explainer | ⏳ Pending |
+| Paper writing | ⏳ Pending |
+
+---
 
 ## License
 
