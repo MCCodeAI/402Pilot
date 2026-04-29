@@ -49,12 +49,18 @@ pilot402/
 │   ├── config.py               # typed config (pydantic) and YAML loader
 │   └── seeds.py                # single random source, seeded per run
 │
-├── env/                        # Calibrated micro-economy simulator
+├── env/                        # Micro-economy simulator (replay-based)
 │   ├── tasks.py                # task generator (3 task types: coding, multi-hop QA, web search)
-│   ├── providers.py            # quality / cost / latency / failure models
-│   ├── calibration.py          # fit provider distributions to public benchmarks
+│   ├── providers.py            # cost / latency / failure models; quality replayed from pregen dataset
+│   ├── calibration.py          # cost/latency noise parameters and P-flaky timeout rate only
+│   │                           #   (quality is NOT fitted here — it comes from real LLM outputs in pregen/)
 │   ├── dynamics.py             # scenario engine: S1 stationary, S2 abrupt-degradation, S3 price-shock
 │   └── workload.py             # workload composition / arrival schedule
+│
+├── pregen/                     # Pre-generation pipeline (Phase 1 only; run once before any experiment)
+│   ├── generator.py            # drives ~20,625 LLM API calls (5 providers × 825 tasks × 5 versions)
+│   ├── scorer.py               # computes and caches pass@1, EM/F1, and LLM-as-judge scores per response
+│   └── dataset.py              # dataset schema (PregenRecord) + load/query interface used by env/
 │
 ├── encoders/                   # Context encoders
 │   ├── default.py              # the initial feature set described in system_design
@@ -79,9 +85,12 @@ pilot402/
 │   └── reward.py               # r = q - lambda*c~ - mu*l~ - nu*f
 │
 ├── eval/                       # Evaluators (quality scoring)
-│   ├── metric_backend.py       # exact match, F1, pass@1
-│   ├── judge_backend.py        # LLM-as-judge wrapper (logged, seedable)
+│   ├── metric_backend.py       # exact match, F1, pass@1  [used at pregen time]
+│   ├── judge_backend.py        # LLM-as-judge wrapper (logged, seedable)  [used at pregen time]
 │   └── composite.py            # per-task-type composite evaluator
+│                               #   two modes: score(task, response) for pregen;
+│                               #   lookup(task_id, provider_id, version) → cached float for experiments
+│                               #   experiment runs ALWAYS use lookup; score is never called during a bandit loop
 │
 ├── x402/                       # x402-in-the-loop integration
 │   ├── client.py               # PaymentExecutor over a real x402 client
@@ -92,7 +101,9 @@ pilot402/
 │       └── premium.py
 │
 ├── runner/                     # Experiment runner
-│   ├── loop.py                 # the per-round loop
+│   ├── loop.py                 # the per-round loop; also owns Policy Updater logic (system_design §2.7):
+│   │                           #   updates per-provider EWMA stats, calls policy.update(ctx, arm, utility),
+│   │                           #   applies per-arm discount, emits the structured log record
 │   ├── recorder.py             # structured JSON-line logging
 │   └── orchestrator.py         # multi-seed, multi-scenario sweeps
 │
@@ -125,6 +136,8 @@ specified in code.
 
 ```
 scripts/
+├── run_pregen.py               # python -m scripts.run_pregen <config.yaml>  [Phase 1 entry point]
+│                               #   calls pregen/generator.py + pregen/scorer.py; writes to data/
 ├── run_experiment.py           # python -m scripts.run_experiment <config.yaml>
 ├── make_figures.py             # builds all paper figures from results/
 ├── make_tables.py              # builds all paper tables from results/
