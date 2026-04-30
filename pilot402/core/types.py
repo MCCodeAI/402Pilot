@@ -163,11 +163,15 @@ class PregenRecord(BaseModel):
     Generated once in Phase 1 by ``pilot402.pregen``. Read at experiment time
     by ``env/`` and ``eval/`` via the ``PregenStore`` and ``Evaluator``
     interfaces. See ``docs/dataset_schema.md`` for the canonical schema spec.
+
+    Schema version 2 (since 2026-04-30): added ``temperature``. The default
+    of 0.0 lets v1 records load through pydantic without a migration step;
+    new records always populate ``temperature`` explicitly.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    schema_version: int = 1
+    schema_version: int = 2
     task_id: str
     task_type: TaskType
     provider_id: ProviderId
@@ -179,6 +183,7 @@ class PregenRecord(BaseModel):
     failure_code: FailureCode
     quality_score: QualityScore
     generated_at: datetime
+    temperature: float = Field(ge=0.0, default=0.0)
 
 
 class LogRecord(BaseModel):

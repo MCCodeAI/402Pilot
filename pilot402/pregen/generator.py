@@ -143,6 +143,7 @@ def run_pregen(
                 failure_code=outcome.failure_code,
                 quality_score=quality,
                 generated_at=datetime.now(timezone.utc),
+                temperature=outcome.temperature,
             )
             fh = _open_for(open_files, pregen_out_dir, provider_id, task.task_type)
             fh.write(record.model_dump_json() + "\n")

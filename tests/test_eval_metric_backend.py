@@ -138,3 +138,80 @@ def test_pass_at_1_determinism() -> None:
     task = _humaneval_task()
     scores = {pass_at_1(task, "    return a + b\n") for _ in range(5)}
     assert scores == {1.0}
+
+
+def test_pass_at_1_complete_function_inherits_prompt_imports() -> None:
+    """Regression: a model that emits a complete ``def foo(...)`` block
+    without re-emitting ``from typing import List`` should still pass.
+
+    Before the import-prepend fix, this case scored 0.0 because ``List``
+    was undefined in the standalone subprocess (``NameError: List``).
+    Real-world example: HumanEval/3 from Qwen3-8B at T=0.3.
+    """
+
+    task = Task(
+        task_id="test_humaneval/needs_typing",
+        task_type=TaskType.T1_CODING,
+        prompt=(
+            "from typing import List\n\n"
+            "def below_zero(operations: List[int]) -> bool:\n"
+            "    \"\"\"Return True iff balance ever drops below 0.\"\"\"\n"
+        ),
+        gold_answer=(
+            "    balance = 0\n"
+            "    for op in operations:\n"
+            "        balance += op\n"
+            "        if balance < 0:\n"
+            "            return True\n"
+            "    return False\n"
+        ),
+        difficulty=0.2,
+        metadata={
+            "source": "test",
+            "entry_point": "below_zero",
+            "test": (
+                "def check(candidate):\n"
+                "    assert candidate([1, 2, -5, 4]) is True\n"
+                "    assert candidate([1, 2, 3]) is False\n"
+            ),
+        },
+    )
+    # Response is a complete function but does NOT re-emit the import line.
+    response = (
+        "def below_zero(operations: List[int]) -> bool:\n"
+        "    balance = 0\n"
+        "    for op in operations:\n"
+        "        balance += op\n"
+        "        if balance < 0:\n"
+        "            return True\n"
+        "    return False\n"
+    )
+    assert pass_at_1(task, response) == 1.0
+
+
+def test_pass_at_1_response_with_redundant_import_still_passes() -> None:
+    """The import-prepend logic must NOT inject duplicate imports when
+    the response already includes them."""
+
+    task = Task(
+        task_id="test_humaneval/dup_imports",
+        task_type=TaskType.T1_CODING,
+        prompt=(
+            "from typing import List\n\n"
+            "def first(items: List[int]) -> int:\n"
+            "    \"\"\"Return the first item.\"\"\"\n"
+        ),
+        gold_answer="    return items[0]\n",
+        difficulty=0.1,
+        metadata={
+            "source": "test",
+            "entry_point": "first",
+            "test": "def check(candidate):\n    assert candidate([7, 8]) == 7\n",
+        },
+    )
+    response = (
+        "from typing import List\n\n"
+        "def first(items: List[int]) -> int:\n"
+        "    return items[0]\n"
+    )
+    assert pass_at_1(task, response) == 1.0

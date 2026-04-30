@@ -22,6 +22,7 @@ from numpy.random import Generator
 from pilot402.core import FailureCode, ProviderId, Task
 from pilot402.pregen.providers.base import (
     ADVERSARIAL_VERSIONS,
+    DEFAULT_TEMPERATURE,
     BaseProvider,
     LlmBackend,
     ProviderCallResult,
@@ -42,12 +43,15 @@ class PFlakyProvider(BaseProvider):
     ) -> ProviderCallResult:
         if version in ADVERSARIAL_VERSIONS[ProviderId.P_FLAKY]:
             # No LLM call; force-fail the round at full price.
+            # Record the canonical sampling temperature so the row matches
+            # what other versions of this provider would have used.
             return ProviderCallResult(
                 response="",
                 cost_usdc=self.base_price_usdc,
                 latency_s=0.0,
                 failure_flag=True,
                 failure_code=FailureCode.TIMEOUT,
+                temperature=DEFAULT_TEMPERATURE,
             )
         return super().generate(task, version, rng=rng)
 

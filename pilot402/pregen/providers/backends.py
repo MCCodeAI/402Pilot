@@ -148,15 +148,62 @@ class AnthropicBackend:
 # ---------------------------------------------------------------------------
 
 
+def _safe_field(obj: Any, name: str) -> Any:
+    """Read ``name`` from ``obj`` regardless of attribute / dict access.
+
+    DashScope's ``GenerationOutput``-style objects support both, and the SDK
+    has flipped between dict and attribute conventions across versions; we
+    don't want one version's choice to silently break parsing.
+    """
+
+    if obj is None:
+        return None
+    if isinstance(obj, dict):
+        return obj.get(name)
+    return getattr(obj, name, None)
+
+
+def _safe_int(obj: Any, name: str) -> int:
+    raw = _safe_field(obj, name)
+    try:
+        return int(raw) if raw is not None else 0
+    except (TypeError, ValueError):
+        return 0
+
+
+def _extract_qwen_text(output: Any) -> str:
+    """Pull message content from a DashScope ``GenerationOutput``."""
+
+    choices = _safe_field(output, "choices") or []
+    if choices:
+        first = choices[0]
+        message = _safe_field(first, "message")
+        content = _safe_field(message, "content")
+        if content:
+            return str(content)
+    # Some DashScope models populate the legacy ``text`` field instead.
+    legacy_text = _safe_field(output, "text")
+    return str(legacy_text or "")
+
+
 @dataclass
 class QwenBackend:
     """Wraps the DashScope SDK for Qwen models.
 
-    DashScope's ``Generation`` API takes a ``seed`` parameter for
-    deterministic sampling at low temperature; we forward
-    ``LlmRequest.seed``. The cost model in DashScope is per-token, but
-    the pregen pipeline records ``cost_usdc`` from the provider's
-    ``base_price_usdc`` (the x402 charge price), not the DashScope bill.
+    Qwen3 quirk: non-streaming calls must pass ``enable_thinking=False``,
+    otherwise the API returns 400 with
+    ``parameter.enable_thinking must be set to false for non-streaming calls``.
+    We always send it; for non-Qwen3 models DashScope ignores the flag.
+
+    Failure handling: any non-200 status, missing ``output``, or empty
+    content raises ``RuntimeError``. The orchestrator catches it and writes
+    a billed ``failure_code=PAYMENT_FAILURE`` record — never a silent
+    "success with empty response" row, which is what the previous version
+    of this backend produced.
+
+    The cost model in DashScope is per-token, but the pregen pipeline
+    records ``cost_usdc`` from the provider's ``base_price_usdc`` (the
+    x402 charge price), not the DashScope bill.
     """
 
     api_key: str
@@ -185,21 +232,33 @@ class QwenBackend:
             temperature=request.temperature,
             timeout=self.timeout_s,
             result_format="message",
+            enable_thinking=False,  # Qwen3 non-streaming quirk; harmless on others.
         )
         elapsed = time.monotonic() - start
-        # DashScope returns a Response with .output.choices[0].message.content
-        # on success. Defensive extraction with empty-string fallback so a
-        # surface-level format change shows up as a billed-but-empty record
-        # rather than a crash.
-        try:
-            text = resp.output.choices[0].message.content
-        except (AttributeError, IndexError, KeyError):
-            text = ""
-        usage = getattr(resp, "usage", None) or {}
+
+        status = getattr(resp, "status_code", None)
+        if status != 200:
+            code = getattr(resp, "code", "<missing>")
+            message = getattr(resp, "message", "<missing>")
+            raise RuntimeError(
+                f"DashScope status={status} code={code!r} message={message!r}"
+            )
+
+        output = getattr(resp, "output", None)
+        if output is None:
+            raise RuntimeError(f"DashScope response missing 'output': {resp!r}")
+
+        text = _extract_qwen_text(output)
+        if not text:
+            raise RuntimeError(
+                f"DashScope returned empty content. output={output!r}"
+            )
+
+        usage = getattr(resp, "usage", None)
         return LlmResponse(
-            text=str(text or ""),
-            prompt_tokens=int(usage.get("input_tokens", 0) if isinstance(usage, dict) else 0),
-            completion_tokens=int(usage.get("output_tokens", 0) if isinstance(usage, dict) else 0),
+            text=text,
+            prompt_tokens=_safe_int(usage, "input_tokens"),
+            completion_tokens=_safe_int(usage, "output_tokens"),
             latency_s=elapsed,
         )
 

@@ -45,7 +45,13 @@ def test_logrecord_has_schema_version(sample_log_record: LogRecord) -> None:
 
 
 def test_pregen_record_has_schema_version(sample_pregen_record: PregenRecord) -> None:
-    assert sample_pregen_record.schema_version == 1
+    assert sample_pregen_record.schema_version == 2
+
+
+def test_pregen_record_carries_temperature(sample_pregen_record: PregenRecord) -> None:
+    """Temperature must be persisted as provenance so a re-run at a
+    different temp doesn't silently mix with prior data."""
+    assert sample_pregen_record.temperature == 0.3
 
 
 def test_types_are_frozen(sample_task: Task) -> None:

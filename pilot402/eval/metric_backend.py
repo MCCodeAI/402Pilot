@@ -83,6 +83,27 @@ def max_em_f1(prediction: str, gold: str) -> float:
 
 
 _CODE_FENCE_RE = re.compile(r"```(?:python)?\n?(.*?)```", re.DOTALL)
+_IMPORT_LINE_RE = re.compile(r"^\s*(?:from\s+\S+\s+import\s+|import\s+)", re.MULTILINE)
+
+
+def _extract_imports(text: str) -> str:
+    """Pull every ``import`` / ``from ... import`` line out of ``text``.
+
+    Used by ``_assemble_program`` to defend against the common LLM behavior
+    of writing a complete function definition without re-emitting the
+    imports that were already in the prompt. Without this, a perfectly
+    correct response that uses ``List[int]`` (HumanEval/3 style) would
+    fail with ``NameError: List`` at test time.
+    """
+
+    lines = []
+    for match in _IMPORT_LINE_RE.finditer(text):
+        line_start = text.rfind("\n", 0, match.start()) + 1
+        line_end = text.find("\n", match.end())
+        if line_end == -1:
+            line_end = len(text)
+        lines.append(text[line_start:line_end].rstrip())
+    return "\n".join(lines)
 
 
 def _strip_code_fence(response: str) -> str:
@@ -115,7 +136,21 @@ def _assemble_program(task: Task, response: str) -> str:
             "pass_at_1 requires 'entry_point' and 'test' in task.metadata"
         )
 
-    body = code if f"def {entry_point}(" in code else task.prompt + code
+    if f"def {entry_point}(" in code:
+        # Response is a complete function. Prepend any imports from the
+        # prompt that the response did not re-emit, so symbols like
+        # ``List[int]`` resolve. ``_IMPORT_LINE_RE`` is anchored at the start
+        # of a line so module-level only.
+        prompt_imports = _extract_imports(task.prompt)
+        response_imports = _extract_imports(code)
+        missing_imports = "\n".join(
+            line for line in prompt_imports.splitlines() if line not in response_imports
+        )
+        body = (missing_imports + "\n\n" + code) if missing_imports else code
+    else:
+        # Response is a body continuation. Prepend the entire prompt so the
+        # function signature + docstring are present.
+        body = task.prompt + code
 
     return body + "\n\n" + test + f"\n\ncheck({entry_point})\n"
 

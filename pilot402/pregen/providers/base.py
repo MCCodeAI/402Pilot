@@ -35,6 +35,16 @@ from pilot402.core import FailureCode, ProviderId, Task
 # ---------------------------------------------------------------------------
 
 
+DEFAULT_TEMPERATURE: float = 0.3
+"""Default sampling temperature for all pregen calls.
+
+Moderate sampling diversity so per-version seeds produce different
+responses, while keeping coding pass@1 nearly as high as T=0. See
+``docs/dataset_schema.md`` for the rationale and PregenRecord
+``temperature`` provenance.
+"""
+
+
 @dataclass(frozen=True)
 class LlmRequest:
     """One LLM completion request. Backend-agnostic."""
@@ -44,7 +54,7 @@ class LlmRequest:
     model: str
     seed: int
     max_tokens: int = 1024
-    temperature: float = 0.0
+    temperature: float = DEFAULT_TEMPERATURE
 
 
 @dataclass(frozen=True)
@@ -74,7 +84,9 @@ class ProviderCallResult:
     """Tuple-equivalent return type from ``Provider.generate``.
 
     The orchestrator turns this plus the evaluator's ``QualityScore`` into a
-    full ``PregenRecord``.
+    full ``PregenRecord``. ``temperature`` records the sampling temperature
+    that the provider actually used; persisted in ``PregenRecord.temperature``
+    so re-runs at different temps stay distinguishable.
     """
 
     response: str
@@ -82,6 +94,7 @@ class ProviderCallResult:
     latency_s: float
     failure_flag: bool
     failure_code: FailureCode
+    temperature: float
 
 
 # ---------------------------------------------------------------------------
@@ -152,6 +165,7 @@ class BaseProvider:
                 latency_s=0.0,
                 failure_flag=True,
                 failure_code=FailureCode.PAYMENT_FAILURE,
+                temperature=request.temperature,
             )
         return ProviderCallResult(
             response=response.text,
@@ -159,6 +173,7 @@ class BaseProvider:
             latency_s=response.latency_s,
             failure_flag=False,
             failure_code=FailureCode.NONE,
+            temperature=request.temperature,
         )
 
     def _select_system_prompt(self, version: int) -> str:

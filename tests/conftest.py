@@ -73,6 +73,7 @@ def sample_pregen_record(sample_quality_score: QualityScore) -> PregenRecord:
         failure_code=FailureCode.NONE,
         quality_score=sample_quality_score,
         generated_at=datetime(2026, 4, 30, 12, 0, 0, tzinfo=timezone.utc),
+        temperature=0.3,
     )
 
 
