@@ -36,16 +36,23 @@
 \node[ifblock] (scorer) at (11.0, 0) {Outcome\\scorer\\$(q_t,c_t,f_t)$};
 
 % --- Background boxes ---
+% Trick: define two coords offset by inner_xsep on either side of scorer.center.
+% After fit's inner_xsep is added, pilotbox right edge and paybox left edge both
+% land EXACTLY on scorer.center — no overlap, no gap. The two boxes share a
+% vertical line that bisects the Outcome scorer.
+\coordinate (bndL) at ([xshift=-8pt]scorer.center);
+\coordinate (bndR) at ([xshift=8pt]scorer.center);
+
 \begin{scope}[on background layer]
   \node[
     draw=blue!45!black, fill=blue!4,
     rounded corners=4pt, inner xsep=8pt, inner ysep=14pt,
-    fit=(ctx) (select) (wallet) (update) (scorer.center)
+    fit=(ctx) (select) (wallet) (update) (bndL)
   ] (pilotbox) {};
   \node[
     draw=black!35, fill=black!5,
     rounded corners=4pt, dashed, inner xsep=8pt, inner ysep=10pt,
-    fit=(x402) (provider) (scorer.center)
+    fit=(x402) (provider) (bndR)
   ] (paybox) {};
 \end{scope}
 
@@ -53,7 +60,7 @@
   at ([xshift=4pt,yshift=-4pt]pilotbox.north west) {402Pilot decision layer};
 % paybox label parked at the bottom-right corner so it doesn't fight with arrow (5)
 \node[anchor=south east, font=\scriptsize\bfseries, text=black!55]
-  at ([xshift=-4pt,yshift=4pt]paybox.south east) {settlement \& service};
+  at ([xshift=-4pt,yshift=4pt]paybox.south east) {protocol stack + provider};
 
 % --- Forward arrows (top row) ---
 \draw[arrow] (agent) -- node[lab, above] {(1) task} (ctx);
