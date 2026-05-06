@@ -1,0 +1,29 @@
+\section{Method: \padct}
+\label{sec:method}
+
+% TODO: ~1.25 pages (paper_outline.md §5).
+%
+% Beats:
+% 1. Posterior model. Per-(arm, context-bucket) Gaussian posteriors over
+%    BOTH utility (Q-posterior) and cost (C-posterior). Conjugate
+%    Normal-Normal closed form in logs/notation.md §5.
+% 2. Two-tier reward (recall §3). u_t updates the posterior; r_t ranks
+%    arms at decision time. The decoupling stabilizes beliefs against
+%    lambda jumps.
+% 3. Discount factor gamma = 0.999. Half-life ≈ 693 rounds. Tradeoff:
+%    fast enough to react to S2 outage (rounds 3000-5500) and S3 promo
+%    (round 1000+); slow enough to accumulate stable estimates.
+% 4. Budget-aware lambda. Bounded sigmoid: lamn = lambda_t / (1 + lambda_t)
+%    keeps reward in [-1, +1].
+% 5. Algorithm 1 (boxed pseudocode). Source: logs/algorithm_box.md §2
+%    (LaTeX block, ready to paste). 6 steps: discount → context-bucket →
+%    lamn → sample-and-score → argmax → pay → update.
+% 6. Theoretical properties (no formal theorem). Bounded reward range —
+%    direct consequence of the sigmoid convex combination — lets
+%    standard contextual TS (Agrawal & Goyal 2013) and discounted TS
+%    (Garivier & Moulines 2011 / Russac et al.) regret guarantees apply.
+%    Honest about which conditions transfer cleanly vs. require extra
+%    assumptions.
+
+% TODO: paste Algorithm 1 LaTeX from logs/algorithm_box.md §2.
+% \begin{algorithm}[t] ... \end{algorithm}
