@@ -5,8 +5,77 @@
 
 \begin{figure}[t]
 \centering
-\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{8cm}{0cm}}
-\caption{The 402Pilot decision-layer architecture. Per round: (1) task arrives from the agent; (2) the context encoder produces $\mathbf{x}_t$; (3) the wallet exposes $\lambda_t$ and the affordable-arm set; (4) \texttt{policy.select} returns $a_t$; (5) the underlying payment protocol settles and calls the chosen provider [grayed: outside the layer]; (6) the evaluator returns $(q_t, c_t, f_t)$; (7) \texttt{policy.update} incorporates the observation. Only steps 2--4 and 7 are inside 402Pilot; settlement is delegated unchanged. [/cc TODO actual TikZ diagram.]}
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\footnotesize,
+  node distance=1.15cm and 1.0cm,
+  block/.style={
+    draw=black!55,
+    rounded corners=2pt,
+    align=center,
+    minimum height=0.78cm,
+    text width=2.15cm,
+    inner sep=4pt,
+    fill=white
+  },
+  pilotblock/.style={block, draw=blue!55!black, fill=blue!5},
+  extblock/.style={block, draw=black!45, fill=black!7},
+  payblock/.style={block, draw=black!45, fill=black!10, dashed},
+  arrow/.style={-{Stealth[length=2.0mm]}, line width=0.45pt},
+  feedback/.style={-{Stealth[length=2.0mm]}, line width=0.45pt, dashed},
+  lab/.style={font=\scriptsize, fill=white, inner sep=1.5pt}
+]
+
+\node[extblock] (agent) {Agent\\planner};
+\node[pilotblock, right=of agent] (ctx) {Context\\encoder\\$\mathbf{x}_t$};
+\node[pilotblock, right=of ctx] (wallet) {Wallet /\\budget\\$\lambda_t,\mathcal{A}_t$};
+\node[pilotblock, right=of wallet, text width=2.35cm] (select) {PA-DCT\\\texttt{policy.select}\\$a_t$};
+\node[payblock, right=of select, text width=2.3cm] (x402) {Payment\\protocol stack\\(e.g., x402)};
+\node[payblock, right=of x402] (provider) {Chosen\\provider\\$a_t$};
+\node[extblock, below=1.1cm of x402, text width=2.35cm] (eval) {Outcome\\evaluator\\$q_t,c_t,f_t$};
+\node[pilotblock, below=1.1cm of select, text width=2.45cm] (update) {Reward split +\\\texttt{policy.update}\\$u_t=q_t-\nu f_t$};
+
+\begin{scope}[on background layer]
+  \node[
+    draw=blue!45!black,
+    fill=blue!3,
+    rounded corners=4pt,
+    inner xsep=7pt,
+    inner ysep=9pt,
+    fit=(ctx) (wallet) (select) (update)
+  ] (pilotbox) {};
+  \node[
+    draw=black!35,
+    fill=black!4,
+    rounded corners=4pt,
+    dashed,
+    inner xsep=7pt,
+    inner ysep=9pt,
+    fit=(x402) (provider)
+  ] (paybox) {};
+\end{scope}
+
+\node[anchor=north west, font=\scriptsize\bfseries, text=blue!55!black]
+  at ([xshift=2pt,yshift=-2pt]pilotbox.north west) {402Pilot decision layer};
+\node[anchor=north west, font=\scriptsize\bfseries, text=black!55]
+  at ([xshift=2pt,yshift=-2pt]paybox.north west) {delegated settlement / service execution};
+
+\draw[arrow] (agent) -- node[lab, above] {(1) task} (ctx);
+\draw[arrow] (ctx) -- node[lab, above] {(2) context} (wallet);
+\draw[arrow] (wallet) -- node[lab, above] {(3) budget pressure + feasible arms} (select);
+\draw[arrow] (select) -- node[lab, above] {(4) chosen arm} (x402);
+\draw[arrow] (x402) -- node[lab, above] {(5) paid call} (provider);
+\draw[arrow] (provider.south) |- node[lab, pos=0.28, right] {response} (eval.east);
+\draw[arrow] (eval) -- node[lab, below] {(6) observed outcome} (update);
+\draw[feedback] (update.north) -- node[lab, right] {(7) update Q/C posteriors} (select.south);
+\draw[feedback] (update.west) -| node[lab, pos=0.25, below] {\texttt{record\_spend}$(c_t)$} (wallet.south);
+
+\node[font=\scriptsize, align=center, text=black!65, below=0.18cm of update, text width=4.4cm]
+  {Posteriors are updated with utility and realized cost; payment-aware reward is logged for accounting.};
+
+\end{tikzpicture}%
+}
+\caption{The 402Pilot decision-layer architecture. Per round: (1) task arrives from the agent; (2) the context encoder produces $\mathbf{x}_t$; (3) the wallet exposes $\lambda_t$ and the affordable-arm set; (4) \texttt{policy.select} returns $a_t$; (5) the underlying payment protocol settles and calls the chosen provider (grayed: outside the layer); (6) the evaluator returns $(q_t, c_t, f_t)$; (7) \texttt{policy.update} incorporates the observation. Only steps 2--4 and 7 are inside 402Pilot; settlement is delegated unchanged.}
 \label{fig:architecture}
 \end{figure}
 
