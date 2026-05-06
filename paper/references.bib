@@ -1,62 +1,96 @@
 % ---------------------------------------------------------------------
-% Provisional bibliography. Verify every entry before submission —
-% especially the placeholders flagged with `note = {Verify ...}`.
+% Bibliography for 402Pilot.
+% Last verified: 2026-05-06.
 % ---------------------------------------------------------------------
 
 % --- Agent payment protocols ----------------------------------------------
 
 @misc{coinbase2025x402v2,
-  title  = {x402 V2: A Specification for Machine-to-Machine HTTP Micropayments},
-  author = {{Coinbase}},
-  year   = {2025},
-  howpublished = {\url{https://x402.org/spec/v2}},
-  note   = {Verify URL and version before submission.}
+  title        = {Introducing x402 {V2}: Evolving the Standard for Internet-native Payments},
+  author       = {Reppel, Erik and Roscoe, Carson and Nickerson, Josh},
+  year         = {2025},
+  month        = dec,
+  howpublished = {\url{https://www.x402.org/writing/x402-v2-launch}},
+  note         = {Accessed: 2026-05-06}
 }
 
-@misc{a402,
-  title  = {A402: A Survey of Agent Payment Protocols},
-  author = {{TBD}},
-  year   = {2025},
-  note   = {Placeholder citation; verify exact title, authors, venue.}
+@misc{google2025ap2,
+  title        = {Powering {AI} Commerce with the New Agent Payments Protocol ({AP2})},
+  author       = {Parikh, Stavan and Surapaneni, Rao},
+  year         = {2025},
+  month        = sep,
+  howpublished = {\url{https://cloud.google.com/blog/products/ai-machine-learning/announcing-agents-to-payments-ap2-protocol}},
+  note         = {Google Cloud Blog. Accessed: 2026-05-06}
 }
 
-@inproceedings{sok2026agentpayments,
-  title     = {{SoK}: Agent Payments and Identity},
-  author    = {{TBD}},
-  booktitle = {To appear},
-  year      = {2026},
-  note      = {Placeholder citation; verify before submission.}
+@misc{a2ax402,
+  title        = {{A2A} x402 Extension},
+  author       = {{google-agentic-commerce}},
+  year         = {2025},
+  howpublished = {\url{https://github.com/google-agentic-commerce/a2a-x402}},
+  note         = {GitHub repository, release v0.1.0. Accessed: 2026-05-06}
+}
+
+@article{a402,
+  title   = {{A402}: Binding Cryptocurrency Payments to Service Execution for Agentic Commerce},
+  author  = {Li, Yue and Wang, Lei and Wang, Kaixuan and Yang, Zhiqiang and Wang, Ke and Guan, Zhi and Gao, Jianbo},
+  journal = {arXiv preprint arXiv:2603.01179},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2603.01179},
+  url     = {https://arxiv.org/abs/2603.01179}
+}
+
+@article{sok2026agentpayments,
+  title   = {{SoK}: Blockchain Agent-to-Agent Payments},
+  author  = {Zhang, Yuanzhe and Xiang, Yuexin and Lei, Yuchen and Wang, Qin and Qiu, Tian and Sun, Yujing and Zarkov, Spiridon and Yuen, Tsz Hon and Deppeler, Andreas and Yu, Jiangshan and Lam, Kwok-Yan},
+  journal = {arXiv preprint arXiv:2604.03733},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2604.03733},
+  url     = {https://arxiv.org/abs/2604.03733}
 }
 
 % --- Classical bandit components ------------------------------------------
 
 @inproceedings{xia2015bts,
-  title     = {Thompson Sampling for Budgeted Multi-armed Bandits},
-  author    = {Xia, Yingce and Qin, Tao and Yu, Nenghai and Bian, Jiang and Liu, Tie-Yan},
-  booktitle = {Proceedings of the 24th International Joint Conference on Artificial Intelligence ({IJCAI})},
-  year      = {2015}
+  title     = {Thompson Sampling for Budgeted Multi-Armed Bandits},
+  author    = {Xia, Yingce and Li, Haifang and Qin, Tao and Yu, Nenghai and Liu, Tie-Yan},
+  booktitle = {Proceedings of the 24th International Joint Conference on Artificial Intelligence},
+  pages     = {3960--3966},
+  year      = {2015},
+  url       = {https://www.ijcai.org/Proceedings/15/Papers/556.pdf}
 }
 
 @article{qi2023dsts,
-  title   = {Thompson Sampling on Discounted Sufficient Statistics for Non-Stationary Multi-armed Bandits},
-  author  = {Qi, Run and others},
-  journal = {arXiv preprint},
+  title   = {Discounted Thompson Sampling for Non-Stationary Bandit Problems},
+  author  = {Qi, Han and Wang, Yue and Zhu, Li},
+  journal = {arXiv preprint arXiv:2305.10718},
   year    = {2023},
-  note    = {Verify exact title, authors, and arXiv ID before submission.}
+  doi     = {10.48550/arXiv.2305.10718},
+  url     = {https://arxiv.org/abs/2305.10718}
 }
 
 @inproceedings{agrawal2013contextualts,
   title     = {Thompson Sampling for Contextual Bandits with Linear Payoffs},
   author    = {Agrawal, Shipra and Goyal, Navin},
-  booktitle = {Proceedings of the 30th International Conference on Machine Learning ({ICML})},
-  year      = {2013}
+  booktitle = {Proceedings of the 30th International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {28},
+  number    = {3},
+  pages     = {127--135},
+  publisher = {PMLR},
+  year      = {2013},
+  url       = {https://proceedings.mlr.press/v28/agrawal13.html}
 }
 
 @inproceedings{li2010linucb,
   title     = {A Contextual-Bandit Approach to Personalized News Article Recommendation},
   author    = {Li, Lihong and Chu, Wei and Langford, John and Schapire, Robert E.},
-  booktitle = {Proceedings of the 19th International Conference on World Wide Web ({WWW})},
-  year      = {2010}
+  booktitle = {Proceedings of the 19th International Conference on World Wide Web},
+  pages     = {661--670},
+  publisher = {ACM},
+  year      = {2010},
+  doi       = {10.1145/1772690.1772758},
+  url       = {https://doi.org/10.1145/1772690.1772758}
 }
 
 @article{badanidiyuru2018bandits,
@@ -65,7 +99,9 @@
   journal = {Journal of the {ACM}},
   volume  = {65},
   number  = {3},
-  year    = {2018}
+  pages   = {13:1--13:55},
+  year    = {2018},
+  doi     = {10.1145/3164539}
 }
 
 % --- LLM cost-aware routing -----------------------------------------------
@@ -74,43 +110,67 @@
   title   = {{FrugalGPT}: How to Use Large Language Models While Reducing Cost and Improving Performance},
   author  = {Chen, Lingjiao and Zaharia, Matei and Zou, James},
   journal = {arXiv preprint arXiv:2305.05176},
-  year    = {2023}
+  year    = {2023},
+  doi     = {10.48550/arXiv.2305.05176},
+  url     = {https://arxiv.org/abs/2305.05176}
 }
 
 @article{ong2024routellm,
   title   = {{RouteLLM}: Learning to Route {LLM}s with Preference Data},
-  author  = {Ong, Isaac and others},
+  author  = {Ong, Isaac and Almahairi, Amjad and Wu, Vincent and Chiang, Wei-Lin and Wu, Tianhao and Gonzalez, Joseph E. and Kadous, M. Waleed and Stoica, Ion},
   journal = {arXiv preprint arXiv:2406.18665},
-  year    = {2024}
+  year    = {2024},
+  doi     = {10.48550/arXiv.2406.18665},
+  url     = {https://arxiv.org/abs/2406.18665}
 }
 
 @inproceedings{ding2024hybridllm,
   title     = {Hybrid {LLM}: Cost-Efficient and Quality-Aware Query Routing},
-  author    = {Ding, Dujian and others},
-  booktitle = {International Conference on Learning Representations ({ICLR})},
-  year      = {2024}
+  author    = {Ding, Dujian and Mallick, Ankur and Wang, Chi and Sim, Robert and Mukherjee, Subhabrata and R{\"u}hle, Victor and Lakshmanan, Laks V. S. and Awadallah, Ahmed Hassan},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2024},
+  url       = {https://openreview.net/forum?id=02f3mUtqnM}
 }
 
-@misc{mixllm2024,
-  title  = {{MixLLM}: Routing Across {LLM} Providers via Contextual Bandits},
-  author = {{TBD}},
-  year   = {2024},
-  note   = {Placeholder citation; verify exact title, authors, venue.}
+@inproceedings{mixllm2024,
+  title     = {{MixLLM}: Dynamic Routing in Mixed Large Language Models},
+  author    = {Wang, Xinyuan and Liu, Yanchi and Cheng, Wei and Zhao, Xujiang and Chen, Zhengzhang and Yu, Wenchao and Fu, Yanjie and Chen, Haifeng},
+  booktitle = {Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers)},
+  pages     = {10912--10922},
+  publisher = {Association for Computational Linguistics},
+  address   = {Albuquerque, New Mexico},
+  year      = {2025},
+  doi       = {10.18653/v1/2025.naacl-long.545},
+  url       = {https://aclanthology.org/2025.naacl-long.545/}
 }
 
 @inproceedings{madaan2024automix,
   title     = {{AutoMix}: Automatically Mixing Language Models},
-  author    = {Madaan, Aman and others},
-  booktitle = {Advances in Neural Information Processing Systems ({NeurIPS})},
-  year      = {2024}
+  author    = {Aggarwal, Pranjal and Madaan, Aman and Anand, Ankit and Potharaju, Srividya Pranavi and Mishra, Swaroop and Zhou, Pei and Gupta, Aditya and Rajagopal, Dheeraj and Kappaganthu, Karthik and Yang, Yiming and Upadhyay, Shyam and Faruqui, Manaal and Mausam},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {37},
+  year      = {2024},
+  doi       = {10.52202/079017-4164},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2024/hash/ecda225cb187b40ea8edc1f46b03ffda-Abstract-Conference.html}
 }
 
-% --- Closest adjacent (AAMAS 2026) ----------------------------------------
+@article{llmbandit2025,
+  title   = {{LLM} Bandit: Cost-Efficient {LLM} Generation via Preference-Conditioned Dynamic Routing},
+  author  = {Li, Yang},
+  journal = {arXiv preprint arXiv:2502.02743},
+  year    = {2025},
+  doi     = {10.48550/arXiv.2502.02743},
+  url     = {https://arxiv.org/abs/2502.02743}
+}
 
-@inproceedings{aamas2026reverseauction,
-  title     = {Truthful Reverse Auctions for Adaptive {LLM} Selection},
-  author    = {{TBD}},
-  booktitle = {Proceedings of the 25th International Conference on Autonomous Agents and Multi-Agent Systems ({AAMAS})},
-  year      = {2026},
-  note      = {Verify exact title, authors, and arXiv ID (provisional: 2602.14476).}
+% --- Closest adjacent mechanism-design work -------------------------------
+
+@article{aamas2026reverseauction,
+  title   = {Truthful Reverse Auctions for Adaptive Selection via Contextual Multi-Armed Bandits},
+  author  = {Patra, Pronoy and Damle, Sankarshan and Padala, Manisha and Gujar, Sujit},
+  journal = {arXiv preprint arXiv:2602.14476},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2602.14476},
+  url     = {https://arxiv.org/abs/2602.14476},
+  note    = {No peer-reviewed venue verified as of 2026-05-06}
 }
