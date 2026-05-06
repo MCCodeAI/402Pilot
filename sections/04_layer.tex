@@ -1,0 +1,24 @@
+\section{The 402Pilot Decision Layer}
+\label{sec:layer}
+
+% TODO: ~1 page (paper_outline.md §4).
+%
+% Beats:
+% 1. High-level diagram (architecture figure): planner → context encoder →
+%    budget manager → service selector (the policy) → x402 executor (gray:
+%    not our work) → evaluator → policy updater.
+% 2. Position relative to x402: 402Pilot decides BEFORE the payment HTTP
+%    loop fires. Settlement is delegated unchanged.
+% 3. Component contracts (one paragraph each). Stable interfaces:
+%    select(context, affordable) -> arm
+%    update(context, arm, utility, observed_cost) -> None
+%    Detailed types in docs/system_design.md.
+% 4. Pluggability: any policy implementing the interface drops in.
+%    Update signal is utility u_t (intrinsic), NOT payment-aware reward r_t.
+%    Decision-time budget pressure is applied inside select.
+% 5. What is out of scope (logs/paper_design_decisions.md §11.3):
+%    on-chain settlement, capability discovery, multi-agent coordination,
+%    drift detection (future work).
+%
+% This section is light on math; the math is §5. This section sells the
+% architectural commitment.

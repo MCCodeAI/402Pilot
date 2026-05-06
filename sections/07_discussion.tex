@@ -1,0 +1,21 @@
+\section{Discussion and Limitations}
+\label{sec:discuss}
+
+% TODO: ~0.5 page (paper_outline.md §7).
+%
+% Beats (kept short — limitations honest, future work concrete):
+% 1. Pre-payment vs. post-selection. \padct{} sits before the HTTP request;
+%    A402 and similar handle post-selection atomicity. Complementary.
+% 2. Dataset fidelity. Pre-generated responses freeze model behavior at
+%    pregen time. Real markets evolve; the discount γ partially mitigates
+%    stale priors. Live deployment would need periodic re-generation.
+% 3. Evaluator-bounded P-adv detection. On open-ended T3b, the LLM judge
+%    sometimes accepts fluent-but-wrong answers; \padct{}'s detection of
+%    P-adv lags accordingly. Stronger evaluators would tighten the gap.
+% 4. Single-agent scope. Multi-agent dynamics, auctions, federated learning
+%    across agents — out of scope; future work.
+% 5. Uniform task-type ordering assumed. The encoder does not stratify
+%    provider quality by task type beyond the contextual bucket. Adequate
+%    for our calibration where providers differ primarily by tier.
+% 6. Future directions: drift detection, online safeguards, real-deployment
+%    A/B evidence.
