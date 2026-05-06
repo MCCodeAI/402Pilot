@@ -1,2 +1,0 @@
-{"task_id":"trivia/test_001","task_type":"T3a","prompt":"What is the chemical symbol for gold?","gold_answer":"Au","difficulty":0.2,"metadata":{"source":"test","aliases":["AU","au"]}}
-{"task_id":"trivia/test_002","task_type":"T3a","prompt":"Who painted the Mona Lisa?","gold_answer":"Leonardo da Vinci","difficulty":0.3,"metadata":{"source":"test","aliases":["da Vinci","Leonardo"]}}
