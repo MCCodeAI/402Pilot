@@ -1,16 +1,8 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-% TODO: ~0.25 page (paper_outline.md §8).
-%
-% Three sentences:
-% 1. We formulate paid service selection as a budget-aware, non-stationary
-%    contextual bandit problem and propose 402Pilot as the decision layer
-%    that solves it.
-% 2. \padct{} combines budget-awareness, discounting, contextual buckets,
-%    and Thompson sampling into a single rule with dual posteriors over
-%    quality and cost; on 402Pilot-Bench it improves ROI, adaptation time,
-%    and cumulative regret over fixed, rule-based, and non-contextual
-%    baselines.
-% 3. The decision layer is protocol-agnostic and the benchmark is
-%    reproducible — both invite extension to other agent-native settings.
+We formalized \emph{agent-native bandits}: budget-aware, non-stationary, contextual decision-making in programmable micropayment markets where the bandit is the autonomous buyer itself, not a human-operated routing service. We proposed \emph{402Pilot}, a protocol-agnostic decision layer with stable interfaces between agent decision-making and payment execution, instantiated above x402 but applicable to any quote-and-pay programmable payment protocol. We proposed \emph{PA-DCT}, a payment-aware Thompson-sampling rule that maintains discounted dual posteriors over both quality and cost per (provider, task-type) bucket; treating cost as a learned signal rather than a known scalar is the structural commitment that lets a single policy detect price shocks and quality shocks symmetrically.
+
+On 402Pilot-Bench—a reproducible benchmark of $824$ tasks $\times$ $5$ providers $\times$ $3$ calibrated market scenarios with $30$ seeds and $10{,}000$ rounds per cell—PA-DCT outperforms five baselines under both non-stationary scenarios with paired-bootstrap significance at $p<10^{-3}$, and pays a small honest exploration cost in the stationary baseline. A four-component ablation shows that each PA-DCT ingredient's contribution is exposed on a different evaluation axis: payment-awareness on cumulative reward (uniformly necessary), discount on adaptation time (35\% recovery acceleration in S2 outage), contextual bucketing selectively when shock structure is task-type heterogeneous, and Thompson sampling on seed variance ($5$--$9\times$ reduction) and shock-detection reliability. No single classical metric reveals all four; this motivates the multi-metric evaluation framework we recommend for the regime.
+
+Code, the frozen pre-generated dataset, the scenario sweeps, and the evaluation harness are released at [/cc TODO repository URL]. We hope the layer interfaces, the algorithm, and the benchmark together invite extension to other agent-native settings beyond the LLM-buyer instance studied here.
