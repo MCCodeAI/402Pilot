@@ -14,17 +14,17 @@ Six-sentence structure:
 
 1. AI agents can now pay for APIs via x402-style micropayment protocols —
    but payment execution alone does not make agents economically rational.
-2. Agents lack a *finance layer* for deciding what to pay for under budget
+2. Agents lack a *decision layer* for choosing what to pay for under budget
    constraints, quality uncertainty, and non-stationary provider behavior.
 3. We formulate paid service selection as a budget-aware, non-stationary
    contextual bandit problem with bandit feedback over irreversible payments.
-4. We propose 402Pilot, a finance layer that sits above x402, and PA-DCTS
-   (Payment-Aware Discounted Contextual Thompson Sampling), the policy
-   that drives it.
+4. We propose 402Pilot, an x402 decision layer for autonomous agents, and
+   PA-DCT (Payment-Aware Discounted Contextual Thompson sampling) — the
+   policy that drives it, with dual posteriors over both quality and cost.
 5. We build 402Pilot-Bench: a pre-generated benchmark grounded in real LLM
    outputs across five heterogeneous providers — including an adversarial
    provider and a flaky provider — under three market scenarios.
-6. PA-DCTS improves ROI and task success rate over fixed, rule-based, and
+6. PA-DCT improves ROI and task success rate over fixed, rule-based, and
    non-contextual baselines, and adapts faster to provider drift; ablations
    confirm the contribution of each design component.
 
@@ -40,12 +40,15 @@ Beats:
   inference cost on a single platform. Neither handles wallet-level markets
   with provider heterogeneity, irreversible payments, adversarial providers,
   and provider drift.
-- The gap: a finance layer that learns which service is worth paying for,
+- The gap: a decision layer that learns which service is worth paying for,
   adapts to market changes, and protects against unreliable providers.
 - **Motivating example** (boxed): fixed budget, mixed task workload,
   five providers including one adversarial and one flaky; static rules
   fail; context- and budget-aware policy wins.
-- Contributions (four bullets from PLAN.md §6).
+- Contributions C1–C5 (locked in `logs/paper_design_decisions.md` §11.4):
+  setting characterization (agent-native bandits), PA-DCT algorithm,
+  402Pilot decision-layer architecture, reproducible benchmark, empirical
+  findings on which classical components transfer to this regime.
 
 ---
 
@@ -71,11 +74,38 @@ Four short paragraphs:
 ## 3. Problem Formulation (~0.75 page)
 
 - Round protocol: at round \(t\), context \(x_t\) arrives; agent picks
-  \(a_t \in \{1,\dots,K\}\); pays \(c_{a_t}\); observes \((q_t, l_t, f_t)\)
-  for the chosen arm only (bandit feedback).
-- Reward:
-  \[ r_t = q_t - \lambda_t \tilde{c}_t - \mu \tilde{l}_t - \nu f_t \]
-  with normalized cost and latency. \(\lambda_t\) is budget-sensitive.
+  \(a_t \in \{1,\dots,K\}\); pays \(c_{a_t}\); observes \((q_t, f_t)\)
+  for the chosen arm only (bandit feedback). Latency \(l_t\) is observed
+  and logged but not part of the reward (see §3 design rationale).
+- Reward, in two pieces:
+  \[ u_t = q_t - \nu \cdot f_t \quad\in [-\nu,\, +1] \]
+  is the *intrinsic service utility* — provider quality minus a failure
+  penalty. The *payment-aware reward*
+  \[
+    \lambda_{\mathrm{norm}} = \frac{\lambda_t}{1 + \lambda_t}
+        = \mathrm{sigmoid}(\alpha\cdot\mathrm{burn\_excess}_t),
+  \]
+  \[
+    r_t = (1 - \lambda_{\mathrm{norm}}) \cdot u_t \;-\;
+          \lambda_{\mathrm{norm}} \cdot \tilde c_t
+          \quad\in [-1,\, +1]
+  \]
+  is a sigmoid convex combination of utility and normalized cost. The
+  bounded form keeps standard contextual / discounted Thompson-sampling
+  regret guarantees applicable; \(\lambda_{\mathrm{norm}}\) reads as the
+  *fraction of decision weight* given to cost vs. utility.
+- **Reward design rationale (one paragraph).** State the split: posterior
+  is updated with \(u_t\) (intrinsic, λ-free) so the policy's beliefs
+  track provider quality independently of decision-time budget pressure;
+  selection ranks arms by the forward-looking PA score
+  \((1-\lambda_{\mathrm{norm}})\hat u_k - \lambda_{\mathrm{norm}}\tilde c_k\).
+  Note that an earlier draft included \(\mu\tilde l_t\); we removed it
+  because none of the K=5 providers were designed with a latency profile,
+  no scenario manipulates latency, and empirically the term contributed
+  ~1% of cumulative reward magnitude. Locked constants: \(\nu = 0.5\),
+  \(\alpha = 2\). Full derivation, alternative forms, and sensitivity
+  analysis live in the appendix; the canonical reference is
+  `logs/reward_design_rationale.md`.
 - Budget constraint: \(\sum_t c_{a_t} \le B\). Hard cutoff if exhausted.
 - Non-stationarity: per-arm reward distribution depends on \(t\) (abrupt
   degradation, price shock).
@@ -85,7 +115,7 @@ Four short paragraphs:
 
 ---
 
-## 4. The 402Pilot Finance Layer (~1 page)
+## 4. The 402Pilot Decision Layer (~1 page)
 
 - High-level diagram: agent planner → context encoder → budget manager →
   service selector → x402 executor → evaluator → policy updater.
@@ -94,29 +124,54 @@ Four short paragraphs:
 - Component contracts (one paragraph each). Detailed spec in
   `docs/system_design.md`.
 - Pluggability: any policy implementing the `Policy` interface
-  (`select(context) → arm`, `update(context, arm, reward) → None`) drops in,
-  enabling apples-to-apples comparison across all comparators and ablations.
+  (`select(context) → arm`, `update(context, arm, utility) → None`)
+  drops in, enabling apples-to-apples comparison across all comparators
+  and ablations. The signal passed to `update` is the budget-pressure-free
+  utility \(u_t = q_t - \nu f_t\), not the payment-aware reward \(r_t\);
+  selection-time budget pressure is applied inside `select`.
 
 ---
 
-## 5. Method: PA-DCTS (~1.25 pages)
+## 5. Method: PA-DCT (~1.25 pages)
 
-- **Posterior model.** Per-arm contextual reward model using Bayesian linear
-  regression. State the prior, the update equation, and the discounted
-  sufficient statistics.
-- **Discount factor \(\gamma\).** Exponential discount on per-arm sufficient
-  statistics; controls the effective observation window for non-stationary
-  adaptation. Fixed in the main paper; sensitivity analysis in appendix.
-- **Budget-aware \(\lambda_t\).** Function of remaining-budget ratio and
-  remaining-time ratio; monotone non-decreasing in budget pressure. Raises
-  the cost penalty as burn rate exceeds target rate.
-- **Algorithm 1 (boxed pseudocode).** Selection step (Thompson sample +
-  budget-aware reward projection) + update step (discounted sufficient
-  statistic update).
-- **Theoretical properties.** Short paragraph (no formal theorem): cites
-  regret guarantees of contextual TS and discounted TS from prior work,
-  notes which conditions transfer to our setting. Honest about what is a
-  corollary vs. what requires additional assumptions.
+- **Posterior model.** Per-arm contextual *utility* model using Bayesian
+  linear regression. State the prior, the update equation, and the
+  discounted sufficient statistics. Important: the posterior tracks
+  intrinsic utility \(u_t = q_t - \nu f_t\), not the payment-aware reward
+  \(r_t\). Decision-time budget pressure is applied at selection, never
+  baked into provider beliefs.
+- **Two-tier reward structure (recall from §3).** \(u_t\) is intrinsic
+  (used for posterior updates); \(r_t = (1-\lambda_{\mathrm{norm}})\,u_t -
+  \lambda_{\mathrm{norm}}\,\tilde c_t\) with \(\lambda_{\mathrm{norm}} =
+  \mathrm{sigmoid}(\alpha\cdot\mathrm{burn\_excess})\) is what selection
+  ranks arms by, in its forward-looking form
+  \((1-\lambda_{\mathrm{norm}})\hat u_k - \lambda_{\mathrm{norm}}\tilde c_k\).
+  This separation is what makes PA-DCT robust to budget-pressure shocks:
+  beliefs do not lurch when \(\lambda_t\) jumps.
+- **Discount factor \(\gamma\).** Exponential discount on per-arm
+  sufficient statistics; controls the effective observation window for
+  non-stationary adaptation. Fixed in the main paper; sensitivity
+  analysis in appendix.
+- **Budget-aware \(\lambda_t\).** \(\lambda_t = \exp(\alpha\cdot
+  \mathrm{burn\_excess}_t)\) where \(\mathrm{burn\_excess}_t = \max(0,
+  \mathrm{burn\_rate}_t - \mathrm{target\_rate})\). Monotone non-decreasing
+  in budget pressure; bounded inside \([-1,+1]\) reward space via the
+  sigmoid in §3. \(\alpha = 2\) fixed across the paper.
+- **Algorithm 1 (boxed pseudocode).**
+  - *Selection step:* Thompson-sample \(\tilde u_k \sim
+    \mathcal{N}(\hat u_k, \hat\Sigma_k)\) for each arm; pick
+    \(a^* = \arg\max_k\,(1-\lambda_{\mathrm{norm}})\tilde u_k -
+    \lambda_{\mathrm{norm}}\tilde c_k\).
+  - *Update step:* discount per-arm sufficient statistics by \(\gamma\),
+    then incorporate the new utility sample \(u_t\). \(r_t\) is logged
+    but does *not* enter the posterior.
+- **Theoretical properties.** Short paragraph (no formal theorem): the
+  bounded reward range \([-1,+1]\) — a direct consequence of the sigmoid
+  convex combination — lets standard contextual TS and discounted TS
+  regret guarantees apply. Cite Agrawal & Goyal (contextual TS) and
+  Garivier & Moulines / Russac et al. (discounted TS); note which
+  conditions transfer cleanly and which require additional assumptions.
+  Honest about what is a corollary vs. what is novel.
 
 ---
 
@@ -133,48 +188,96 @@ Full design in `docs/experiment_design.md`.
 - **Providers.** Five heterogeneous agent pipelines: P-cheap (Qwen3-8B, no
   tools), P-mid (GPT-5.4-mini, BM25), P-premium (GPT-5.4, CoT + tools),
   P-adv (GPT-5.4-mini + adversarial system prompt), P-flaky (GPT-5.4-mini +
-  20% timeout injection). P-mid / P-adv / P-flaky share cost tier and base
+  40% timeout injection). P-mid / P-adv / P-flaky share cost tier and base
   model — only reward feedback distinguishes them.
-- **Task types.** T1: Coding (HumanEval, pass@1); T2: Multi-hop QA
-  (HotpotQA, EM/F1); T3: Web Search (TriviaQA-web closed-form + custom
-  open-ended, EM/F1 + LLM-as-judge).
-- **Scenarios.** S1: Stationary. S2: Abrupt degradation (P-premium quality
-  drop at round 3,000; P-flaky timeout spike at round 5,000). S3: Price
-  shock (P-premium doubles, P-mid halves at round 5,000).
+- **Task types** (4 sub-types, treated separately because the evaluator
+  differs).
+  - T1 — Coding (HumanEval), pass@1. Deterministic.
+  - T2 — Multi-hop QA (HotpotQA), max(EM, F1). Deterministic given gold.
+  - T3a — Web search, closed-form (TriviaQA-web), max(EM, F1).
+    Deterministic given gold.
+  - T3b — Web search, open-ended (custom), LLM-as-judge with structured
+    rubric (factual accuracy, completeness, absence of hallucination).
+    Cached at pre-generation time and replayed.
+  T3 is split into T3a vs. T3b throughout the paper because their
+  evaluators behave differently and PA-DCT's behavior on the two differs
+  in interpretable ways (see §7 limitations).
+- **Scenarios.** S1: Stationary. S2: Mid outage — `MidOutageScenario`,
+  P-mid fails 30% of the time during rounds 3,000–5,500, fully recovers
+  after. S3 v2: Premium promo — `PremiumDropScenario`, P-premium price
+  drops at round 1,000 from $0.01 to $0.002 (matches mid), 9,000 rounds
+  for the cost posterior to detect and the policy to migrate.
 - **Scale.** T = 10,000 rounds, N = 30 seeds per cell.
 
 ### 6.2 Comparators and metrics (~0.25 page)
 
-- **Comparators.** Always-P-premium (strongest fixed policy), Budget rule
-  (strongest rule-based policy), Oracle (offline upper bound).
-- **Metrics.** Task success rate; ROI = Σq_t / Σc_t; cumulative regret;
-  adaptation time (S2/S3 only).
+- **Comparators.** Six baselines plus an offline upper bound, all run on
+  identical seeds:
+  - **Random** — uniform over affordable arms (lower bound).
+  - **Always-P-cheap / Always-P-mid / Always-P-premium** — three fixed
+    policies covering the cost-tier sweep; Always-P-premium is the
+    strongest non-adaptive baseline.
+  - **Budget rule** — threshold heuristic over remaining budget; the
+    strongest hand-crafted baseline (FrugalGPT-style).
+  - **PA-DCT** — ours.
+  - **True Oracle** — free-running with hindsight per-round arm peek;
+    upper bound for the *scenario*, not just one policy's λ trajectory.
+- **Metrics.** Four locked metrics from `docs/experiment_design.md`:
+  task_success_rate (mean quality as proxy), ROI = Σq_t / Σc_t,
+  cumulative regret (Oracle − policy on cum_PA), adaptation_time (rounds
+  for trailing-200 ROI to recover within 5% of pre-event level; S2/S3
+  only).
 
 ### 6.3 Main results (~1 page)
 
 - **Table 1.** ROI and task success rate across S1/S2/S3 for all comparators
-  and PA-DCTS. Mean ± std, effect sizes, significance markers.
-- **Figure 1.** Per-scenario ROI curves over rounds; shows PA-DCTS learning
+  and PA-DCT. Mean ± std, effect sizes, significance markers.
+- **Figure 1.** Per-scenario ROI curves over rounds; shows PA-DCT learning
   trajectory vs. Always-P-premium exhausting budget by round ~5,000.
-- **Figure 2.** Adaptation curves in S2 and S3: ROI around the shock event,
-  comparing PA-DCTS (A2 ablation) against non-discounted counterpart.
-- **Narrative.** PA-DCTS matches Always-P-premium on task quality while
+- **Figure 2.** Adaptation curves in S2 and S3: trailing-200 ROI around
+  the shock event, comparing full PA-DCT against the −D ablation (no
+  discount). This is the figure that makes D's contribution visible —
+  cum_PA alone hides it.
+- **Narrative.** PA-DCT matches Always-P-premium on task quality while
   achieving higher ROI and longer wallet life. Budget rule adapts to cost
   but cannot detect P-adv / P-flaky from P-mid. P-adv detection is fast on
   T1/T2 (objective evaluation), slow on T3 open-ended (evaluator-bounded).
 
 ### 6.4 Ablations (~0.75 page)
 
-- **Table 2.** Delta in ROI and adaptation time for A1–A4 vs. full PA-DCTS,
-  across all three scenarios.
-- **A1 (no context):** Largest ROI drop on mixed workloads — confirms
-  task-type context drives provider differentiation.
-- **A2 (no discount):** Largest adaptation-time increase in S2/S3 —
-  confirms discount is load-bearing for non-stationarity.
-- **A3 (no budget-aware λ):** Budget exhaustion accelerates; ROI drops in
-  late rounds — confirms dynamic λ_t extends wallet life.
-- **A4 (no failure penalty):** P-flaky usage increases, reducing effective
-  task success rate — confirms failure term is necessary.
+The four ablations correspond to the four letters of PA-DCT — each
+removes one named algorithmic component. Detailed per-cell numbers in
+`logs/ablation_4metrics_table.md`.
+
+- **Table 2.** Delta in cum_PA, ROI, cumulative regret, and adaptation
+  time for −P / −D / −C / −TS vs. full PA-DCT, across all three scenarios.
+- **−P (no Payment-aware):** policy ranks by raw utility instead of
+  `(1−λ_norm)·u − λ_norm·c̃`. cum_PA collapses to negative everywhere
+  (S1 −1710, S2 −1966, S3 +4528 vs. full ~5500–5900). The agent picks
+  high-quality but expensive arms, burns budget early, and is crushed by
+  the cost penalty in PA reward. **P is uniformly necessary.**
+- **−D (no Discount, γ = 1):** cum_PA is essentially flat vs. full, but
+  adaptation_time in S2 jumps from 1467 → 2249 rounds (35% slower
+  recovery from outage). cum_PA averages 10k rounds, diluting the
+  recovery-acceleration benefit. **D's contribution shows up only on the
+  right metric (adaptation_time).**
+- **−C (no Contextual, single global bucket):** mixed effect by
+  scenario. Helps slightly when shock is uniform across task types (S2
+  outage hits all task types equally → bucket fragmentation hurts; −C
+  adapts in 1176 rounds vs. full 1467). Hurts when task heterogeneity is
+  exploitable (S3 promo + P-premium especially good on T3b → full adapts
+  in 200 vs. −C 398). **Honest claim: C helps when per-task-type quality
+  differences emerge from the shock structure.**
+- **−TS (no Thompson sampling, greedy posterior mean):** cum_PA mean is
+  within ~50 of full, but seed std is 5–9× higher (full ~50–80, −TS
+  244–481). S3 adaptation_time jumps from 200 → 2232 (greedy locks onto
+  initial-state arm, fails to detect new opportunities). **TS provides
+  reproducibility (low variance) and exploration (capture new
+  opportunities); the cum_PA-mean similarity hides this.**
+
+**Multi-metric framing.** No single classical bandit metric (cum_PA
+alone) reveals all four contributions. This motivates the four-metric
+evaluation framework introduced in §6.2.
 
 ---
 
@@ -188,7 +291,7 @@ Full design in `docs/experiment_design.md`.
   periodic re-generation; the discount mechanism partially mitigates stale
   priors in practice.
 - **Evaluator quality bounds adversarial detection.** P-adv's impact on
-  open-ended T3 tasks is not fully corrected by PA-DCTS because the LLM
+  open-ended T3 tasks is not fully corrected by PA-DCT because the LLM
   judge occasionally accepts fluent-but-wrong answers. Stronger evaluators
   would tighten this gap.
 - **Single-agent scope.** Multi-agent dynamics, auction mechanisms, and
@@ -210,7 +313,7 @@ Full design in `docs/experiment_design.md`.
 ## 8. Conclusion (~0.25 page)
 
 Restate the thesis: 402Pilot bridges the gap between payment execution
-(x402) and payment decision (PA-DCTS). Restate the four contributions.
+(x402) and payment decision (PA-DCT). Restate the four contributions.
 One forward-looking sentence on adding provider reputation or
 atomicity-aware selection as future directions.
 
@@ -218,7 +321,7 @@ atomicity-aware selection as future directions.
 
 ## Appendix (after refs, no page limit)
 
-- **A.** Algorithm details: full PA-DCTS pseudocode, hyperparameter values,
+- **A.** Algorithm details: full PA-DCT pseudocode, hyperparameter values,
   ablation hyperparameter grids.
 - **B.** Theoretical properties: formal statements and proof sketches for
   contextual TS and discounted TS results that carry over; discussion of
@@ -228,6 +331,10 @@ atomicity-aware selection as future directions.
   rubric, inter-rater reliability on a human-validated subset.
 - **D.** Scenario specifications: event schedules, response pool switching
   logic, price parameter changes.
-- **E.** Additional results: per-task-type ROI breakdowns, P-adv detection
-  curves by task type, sensitivity to N seeds, budget B, and γ.
+- **E.** Additional results: per-task-type ROI breakdowns (T1 / T2 /
+  T3a / T3b separately), P-adv detection curves by task type, sensitivity
+  to N seeds, budget B, discount γ, failure penalty ν ∈ {0.1, 0.5, 1.0},
+  and λ_t shape parameter α. Also includes the empirical justification
+  for dropping the latency term from an earlier draft (~1% contribution
+  to cumulative reward magnitude).
 - **F.** Reproducibility checklist.

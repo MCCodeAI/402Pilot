@@ -37,6 +37,7 @@ def load_all_tasks(
     cache_dir: Path,
     *,
     limits: dict[str, int | None] | None = None,
+    offsets: dict[str, int] | None = None,
 ) -> list[Task]:
     """Load every configured task source and concatenate.
 
@@ -45,6 +46,11 @@ def load_all_tasks(
         limits: per-source caps. A missing key means "use the source's full
             cached length"; an explicit ``None`` means the same. Passing a
             dict with smaller numbers is the standard thin-pregen pattern.
+        offsets: per-source offsets into the deterministic cached order.
+            Pairing ``offsets={"humaneval": 15}`` with ``limits={"humaneval": 15}``
+            yields tasks at positions 15..29 — disjoint from a baseline run
+            at offset 0. Used for replication / out-of-sample validation.
+            Keys missing from this dict default to offset 0.
 
     Returns:
         A flat list of ``Task`` objects, one source after another in the
@@ -55,6 +61,15 @@ def load_all_tasks(
     if limits is not None:
         effective.update(limits)
 
+    effective_offsets: dict[str, int] = {}
+    if offsets is not None:
+        for k, v in offsets.items():
+            if v < 0:
+                raise ValueError(
+                    f"offsets[{k!r}] must be non-negative, got {v}"
+                )
+            effective_offsets[k] = int(v)
+
     out: list[Task] = []
     for loader in _all_loaders():
         cap = effective.get(loader.name)
@@ -64,5 +79,13 @@ def load_all_tasks(
         # path on first run.
         if cap == 0:
             continue
-        out.extend(loader.load(cache_dir, limit=cap))
+        off = effective_offsets.get(loader.name, 0)
+        # Read cap+off rows from the loader, then drop the first ``off``.
+        # Each loader's cache is a deterministic permutation, so this gives
+        # us a disjoint slice when paired with a previous run at offset 0.
+        read_limit = (cap + off) if cap is not None else None
+        chunk = loader.load(cache_dir, limit=read_limit)
+        if off > 0:
+            chunk = chunk[off:]
+        out.extend(chunk)
     return out

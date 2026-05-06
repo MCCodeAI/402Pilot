@@ -1,0 +1,23 @@
+.banner {
+  background: var(--c-banner-bg);
+  color: var(--c-banner-text);
+  padding: 9px 0;
+  font-size: 0.86rem;
+  border-bottom: 1px solid #2c2c2c;
+}
+
+.banner .tag {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  padding: 1px 7px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-right: 10px;
+  vertical-align: 1px;
+}
+
+.text {
+  color: #d8d8d8;
+}

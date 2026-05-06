@@ -32,7 +32,7 @@ from pilot402.core import (
 )
 from pilot402.eval import CachedJudgeBackend, MockJudgeClient
 from pilot402.pregen import JsonlPregenStore, run_pregen
-from pilot402.pregen.providers import MockLlmBackend
+from pilot402.pregen.providers import MockLlmBackend, RecordingMockBackend
 
 FIXTURE_TASKS = Path(__file__).parent / "fixtures" / "tasks"
 
@@ -59,7 +59,7 @@ def _make_cfg(seed: int = 42) -> ExperimentConfig:
             ProviderSpec(
                 provider_id=ProviderId.P_PREMIUM,
                 model_name="gpt-5.4",
-                base_price_usdc=0.02,
+                base_price_usdc=0.01,
                 tier="premium",
             ),
             ProviderSpec(
@@ -79,8 +79,8 @@ def _make_cfg(seed: int = 42) -> ExperimentConfig:
         budget=BudgetConfig(
             total_usdc=1.0, lambda_0=1.0, alpha=1.0, target_burn_rate=0.01
         ),
-        reward=RewardConfig(mu=0.05, nu=0.5),
-        policy=PolicyConfig(name="padcts"),
+        reward=RewardConfig(nu=0.5),
+        policy=PolicyConfig(name="padct"),
         paths=PathConfig(),
         x402=X402Settings(),
         llm_keys=LlmKeysSettings(),
@@ -159,7 +159,7 @@ def test_e2e_writes_loadable_jsonl(
         assert store.versions("trivia/test_002", pid) == (0, 1)
 
 
-def test_p_flaky_version_0_records_billed_timeout(
+def test_p_flaky_versions_0_and_1_record_billed_timeouts(
     runtime: tuple[ExperimentConfig, Path, Path], tmp_path: Path
 ) -> None:
     cfg, task_dir, pregen_dir = runtime
@@ -173,16 +173,18 @@ def test_p_flaky_version_0_records_billed_timeout(
         version_count=5,
     )
     store = JsonlPregenStore(pregen_dir)
-    # Version 0 of P-flaky must be a billed timeout per ADVERSARIAL_VERSIONS.
-    rec = store.get("trivia/test_001", ProviderId.P_FLAKY, version=0)
-    assert rec.failure_flag is True
-    assert rec.failure_code is FailureCode.TIMEOUT
-    assert rec.cost_usdc == 0.002
-    assert rec.response == ""
-    assert rec.quality_score.q == 0.0
+    # Versions 0 AND 1 of P-flaky must be billed timeouts per ADVERSARIAL_VERSIONS
+    # (calibrated 40% failure rate: 2 of 5 versions).
+    for v in (0, 1):
+        rec = store.get("trivia/test_001", ProviderId.P_FLAKY, version=v)
+        assert rec.failure_flag is True, f"v={v} should be timeout"
+        assert rec.failure_code is FailureCode.TIMEOUT
+        assert rec.cost_usdc == 0.002
+        assert rec.response == ""
+        assert rec.quality_score.q == 0.0
 
-    # Versions 1-4 must NOT be timeouts.
-    for v in (1, 2, 3, 4):
+    # Versions 2-4 must NOT be timeouts.
+    for v in (2, 3, 4):
         rec = store.get("trivia/test_001", ProviderId.P_FLAKY, version=v)
         assert rec.failure_flag is False
 
@@ -252,3 +254,147 @@ def test_version_count_zero_rejected(
             limits={"humaneval": 0, "hotpotqa": 0, "triviaqa": 1, "openweb": 0},
             version_count=0,
         )
+
+
+def test_resume_skips_existing_cells(
+    runtime: tuple[ExperimentConfig, Path, Path], tmp_path: Path
+) -> None:
+    """Re-running with resume=True must NOT issue any new LLM calls when all
+    cells are already on disk. This is the contract that lets a 4-hour run
+    survive Ctrl+C and resume cleanly."""
+
+    cfg, task_dir, pregen_dir = runtime
+
+    # First run: complete all 10 cells (5 providers × 1 task × 2 versions).
+    first_backends = {pid: RecordingMockBackend() for pid in ProviderId}
+    n_first = run_pregen(
+        cfg,
+        backends=dict(first_backends),
+        judge=_judge(tmp_path / "judge1"),
+        task_cache_dir=task_dir,
+        pregen_out_dir=pregen_dir,
+        limits={"humaneval": 0, "hotpotqa": 0, "triviaqa": 1, "openweb": 0},
+        version_count=2,
+    )
+    assert n_first == 10
+    # P-flaky versions 0 AND 1 force billed timeouts WITHOUT calling the backend
+    # (40% failure rate). With version_count=2, BOTH P-flaky cells are timeouts,
+    # so we expect 8 actual LLM calls (10 cells minus the 2 P-flaky timeouts).
+    total_first_calls = sum(len(b.calls) for b in first_backends.values())
+    assert total_first_calls == 8
+
+    # Second run with resume=True: every cell is already present → 0 new
+    # records written and 0 LLM calls issued.
+    second_backends = {pid: RecordingMockBackend() for pid in ProviderId}
+    n_second = run_pregen(
+        cfg,
+        backends=dict(second_backends),
+        judge=_judge(tmp_path / "judge2"),
+        task_cache_dir=task_dir,
+        pregen_out_dir=pregen_dir,
+        limits={"humaneval": 0, "hotpotqa": 0, "triviaqa": 1, "openweb": 0},
+        version_count=2,
+        resume=True,
+    )
+    assert n_second == 0, "resume should skip every cell when all are on disk"
+    total_second_calls = sum(len(b.calls) for b in second_backends.values())
+    assert total_second_calls == 0, "resume must NOT call the LLM"
+
+    # The on-disk store still has exactly 10 records (no duplicates).
+    store = JsonlPregenStore(pregen_dir)
+    assert len(store) == 10
+
+
+def test_resume_completes_partial_run(
+    runtime: tuple[ExperimentConfig, Path, Path], tmp_path: Path
+) -> None:
+    """Simulate an interrupted run by manually pre-populating SOME records,
+    then resume should fill in only the missing ones."""
+
+    cfg, task_dir, pregen_dir = runtime
+
+    # First, write only ProviderId.P_CHEAP records to disk by running with
+    # a provider_subset of just P-cheap.
+    partial_backends = {pid: RecordingMockBackend() for pid in ProviderId}
+    n_partial = run_pregen(
+        cfg,
+        backends=dict(partial_backends),
+        judge=_judge(tmp_path / "judge_partial"),
+        task_cache_dir=task_dir,
+        pregen_out_dir=pregen_dir,
+        limits={"humaneval": 0, "hotpotqa": 0, "triviaqa": 1, "openweb": 0},
+        version_count=2,
+        provider_subset=(ProviderId.P_CHEAP,),
+    )
+    assert n_partial == 2  # 1 task × 2 versions
+    # Only P-cheap was called.
+    assert len(partial_backends[ProviderId.P_CHEAP].calls) == 2
+    for pid in ProviderId:
+        if pid is ProviderId.P_CHEAP:
+            continue
+        assert len(partial_backends[pid].calls) == 0
+
+    # Now resume with the FULL provider set. Should run only the 8 missing
+    # cells (4 providers × 1 task × 2 versions; P-flaky versions 0 AND 1 take
+    # the forced-timeout path with no LLM call, so 6 LLM calls expected).
+    resume_backends = {pid: RecordingMockBackend() for pid in ProviderId}
+    n_resume = run_pregen(
+        cfg,
+        backends=dict(resume_backends),
+        judge=_judge(tmp_path / "judge_resume"),
+        task_cache_dir=task_dir,
+        pregen_out_dir=pregen_dir,
+        limits={"humaneval": 0, "hotpotqa": 0, "triviaqa": 1, "openweb": 0},
+        version_count=2,
+        resume=True,
+    )
+    assert n_resume == 8
+    # P-cheap must NOT be re-called.
+    assert len(resume_backends[ProviderId.P_CHEAP].calls) == 0
+    # Final store has all 10 cells.
+    store = JsonlPregenStore(pregen_dir)
+    assert len(store) == 10
+
+
+def test_resume_tolerates_corrupted_last_line(
+    runtime: tuple[ExperimentConfig, Path, Path], tmp_path: Path
+) -> None:
+    """A truncated final line (write killed mid-record) is the realistic
+    crash mode. resume should skip it and rerun that one cell."""
+
+    cfg, task_dir, pregen_dir = runtime
+
+    # Complete a real run first to get clean records.
+    run_pregen(
+        cfg,
+        backends={pid: MockLlmBackend() for pid in ProviderId},
+        judge=_judge(tmp_path / "judge_init"),
+        task_cache_dir=task_dir,
+        pregen_out_dir=pregen_dir,
+        limits={"humaneval": 0, "hotpotqa": 0, "triviaqa": 1, "openweb": 0},
+        version_count=2,
+        provider_subset=(ProviderId.P_CHEAP,),
+    )
+
+    # Corrupt the file: append a partial JSON line as if the writer was
+    # killed mid-record.
+    cheap_jsonl = pregen_dir / f"{ProviderId.P_CHEAP.value}__T3a.jsonl"
+    with cheap_jsonl.open("a", encoding="utf-8") as fh:
+        fh.write('{"task_id": "trivia/test_999", "task_type": "T3a", "provid')
+
+    # Resume with the same provider subset must NOT crash on the bad line.
+    backends = {pid: RecordingMockBackend() for pid in ProviderId}
+    n = run_pregen(
+        cfg,
+        backends=dict(backends),
+        judge=_judge(tmp_path / "judge_after"),
+        task_cache_dir=task_dir,
+        pregen_out_dir=pregen_dir,
+        limits={"humaneval": 0, "hotpotqa": 0, "triviaqa": 1, "openweb": 0},
+        version_count=2,
+        provider_subset=(ProviderId.P_CHEAP,),
+        resume=True,
+    )
+    # All 2 cells already on disk, partial line ignored — 0 new work.
+    assert n == 0
+    assert len(backends[ProviderId.P_CHEAP].calls) == 0

@@ -64,12 +64,17 @@ class LlmKeysSettings(BaseSettings):
     )
 
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
-    anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
     qwen_api_key: str = Field(default="", alias="QWEN_API_KEY")
+    judge_api_key: str = Field(default="", alias="JUDGE_API_KEY")
 
 
 class JudgeSettings(BaseSettings):
-    """LLM-as-judge backend identity. Logged as provenance per call."""
+    """LLM-as-judge backend identity. Logged as provenance per call.
+
+    ``judge_provider`` selects the wire protocol; the credential always
+    comes from ``LlmKeysSettings.judge_api_key`` (env: ``JUDGE_API_KEY``)
+    regardless of which gateway is used.
+    """
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -80,6 +85,8 @@ class JudgeSettings(BaseSettings):
 
     judge_model: str = Field(default="claude-sonnet-4.6", alias="JUDGE_MODEL")
     judge_seed: int = Field(default=0, alias="JUDGE_SEED")
+    judge_provider: str = Field(default="anthropic", alias="JUDGE_PROVIDER")
+    judge_base_url: str = Field(default="", alias="JUDGE_BASE_URL")
 
 
 # ---------------------------------------------------------------------------
@@ -104,14 +111,16 @@ class BudgetConfig(BaseModel):
 class RewardConfig(BaseModel):
     """Reward calculator weights (system_design §2.6).
 
-    ``mu`` and ``nu`` are constants across the paper to avoid the
-    'you tuned the reward' objection. ``lambda_t`` is dynamic and lives in
-    ``BudgetConfig``.
+    ``nu`` is a constant across the paper to avoid the "you tuned the reward"
+    objection. ``lambda_t`` is dynamic and lives in ``BudgetConfig``.
+
+    History note: an earlier draft also exposed ``mu`` for a latency penalty.
+    The latency term was retired on 2026-05-02 (no provider in the design
+    specifies a latency profile, no scenario manipulates latency).
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    mu: float = Field(ge=0.0, description="Latency penalty weight (constant).")
     nu: float = Field(ge=0.0, description="Failure penalty weight (constant).")
 
 
@@ -120,7 +129,7 @@ class PolicyConfig(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    name: str = Field(description="Policy registry key (e.g. 'padcts', 'always_premium').")
+    name: str = Field(description="Policy registry key (e.g. 'padct', 'always_premium').")
     kwargs: dict[str, Any] = Field(default_factory=dict)
 
 

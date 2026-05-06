@@ -65,7 +65,7 @@ regret guarantees and noting which conditions transfer.
 ### 3.5 Concrete market shape
 - **K = 5 providers:** P-cheap (Qwen3-8B, no tools), P-mid (GPT-5.4-mini,
   BM25), P-premium (GPT-5.4, CoT + tools), P-adv (GPT-5.4-mini + adversarial
-  system prompt), P-flaky (GPT-5.4-mini + 20% timeout injection). P-mid /
+  system prompt), P-flaky (GPT-5.4-mini + 40% timeout injection). P-mid /
   P-adv / P-flaky share cost tier and base model — only reward feedback
   distinguishes them.
 - **M = 3 task types:** T1 Coding (HumanEval, pass@1), T2 Multi-hop QA

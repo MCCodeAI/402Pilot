@@ -52,8 +52,10 @@ implementations.
   manager snapshot.
 - **Output.** A fixed-dimension feature vector \(x_t \in \mathbb{R}^d\).
 - **Initial feature set.**
-  - Task type (one-hot over 3 types: coding, multi-hop QA, web search).
-  - Task sub-type flag for web search (closed-form vs. open-ended).
+  - Task type (one-hot over 4 sub-types: T1 coding, T2 multi-hop QA,
+    T3a web-search closed-form, T3b web-search open-ended). T3a/T3b are
+    treated as separate types because they use different evaluators
+    (deterministic EM/F1 vs. LLM-as-judge); see §2.5.
   - Difficulty estimate (scalar, [0,1]).
   - Prompt-length / output-type signals (a few scalars).
   - Remaining-budget ratio.
@@ -73,8 +75,12 @@ implementations.
     budget are blocked, and the round aborts only when no candidate is
     affordable.
 - **Policy for \(\lambda_t\).** Monotone non-decreasing in budget pressure.
-  Default form (to be calibrated):
-  \[ \lambda_t = \lambda_0 \cdot \big( 1 + \alpha \cdot \max\big(0,\ \mathrm{burn\_rate}_t - \mathrm{target\_rate}\big) \big). \]
+  Final form (locked 2026-05-02):
+  \[ \lambda_t = \exp\!\big(\alpha \cdot \mathrm{burn\_excess}_t\big), \qquad
+     \mathrm{burn\_excess}_t = \max\big(0,\ \mathrm{burn\_rate}_t - \mathrm{target\_rate}\big). \]
+  The Reward Calculator (§2.6) feeds this into the bounded form
+  \(\lambda_{\mathrm{norm}} = \lambda_t / (1 + \lambda_t)\). \(\alpha = 2\)
+  is fixed across the paper.
 - **Contract.** Idempotent reads. In the sequential benchmark runner, write
   only via `record_spend(c)` after a paid call resolves, where `c` is the
   actual charged amount. A budget block or uncharged payment failure records
@@ -86,12 +92,14 @@ implementations.
   budget manager state.
 - **Output.** Chosen arm \(a_t\).
 - **Pluggability.** A single `Policy` interface (`select(context) → arm`,
-  `update(context, arm, reward) → None`) is implemented by every comparator
-  and ablation, as well as by PA-DCTS. Provider-level outcome statistics are
-  maintained outside the policy and encoded into the next round's context,
-  keeping the policy interface aligned with the standard contextual-bandit
-  update.
-- **Default.** PA-DCTS (see method section in paper outline).
+  `update(context, arm, utility) → None`) is implemented by every
+  comparator and ablation, as well as by PA-DCT. The signal passed in is
+  the budget-pressure-free utility \(u_t = q_t - \nu f_t\) (§2.6), not the
+  payment-aware reward \(r_t\); selection-time budget pressure is applied
+  inside `select`. Provider-level outcome statistics are maintained
+  outside the policy and encoded into the next round's context, keeping
+  the policy interface aligned with the standard contextual-bandit update.
+- **Default.** PA-DCT (see method section in paper outline).
 
 ### 2.4 x402 Payment Executor
 - **Wraps.** An x402 client (real or mock). Exposed surface:
@@ -127,23 +135,58 @@ implementations.
   that an external judge service can be re-run bit-identically later.
 
 ### 2.6 Reward Calculator
-- **Input.** Quality, cost, latency, failure flag, current \(\lambda_t\),
-  current normalization stats.
+
+> Final design as of 2026-05-02. Full rationale, including why the latency
+> term was dropped and why we use a sigmoid convex combination instead of
+> a subtractive Lagrangian, is in `logs/reward_design_rationale.md`.
+
+- **Input.** Quality \(q_t \in [0,1]\), cost \(c_t\), failure flag
+  \(f_t \in \{0,1\}\), and the current budget-pressure multiplier
+  \(\lambda_t\) from the Budget Manager.
 - **Output.** Two related scalar quantities:
-  - Service utility:
-    \( u_t = q_t - \mu \tilde l_t - \nu f_t \).
-  - Payment-aware reward:
-    \( r_t = u_t - \lambda_t \tilde c_t
-      = q_t - \lambda_t \tilde c_t - \mu \tilde l_t - \nu f_t \).
-- **Use.** The policy posterior is updated with \(u_t\), because dynamic budget
-  pressure \(\lambda_t\) is a known decision-time multiplier rather than a
-  stable provider-quality signal. The payment-aware \(r_t\) is logged and used
-  for regret / objective accounting. At selection time, PA-DCTS estimates
-  candidate utility and subtracts the current \(\lambda_t \tilde c_k\), which
-  is the forward-looking counterpart of the realized \(r_t\).
-- **Normalization.** Cost and latency are normalized to roughly comparable
-  scales; \(\mu, \nu\) are fixed across the paper (constants, not per-method
-  tunables) to avoid the "you tuned the reward" objection.
+  - Service utility (intrinsic provider value, decoupled from budget pressure):
+    \[ u_t = q_t - \nu \cdot f_t \quad \in [-\nu,\ +1]. \]
+  - Payment-aware reward (sigmoid convex combination of utility and
+    normalized cost):
+    \[
+      \lambda_{\mathrm{norm}} = \frac{\lambda_t}{1 + \lambda_t}
+        = \mathrm{sigmoid}(\alpha \cdot \mathrm{burn\_excess}_t)
+        \quad \in (0,1),
+    \]
+    \[
+      r_t = (1 - \lambda_{\mathrm{norm}}) \cdot u_t \;-\;
+            \lambda_{\mathrm{norm}} \cdot \tilde c_t
+            \quad \in [-1,\ +1],
+    \]
+    with \(\tilde c_t = c_t / c_{\max}\) the normalized cost.
+- **Use.**
+  - The policy posterior is updated with \(u_t\). Dynamic budget pressure
+    \(\lambda_t\) is a known decision-time multiplier, not a stable
+    provider-quality signal, so it must not enter the posterior.
+  - At selection time, PA-DCT ranks arms by the forward-looking
+    payment-aware score
+    \( (1 - \lambda_{\mathrm{norm}}) \cdot \hat u_k - \lambda_{\mathrm{norm}}
+       \cdot \tilde c_k \).
+  - \(r_t\) is logged and used for regret / objective accounting.
+- **Why this form.**
+  - Bounding \(r_t \in [-1, +1]\) lets the standard contextual TS and
+    discounted TS regret bounds apply without empirical hand-waving about
+    unbounded reward.
+  - The convex combination has a natural reading: \(\lambda_{\mathrm{norm}}\)
+    is the *fraction of decision weight* given to cost vs. utility. Low
+    \(\lambda_{\mathrm{norm}}\) (no budget pressure) → all weight on
+    utility; high \(\lambda_{\mathrm{norm}}\) (severe over-spend) → all
+    weight on \(-\tilde c\). The transition is smooth.
+- **Latency term.** An earlier draft included a \(\mu \tilde l_t\) term;
+  it was removed on 2026-05-02. None of the K=5 providers were designed
+  with a latency profile, no scenario manipulates latency, and empirically
+  the term contributed ≈ 1% of cumulative reward magnitude — not enough
+  to justify the extra hyperparameter. Latency is still observed and
+  logged (it is part of the round record), just not part of the reward.
+- **Locked constants.** \(\nu = 0.5\) is fixed across the paper (sensitivity
+  analysis for \(\nu \in \{0.1, 0.5, 1.0\}\) lives in the appendix).
+  \(\alpha = 2\) inside \(\lambda_t = \exp(\alpha \cdot \mathrm{burn\_excess})\).
+  Neither is tuned per scenario or per method.
 
 ### 2.7 Policy Updater
 - **Input.** \((x_t, a_t, u_t)\), plus \(r_t\) and \(\mathrm{outcome}_t\) for

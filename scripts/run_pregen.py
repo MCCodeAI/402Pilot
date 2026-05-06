@@ -33,7 +33,9 @@ from pilot402.eval import (
     AnthropicJudgeClient,
     CachedJudgeBackend,
     JudgeBackend,
+    OpenRouterJudgeClient,
 )
+from pilot402.eval.judge_backend import JudgeClient
 from pilot402.pregen import run_pregen
 from pilot402.pregen.providers import LlmBackend
 from pilot402.pregen.providers.backends import (
@@ -54,6 +56,19 @@ def _parse_limits(pairs: list[str]) -> dict[str, int | None]:
         if not key or not value:
             raise SystemExit(f"--limits expects KEY=VALUE pairs, got {raw!r}")
         out[key.strip()] = int(value)
+    return out
+
+
+def _parse_offsets(pairs: list[str]) -> dict[str, int]:
+    out: dict[str, int] = {}
+    for raw in pairs:
+        key, _, value = raw.partition("=")
+        if not key or not value:
+            raise SystemExit(f"--offsets expects KEY=VALUE pairs, got {raw!r}")
+        n = int(value)
+        if n < 0:
+            raise SystemExit(f"--offsets value must be non-negative, got {raw!r}")
+        out[key.strip()] = n
     return out
 
 
@@ -113,17 +128,59 @@ def _build_real_judge(
 ) -> JudgeBackend:
     """Real Claude judge if needed; otherwise a stub that raises on use.
 
+    The judge backend is selected by ``cfg.judge.judge_provider``:
+
+    * ``anthropic`` (default) — talks to ``api.anthropic.com`` via the
+      Anthropic SDK using the Messages schema.
+    * ``openrouter``         — talks to OpenRouter's OpenAI-compatible
+      chat completions endpoint via the OpenAI SDK. Use when the user
+      has an OpenRouter key in ``ANTHROPIC_API_KEY`` instead of a native
+      Anthropic key. ``JUDGE_MODEL`` should then be an OpenRouter model
+      id like ``anthropic/claude-sonnet-4.6``.
+
     The orchestrator never invokes the judge for failed calls or for
     non-T3b task types, so a stub is safe whenever T3b is excluded.
     """
 
     if not t3b_in_scope:
         return _UnconfiguredJudge()
-    if not cfg.llm_keys.anthropic_api_key:
+    if not cfg.llm_keys.judge_api_key:
         raise SystemExit(
-            "ANTHROPIC_API_KEY is empty in .env; required for the T3b judge."
+            "JUDGE_API_KEY is empty in .env; required for the T3b judge. "
+            "It holds whichever credential matches JUDGE_PROVIDER "
+            "(Anthropic key for 'anthropic', OpenRouter key for 'openrouter', "
+            "Vercel key for 'vercel', etc.)."
         )
-    client = AnthropicJudgeClient(api_key=cfg.llm_keys.anthropic_api_key)
+
+    provider = cfg.judge.judge_provider.lower()
+    client: JudgeClient
+    if provider == "openrouter":
+        # Default OpenRouter base URL; allow override via JUDGE_BASE_URL.
+        base_url = cfg.judge.judge_base_url or "https://openrouter.ai/api/v1"
+        client = OpenRouterJudgeClient(
+            api_key=cfg.llm_keys.judge_api_key,
+            base_url=base_url,
+        )
+    elif provider in ("vercel", "openai_compatible"):
+        # Generic OpenAI-compatible gateway (Vercel AI Gateway, Cloudflare,
+        # native OpenAI, etc.). Requires JUDGE_BASE_URL to be explicit.
+        if not cfg.judge.judge_base_url:
+            raise SystemExit(
+                f"JUDGE_PROVIDER={provider!r} requires JUDGE_BASE_URL in .env "
+                f"(e.g. https://ai-gateway.vercel.sh/v1)."
+            )
+        client = OpenRouterJudgeClient(
+            api_key=cfg.llm_keys.judge_api_key,
+            base_url=cfg.judge.judge_base_url,
+        )
+    elif provider == "anthropic":
+        client = AnthropicJudgeClient(api_key=cfg.llm_keys.judge_api_key)
+    else:
+        raise SystemExit(
+            f"Unknown JUDGE_PROVIDER={cfg.judge.judge_provider!r}; "
+            f"must be 'anthropic', 'openrouter', 'vercel', or 'openai_compatible'."
+        )
+
     cache_path = cfg.paths.pregen_dir / "judge_cache.jsonl"
     return CachedJudgeBackend(
         client=client,
@@ -160,15 +217,49 @@ def main(argv: list[str] | None = None) -> int:
         help="per-source caps; e.g. `--limits humaneval=5 hotpotqa=0`.",
     )
     parser.add_argument(
+        "--offsets",
+        nargs="*",
+        default=[],
+        metavar="KEY=N",
+        help=(
+            "per-source offsets into the deterministic task order; pair with "
+            "--limits to run a replication on a disjoint slice."
+        ),
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help=(
+            "override pregen output directory (default: cfg.paths.pregen_dir). "
+            "Use with --offsets to keep replication runs isolated."
+        ),
+    )
+    parser.add_argument(
         "--version-count",
         type=int,
         default=5,
         help="versions per (provider, task) pair (default: 5).",
     )
     parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=8,
+        help="concurrent LLM calls (default: 8). 1 = strict sequential.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="print the call plan and exit without invoking any LLM.",
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help=(
+            "skip cells already present in the output directory. Use after "
+            "Ctrl+C to continue an interrupted run; resume granularity is "
+            "per (provider, task, version) cell."
+        ),
     )
     args = parser.parse_args(argv)
 
@@ -177,6 +268,7 @@ def main(argv: list[str] | None = None) -> int:
         tuple(ProviderId(p) for p in args.providers) if args.providers else None
     )
     limits = _parse_limits(args.limits) or None
+    offsets = _parse_offsets(args.offsets) or None
 
     needed_providers: frozenset[ProviderId] = frozenset(
         provider_subset
@@ -207,10 +299,14 @@ def main(argv: list[str] | None = None) -> int:
         cfg,
         backends=backends,
         judge=judge,
+        pregen_out_dir=args.output_dir,
         limits=limits,
+        offsets=offsets,
         provider_subset=provider_subset,
         version_count=args.version_count,
+        concurrency=args.concurrency,
         dry_run=args.dry_run,
+        resume=args.resume,
     )
     print(f"{'PLAN' if args.dry_run else 'DONE'}: {n} cells")
     return 0

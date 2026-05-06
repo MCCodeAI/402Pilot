@@ -35,6 +35,31 @@ def _missing_sdk(pkg: str) -> ImportError:
     )
 
 
+_MAX_RATE_LIMIT_RETRIES = 4
+_RATE_LIMIT_BASE_DELAY_S = 1.0
+
+
+def _is_rate_limit(exc: Exception) -> bool:
+    """Heuristic detector for 'try again later' errors across SDKs.
+
+    OpenAI / Anthropic raise typed ``RateLimitError`` exceptions; DashScope
+    just returns ``status_code=429``, which our backend wraps in a
+    ``RuntimeError`` carrying ``status=429`` in the message. We sniff both
+    shapes without hard-importing SDK exception classes (those are lazy).
+    """
+
+    cls_name = type(exc).__name__
+    if "RateLimit" in cls_name or "Throttl" in cls_name:
+        return True
+    msg = str(exc)
+    return "status=429" in msg or "429" in msg and "Throttl" in msg
+
+
+def _backoff_sleep(attempt: int) -> None:
+    """Sleep ``base * 2**attempt`` seconds before the next retry."""
+    time.sleep(_RATE_LIMIT_BASE_DELAY_S * (2 ** attempt))
+
+
 # ---------------------------------------------------------------------------
 # OpenAI (GPT-5.4 / GPT-5.4-mini)
 # ---------------------------------------------------------------------------
@@ -67,27 +92,40 @@ class OpenAIBackend:
         self._client = OpenAI(**kwargs)
 
     def complete(self, request: LlmRequest) -> LlmResponse:
-        start = time.monotonic()
-        resp = self._client.chat.completions.create(
-            model=request.model,
-            messages=[
-                {"role": "system", "content": request.system},
-                {"role": "user", "content": request.user},
-            ],
-            seed=request.seed,
-            max_tokens=request.max_tokens,
-            temperature=request.temperature,
-        )
-        elapsed = time.monotonic() - start
-        choice = resp.choices[0]
-        text = choice.message.content or ""
-        usage = resp.usage
-        return LlmResponse(
-            text=text,
-            prompt_tokens=int(getattr(usage, "prompt_tokens", 0) or 0),
-            completion_tokens=int(getattr(usage, "completion_tokens", 0) or 0),
-            latency_s=elapsed,
-        )
+        # GPT-5 / o1 / o3 series renamed ``max_tokens`` to
+        # ``max_completion_tokens``. The old parameter name returns
+        # 400 ``unsupported_parameter`` on these models. The new name
+        # is also accepted by recent GPT-4 series (4o / 4-turbo) so we
+        # always send it for forward compatibility.
+        for attempt in range(_MAX_RATE_LIMIT_RETRIES):
+            try:
+                start = time.monotonic()
+                resp = self._client.chat.completions.create(
+                    model=request.model,
+                    messages=[
+                        {"role": "system", "content": request.system},
+                        {"role": "user", "content": request.user},
+                    ],
+                    seed=request.seed,
+                    max_completion_tokens=request.max_tokens,
+                    temperature=request.temperature,
+                )
+                elapsed = time.monotonic() - start
+            except Exception as exc:
+                if _is_rate_limit(exc) and attempt < _MAX_RATE_LIMIT_RETRIES - 1:
+                    _backoff_sleep(attempt)
+                    continue
+                raise
+            choice = resp.choices[0]
+            text = choice.message.content or ""
+            usage = resp.usage
+            return LlmResponse(
+                text=text,
+                prompt_tokens=int(getattr(usage, "prompt_tokens", 0) or 0),
+                completion_tokens=int(getattr(usage, "completion_tokens", 0) or 0),
+                latency_s=elapsed,
+            )
+        raise RuntimeError("OpenAI rate limit retries exhausted")
 
 
 # ---------------------------------------------------------------------------
@@ -118,29 +156,37 @@ class AnthropicBackend:
         self._client = Anthropic(api_key=self.api_key, timeout=self.timeout_s)
 
     def complete(self, request: LlmRequest) -> LlmResponse:
-        start = time.monotonic()
-        resp = self._client.messages.create(
-            model=request.model,
-            system=request.system,
-            messages=[{"role": "user", "content": request.user}],
-            max_tokens=request.max_tokens,
-            temperature=request.temperature,
-        )
-        elapsed = time.monotonic() - start
-        # Concatenate any text blocks. Anthropic returns a list of content
-        # blocks; for our prompts (no tool use) only text blocks appear.
-        parts: list[str] = []
-        for block in resp.content:
-            text = getattr(block, "text", None)
-            if isinstance(text, str):
-                parts.append(text)
-        usage = resp.usage
-        return LlmResponse(
-            text="".join(parts),
-            prompt_tokens=int(getattr(usage, "input_tokens", 0) or 0),
-            completion_tokens=int(getattr(usage, "output_tokens", 0) or 0),
-            latency_s=elapsed,
-        )
+        for attempt in range(_MAX_RATE_LIMIT_RETRIES):
+            try:
+                start = time.monotonic()
+                resp = self._client.messages.create(
+                    model=request.model,
+                    system=request.system,
+                    messages=[{"role": "user", "content": request.user}],
+                    max_tokens=request.max_tokens,
+                    temperature=request.temperature,
+                )
+                elapsed = time.monotonic() - start
+            except Exception as exc:
+                if _is_rate_limit(exc) and attempt < _MAX_RATE_LIMIT_RETRIES - 1:
+                    _backoff_sleep(attempt)
+                    continue
+                raise
+            # Concatenate any text blocks. Anthropic returns a list of content
+            # blocks; for our prompts (no tool use) only text blocks appear.
+            parts: list[str] = []
+            for block in resp.content:
+                text = getattr(block, "text", None)
+                if isinstance(text, str):
+                    parts.append(text)
+            usage = resp.usage
+            return LlmResponse(
+                text="".join(parts),
+                prompt_tokens=int(getattr(usage, "input_tokens", 0) or 0),
+                completion_tokens=int(getattr(usage, "output_tokens", 0) or 0),
+                latency_s=elapsed,
+            )
+        raise RuntimeError("Anthropic rate limit retries exhausted")
 
 
 # ---------------------------------------------------------------------------
@@ -220,47 +266,60 @@ class QwenBackend:
         self._module = Generation
 
     def complete(self, request: LlmRequest) -> LlmResponse:
-        start = time.monotonic()
-        resp = self._module.call(
-            model=request.model,
-            messages=[
-                {"role": "system", "content": request.system},
-                {"role": "user", "content": request.user},
-            ],
-            seed=request.seed,
-            max_tokens=request.max_tokens,
-            temperature=request.temperature,
-            timeout=self.timeout_s,
-            result_format="message",
-            enable_thinking=False,  # Qwen3 non-streaming quirk; harmless on others.
-        )
-        elapsed = time.monotonic() - start
-
-        status = getattr(resp, "status_code", None)
-        if status != 200:
-            code = getattr(resp, "code", "<missing>")
-            message = getattr(resp, "message", "<missing>")
-            raise RuntimeError(
-                f"DashScope status={status} code={code!r} message={message!r}"
+        # Retry on 429 (DashScope rate limit) with exponential backoff.
+        # Qwen3-8B's per-account RPS quota is much tighter than OpenAI's,
+        # so 8-way concurrency easily saturates it.
+        last_exc: RuntimeError | None = None
+        for attempt in range(_MAX_RATE_LIMIT_RETRIES):
+            start = time.monotonic()
+            resp = self._module.call(
+                model=request.model,
+                messages=[
+                    {"role": "system", "content": request.system},
+                    {"role": "user", "content": request.user},
+                ],
+                seed=request.seed,
+                max_tokens=request.max_tokens,
+                temperature=request.temperature,
+                timeout=self.timeout_s,
+                result_format="message",
+                enable_thinking=False,
             )
+            elapsed = time.monotonic() - start
 
-        output = getattr(resp, "output", None)
-        if output is None:
-            raise RuntimeError(f"DashScope response missing 'output': {resp!r}")
+            status = getattr(resp, "status_code", None)
+            if status == 429 and attempt < _MAX_RATE_LIMIT_RETRIES - 1:
+                last_exc = RuntimeError(
+                    f"DashScope status=429 (attempt {attempt + 1})"
+                )
+                _backoff_sleep(attempt)
+                continue
+            if status != 200:
+                code = getattr(resp, "code", "<missing>")
+                message = getattr(resp, "message", "<missing>")
+                raise RuntimeError(
+                    f"DashScope status={status} code={code!r} message={message!r}"
+                )
 
-        text = _extract_qwen_text(output)
-        if not text:
-            raise RuntimeError(
-                f"DashScope returned empty content. output={output!r}"
+            output = getattr(resp, "output", None)
+            if output is None:
+                raise RuntimeError(f"DashScope response missing 'output': {resp!r}")
+
+            text = _extract_qwen_text(output)
+            if not text:
+                raise RuntimeError(
+                    f"DashScope returned empty content. output={output!r}"
+                )
+
+            usage = getattr(resp, "usage", None)
+            return LlmResponse(
+                text=text,
+                prompt_tokens=_safe_int(usage, "input_tokens"),
+                completion_tokens=_safe_int(usage, "output_tokens"),
+                latency_s=elapsed,
             )
-
-        usage = getattr(resp, "usage", None)
-        return LlmResponse(
-            text=text,
-            prompt_tokens=_safe_int(usage, "input_tokens"),
-            completion_tokens=_safe_int(usage, "output_tokens"),
-            latency_s=elapsed,
-        )
+        # Exhausted retries on 429.
+        raise last_exc or RuntimeError("DashScope rate limit retries exhausted")
 
 
 __all__ = ["AnthropicBackend", "OpenAIBackend", "QwenBackend"]

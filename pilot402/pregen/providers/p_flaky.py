@@ -1,16 +1,19 @@
-"""P-flaky: GPT-5.4-mini with mechanical 20% timeout injection.
+"""P-flaky: GPT-5.4-mini with mechanical 40% timeout injection.
 
-Mechanism (decision Option C):
+Mechanism (decision Option C; rate calibrated on 2026-05-02):
 
-* Version ``{0}`` short-circuits — no LLM call. We return a billed timeout
-  failure (``failure_flag=True``, ``failure_code=TIMEOUT``,
+* Versions ``{0, 1}`` short-circuit — no LLM call. We return a billed
+  timeout failure (``failure_flag=True``, ``failure_code=TIMEOUT``,
   ``charged_cost_usdc=base_price_usdc``, empty ``response``).
-* Versions ``{1, 2, 3, 4}`` use the same prompt as P-mid and call the LLM
+* Versions ``{2, 3, 4}`` use the same prompt as P-mid and call the LLM
   normally.
 
-This makes the per-call failure rate exactly 1/5 = 20% under uniform
+This makes the per-call failure rate exactly 2/5 = 40% under uniform
 version sampling, with full charge on failure (decision 2: payment is
-irreversible under x402 semantics).
+irreversible under x402 semantics). The 40% rate (raised from an initial
+20% calibration) was chosen to give the bandit a clearly differentiated
+reliability signal — at the same cost and base model as P-mid, only the
+failure pattern distinguishes them.
 """
 
 from __future__ import annotations
@@ -32,7 +35,7 @@ from pilot402.pregen.providers.prompts import P_FLAKY_PROMPT
 
 @dataclass
 class PFlakyProvider(BaseProvider):
-    """Same tier as P-mid but version 0 is a forced billed timeout."""
+    """Same tier as P-mid but versions 0 and 1 are forced billed timeouts (40%)."""
 
     def generate(
         self,

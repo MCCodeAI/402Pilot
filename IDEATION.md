@@ -644,7 +644,7 @@ premium provider 逐渐变差
 
 Price shock
 
-premium price 从 0.02 涨到 0.04
+premium price 从 0.01 涨到 0.02 (S3 price shock — 2x)
 medium 降价
 
 Adversarial-looking but not adversarial
@@ -920,9 +920,9 @@ Motivation Example
 一定要有一个简单例子：
 
 An agent has $1 budget and must solve 200 tasks.
-Premium API costs $0.02 and is high quality.
-Cheap API costs $0.001 but is noisy.
-If the agent always uses premium, it runs out of budget after 50 calls.
+Premium API costs $0.01 and is high quality.
+Cheap API costs $0.0005 but is noisy.
+If the agent always uses premium, it runs out of budget after 100 calls.
 If it always uses cheap, many hard tasks fail.
 The rational strategy is context-dependent:
 cheap for easy tasks, medium for routine tasks, premium for hard/high-value tasks.
@@ -1316,7 +1316,7 @@ LLM routing 领域没有显式处理 agent micropayment、wallet budget、paymen
 
 具体做法：每个 `(任务, Provider)` 组合生成 **5 个响应版本**（不同随机种子下的温度采样）。实验运行时，按 run seed 控制地从 5 个版本中抽取一个，既保留了真实 LLM 的输出随机性，又保证 30 个 seed 之间的可复现性。
 
-对于确定性评估器（pass@1、EM/F1），质量分数在预生成阶段就计算并存储。对于 LLM-as-judge，judge 模型 ID 和 seed 一并记录。Provider E 的 20% timeout 事件也在预生成阶段用固定 seed 标注。
+对于确定性评估器（pass@1、EM/F1），质量分数在预生成阶段就计算并存储。对于 LLM-as-judge，judge 模型 ID 和 seed 一并记录。Provider E 的 40% timeout 事件也在预生成阶段用固定 version 标注（versions 0 和 1 强制 timeout）。
 
 预生成总量约 **20,600 次 API 调用**（824 任务 × 5 providers × 5 versions），一次性成本。实验本身零 API 成本。
 
@@ -1350,8 +1350,8 @@ LLM routing 领域没有显式处理 agent micropayment、wallet budget、paymen
 **Provider E — Flaky**
 - LLM：GPT-5.4-mini，reasoning 关闭（与 B 完全相同）
 - 工具：BM25 top-2（与 B 完全相同）
-- 特殊行为：20% 的调用被标记为 timeout（seed 控制，预生成时注入）。Timeout 时质量=0、成本=0、延迟=超时阈值；正常工作时质量与 B 持平
-- 期望质量 = 0.8 × B质量，低于 B，但靠价格无法区分
+- 特殊行为：40% 的调用被标记为 timeout（version-level 机制，5 个 version 中固定 v=0 和 v=1 强制 timeout）。Timeout 时质量=0、成本=base_price（x402 协议下失败也要付费）、延迟=超时阈值；正常工作时质量与 B 持平
+- 期望质量 = 0.6 × B质量，显著低于 B，但靠价格/底层模型无法区分（必须从失败观察学习）
 
 **B/D/E 三方对比的意义**：三者成本相同、底层模型相同，rule-based 策略无法区分。PA-DCTS 必须通过奖励反馈学习区分三者，这正是 contextual bandit 的核心价值所在。
 
@@ -1387,11 +1387,11 @@ LLM routing 领域没有显式处理 agent micropayment、wallet budget、paymen
 每个场景独立运行：10,000 轮 × 30 seeds。相同 provider、相同任务池、相同 seed——只有参数变化时间表不同。
 
 **S1 — Stationary**
-无任何变化。A/B/C 保持基础配置，D 全程对抗，E 全程 20% timeout。建立静态市场基线，验证 bandit 在稳定环境下能否识别 D/E 并学到最优任务-provider 匹配。
+无任何变化。A/B/C 保持基础配置，D 全程对抗，E 全程 40% timeout。建立静态市场基线，验证 bandit 在稳定环境下能否识别 D/E 并学到最优任务-provider 匹配。
 
 **S2 — Abrupt Degradation**
 - Round 3,000：Provider C 质量下跌（切换低质量响应池）
-- Round 5,000：Provider E 的 timeout 率从 20% 飙升至 60%
+- Round 5,000：Provider E 的 timeout 率从 40% 飙升至 80%
 
 两个事件测试不同类型的突变适应：C 的质量退化信号较缓，测试 discount 机制能否加速感知；E 的超时飙升信号明显，验证失败惩罚项 ν·f_t 的有效性。
 

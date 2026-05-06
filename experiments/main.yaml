@@ -15,7 +15,7 @@ num_seeds: 30
 
 providers:
   - provider_id: "P-cheap"
-    model_name: "Qwen3-8B"
+    model_name: "qwen3.5-flash"
     base_price_usdc: 0.0005
     tier: "cheap"
   - provider_id: "P-mid"
@@ -24,7 +24,7 @@ providers:
     tier: "mid"
   - provider_id: "P-premium"
     model_name: "GPT-5.4"
-    base_price_usdc: 0.02
+    base_price_usdc: 0.01
     tier: "premium"
   - provider_id: "P-adv"
     model_name: "GPT-5.4-mini"
@@ -41,21 +41,37 @@ scenario:
 
 budget:
   # Sized so that Always-P-premium exhausts the wallet near round ~5,000
-  # (PLAN §3.5). Real B is computed by `pilot402.budget.sizing`; this is a
-  # placeholder that satisfies the schema.
-  total_usdc: 100.0
+  # (PLAN §3.5): $50 / $0.01 = 5,000 rounds. The 5x mid:premium ratio mirrors
+  # GPT-4o-mini → GPT-4o (~17x) and Haiku → Sonnet (~12x); we land at 5x
+  # for the experiment so premium has visible economic value on hard tasks
+  # without being unconditionally dominated.
+  #
+  # target_burn_rate = 1 / num_rounds = 0.0001 — this is the spend fraction
+  # per round at which the wallet would last exactly the full run. Setting
+  # this incorrectly (e.g. 0.01 = "100-round burn target") makes λ-dynamics
+  # silent, which defeats the "Payment-Aware" half of PA-DCT.
+  total_usdc: 50.0
   lambda_0: 1.0
   alpha: 2.0
-  target_burn_rate: 0.01
+  target_burn_rate: 0.0001
 
 reward:
   # Constants across the paper to avoid the "you tuned the reward" objection
   # (system_design §2.6).
-  mu: 0.05
+  #
+  # The latency term μ·l̃ was retired on 2026-05-02 — no provider in the
+  # design specifies a latency profile, no scenario manipulates latency,
+  # and empirically it contributed ~1% of reward magnitude. Latency-aware
+  # bandits are explicit future work.
+  #
+  # ν·f penalty is retained even though q=0 already on failures, because
+  # P-flaky's distinct identity (same model + cost as P-mid, only difference
+  # is reliability) only shows up via failure_flag. ν=0.5 abstracts the
+  # structural cost of timeouts (retry overhead, broken call chain).
   nu: 0.5
 
 policy:
-  name: "padcts"
+  name: "padct"
   kwargs: {}
 
 paths:

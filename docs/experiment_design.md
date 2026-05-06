@@ -1,7 +1,7 @@
 # Experiment Design — 402Pilot-Bench
 
 402Pilot-Bench is the single evaluation used in this paper. It comprises
-three market scenarios, a fixed comparator set, four ablations of PA-DCTS,
+three market scenarios, a fixed comparator set, four ablations of PA-DCT,
 and a fixed metric suite — all run against the same pre-generated response
 dataset. Every reported number comes from this one experimental framework.
 
@@ -50,7 +50,7 @@ reasoning settings remain fixed.
 | **P-mid**     | Medium      | GPT-5.4-mini | ❌ disabled                     | BM25, top-2 paragraphs from provided docs   | None                                       | —                         |
 | **P-premium** | Premium     | GPT-5.4      | ✅ CoT pipeline                 | Full document context injection             | Code execution sandbox (coding tasks only) | —                         |
 | **P-adv**     | Adversarial | GPT-5.4-mini | ❌ disabled                     | BM25, top-2 paragraphs (identical to P-mid) | None                                       | Adversarial system prompt |
-| **P-flaky**   | Flaky       | GPT-5.4-mini | ❌ disabled                     | BM25, top-2 paragraphs (identical to P-mid) | None                                       | 20% timeout injection     |
+| **P-flaky**   | Flaky       | GPT-5.4-mini | ❌ disabled                     | BM25, top-2 paragraphs (identical to P-mid) | None                                       | 40% timeout injection     |
 
 
 **P-adv — adversarial system prompt.** P-adv uses the same base model and
@@ -63,16 +63,25 @@ LLM-as-judge evaluation on open-ended tasks, producing a task-type-dependent
 detection gradient (see §1.3).
 
 **P-flaky — flaky behavior.** P-flaky uses the same model and tool stack as
-P-mid. During pre-generation, 20% of `(task, P-flaky)` pairs are randomly
-designated as timeout events using a fixed seed. A timeout yields quality = 0,
-cost = 0 (no charge on failure), and latency = timeout threshold. The remaining
-80% of calls return P-mid-level quality. P-flaky's expected quality is
-therefore lower than P-mid's despite identical per-call quality on successful
-calls, creating a risk-reward trade-off that the bandit must learn.
+P-mid. During pre-generation, 40% of `(task, P-flaky)` pairs are designated as
+timeout events using the deterministic version-level mechanism (versions 0 and
+1 of the 5 stored versions are forced timeouts). A timeout yields quality = 0,
+charged_cost_usdc = base_price (full charge per x402 semantics — payments are
+irreversible on the network even when the upstream provider failed), and
+latency = timeout threshold. The remaining 60% of calls return P-mid-level
+quality. P-flaky's expected quality is therefore substantially lower than
+P-mid's (gap ~0.32 on the calibrated dataset) despite identical per-call
+quality on successful calls, creating a clear reliability signal the bandit
+must learn from failure observations alone — cost and base model are
+indistinguishable from P-mid.
+
+The 40% rate (calibrated 2026-05-02 from an earlier 20% trial) was chosen so
+that the failure signal is statistically obvious within ~5 pulls but not so
+overwhelming that a trivial heuristic ("any failures means avoid") suffices.
 
 **Design rationale for the P-mid / P-adv / P-flaky three-way structure.**
 All three share the same cost tier and base model. A rule-based policy relying
-on price or latency alone cannot distinguish them. PA-DCTS must learn the
+on price or latency alone cannot distinguish them. PA-DCT must learn the
 distinction purely from reward feedback — exactly the regime where contextual
 bandit learning provides value over fixed or rule-based policies.
 
@@ -175,9 +184,9 @@ static-market baseline and measures the base rate at which each policy
 learns to distinguish P-adv and P-flaky from P-mid.
 - **S2 — Abrupt degradation.** At round 3,000, P-premium's quality steps down
 (switches to a lower-quality response pool). At round 5,000, P-flaky's
-timeout rate spikes from 20% to 60%. Tests whether PA-DCTS detects and
-adapts to abrupt quality and reliability changes faster than non-discounted
-policies.
+timeout rate spikes from its baseline 40% to 80%. Tests whether PA-DCT
+detects and adapts to abrupt quality and reliability changes faster than
+non-discounted policies.
 - **S3 — Price shock.** At round 5,000, P-premium's price doubles; P-mid's
 price halves. Response quality is unaffected; only cost parameters change.
 Tests whether the budget-aware λ_t correctly re-weights the cost penalty
@@ -189,7 +198,7 @@ spend toward P-adv and P-flaky (which do not receive the P-mid price cut).
 ## 3. Comparators
 
 Three external comparators plus an offline upper bound. Learning variants of
-PA-DCTS are reported as ablations in §5, not as separate comparators, to avoid
+PA-DCT are reported as ablations in §5, not as separate comparators, to avoid
 double-counting and keep the results table clean.
 
 
@@ -197,11 +206,11 @@ double-counting and keep the results table clean.
 | ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | Fixed      | Always-P-premium | Strongest non-adaptive policy; always picks the highest-quality provider regardless of cost or budget state.                                |
 | Rule-based | Budget rule      | Best hand-crafted heuristic; adjusts provider choice based on remaining budget pressure. Represents the ceiling of rule-based approaches.   |
-| Ours       | **PA-DCTS**      | Full proposed method.                                                                                                                       |
+| Ours       | **PA-DCT**      | Full proposed method.                                                                                                                       |
 | Reference  | Oracle           | Offline upper bound using ground-truth quality distributions each round. Not available to any online agent; defines the regret denominator. |
 
 
-P-adv and P-flaky are part of the selectable arm pool for PA-DCTS and all
+P-adv and P-flaky are part of the selectable arm pool for PA-DCT and all
 ablations, but are not assigned dedicated fixed baselines.
 
 ---
@@ -221,14 +230,14 @@ per-round logs; reported per-scenario as mean ± std across 30 seeds.
 
 
 **ROI note.** q_t is the raw evaluator score (pass@1, EM/F1, or judge score),
-not the shaped internal reward. This keeps ROI independent of PA-DCTS's
+not the shaped internal reward. This keeps ROI independent of PA-DCT's
 reward hyperparameters (λ, μ, ν) and directly comparable across all policies.
 
 ---
 
 ## 5. Ablations
 
-Four removed-component variants of PA-DCTS, run on all scenarios with the
+Four removed-component variants of PA-DCT, run on all scenarios with the
 same 30 seeds as the main experiment.
 
 
@@ -260,7 +269,7 @@ addition to p-values.
 
 - One held-out instance per scenario family is reserved for hyperparameter
 selection, using different seeds from the evaluation seeds.
-- PA-DCTS hyperparameters are fixed across all scenarios after selection; no
+- PA-DCT hyperparameters are fixed across all scenarios after selection; no
 per-scenario tuning. The same rule applies to all ablations.
 - The hyperparameter grid and selection criterion are documented in the
 appendix.

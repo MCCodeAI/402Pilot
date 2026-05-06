@@ -16,13 +16,16 @@ locked with the user):
 
 * ``ADVERSARIAL_VERSIONS[ProviderId.P_ADV] = {0, 1, 2}`` — those versions
   use the adversarial system prompt; versions 3, 4 use the neutral prompt.
-* ``ADVERSARIAL_VERSIONS[ProviderId.P_FLAKY] = {0}`` — that version is
-  short-circuited to a billed timeout (no LLM call) so the empirical failure
-  rate is exactly 1/5 = 20%.
+* ``ADVERSARIAL_VERSIONS[ProviderId.P_FLAKY] = {0, 1}`` — those versions
+  are short-circuited to a billed timeout (no LLM call) so the empirical
+  failure rate is exactly 2/5 = 40%. The 40% rate (raised from an earlier
+  20% calibration on 2026-05-02) gives the bandit a clearly differentiated
+  reliability signal versus P-mid (same cost, same model, 0% failures).
 """
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
@@ -104,7 +107,7 @@ class ProviderCallResult:
 
 ADVERSARIAL_VERSIONS: dict[ProviderId, frozenset[int]] = {
     ProviderId.P_ADV: frozenset({0, 1, 2}),
-    ProviderId.P_FLAKY: frozenset({0}),
+    ProviderId.P_FLAKY: frozenset({0, 1}),
 }
 """Locked version-level mechanism for degraded behavior (decision Option C).
 
@@ -155,10 +158,20 @@ class BaseProvider:
         )
         try:
             response = self.backend.complete(request)
-        except Exception:
+        except Exception as exc:
             # Catch broadly: any backend exception during pregen is recorded
             # as a billed payment_failure rather than crashing the run. The
             # orchestrator decides whether to retry the (task, version) cell.
+            #
+            # Print to stderr so the user can diagnose which provider /
+            # model / call is failing — without this, all backend errors
+            # collapsed into identical empty PregenRecords and the cause
+            # was invisible.
+            print(
+                f"[{self.provider_id.value} model={self.model_name} "
+                f"task={task.task_id} v={version}] backend failed: {exc!r}",
+                file=sys.stderr,
+            )
             return ProviderCallResult(
                 response="",
                 cost_usdc=self.base_price_usdc,

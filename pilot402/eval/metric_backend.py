@@ -71,10 +71,41 @@ def f1_score(prediction: str, gold: str) -> float:
     return 2 * precision * recall / (precision + recall)
 
 
-def max_em_f1(prediction: str, gold: str) -> float:
-    """Composite ``max(EM, F1)`` used as the T2 / T3a scalar in the paper."""
+_SENTENCE_BOUNDARY_RE = re.compile(r"(?<=[.!?])\s+|\n+")
 
-    return max(em_score(prediction, gold), f1_score(prediction, gold))
+
+def _short_extract(text: str, max_chars: int = 200) -> str:
+    """Pull the first sentence (or first few words) out of a verbose response.
+
+    LLM-as-explainer responses on T2 / T3a typically lead with the answer
+    ("Charles Dickens wrote both...", "The capital is Rome.") and then
+    pad with elaboration. Token-level F1 against gold answers like
+    ``"Charles Dickens"`` collapses to ~0.05 when matched against the
+    full 200-word elaboration. Extracting just the first sentence gives
+    a much fairer signal of "did the model say the right thing first?".
+    """
+
+    text = text.strip()
+    if not text:
+        return ""
+    parts = _SENTENCE_BOUNDARY_RE.split(text, maxsplit=1)
+    head = parts[0] if parts else text
+    return head[:max_chars]
+
+
+def max_em_f1(prediction: str, gold: str) -> float:
+    """Composite ``max(EM, F1)`` used as the T2 / T3a scalar in the paper.
+
+    Scores both the full response and a first-sentence extract; takes
+    the higher value. This rescues verbose CoT-style responses where the
+    correct answer is in the first sentence but full-text F1 is diluted
+    by elaboration tokens.
+    """
+
+    candidates = (prediction, _short_extract(prediction))
+    return max(
+        max(em_score(c, gold), f1_score(c, gold)) for c in candidates if c
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -106,13 +137,26 @@ def _extract_imports(text: str) -> str:
     return "\n".join(lines)
 
 
-def _strip_code_fence(response: str) -> str:
-    """Pull the largest fenced code block out of a response, if any."""
+def _strip_code_fence(response: str, entry_point: str | None = None) -> str:
+    """Pull the relevant fenced code block out of a response, if any.
+
+    When ``entry_point`` is supplied, we prefer the first fence that
+    actually defines that function — this is critical for P-premium-style
+    responses that contain BOTH a ``python`` code fence and a ``text``
+    fence with explanation / time complexity / etc. ``max(matches, key=len)``
+    alone can pick the explanation block when the explanation is longer
+    than the code, leading to silent pass@1 failures on otherwise correct
+    code.
+    """
 
     matches: list[str] = _CODE_FENCE_RE.findall(response)
     if not matches:
         return response
-    # Return the longest block — model often emits a tiny example fence first.
+    if entry_point:
+        for match in matches:
+            if f"def {entry_point}(" in match:
+                return str(match)
+    # Fall back to the longest block.
     return str(max(matches, key=len))
 
 
@@ -127,7 +171,6 @@ def _assemble_program(task: Task, response: str) -> str:
       docstring).
     """
 
-    code = _strip_code_fence(response)
     metadata = task.metadata or {}
     entry_point = str(metadata.get("entry_point", "")).strip()
     test = str(metadata.get("test", "")).strip()
@@ -135,6 +178,7 @@ def _assemble_program(task: Task, response: str) -> str:
         raise ValueError(
             "pass_at_1 requires 'entry_point' and 'test' in task.metadata"
         )
+    code = _strip_code_fence(response, entry_point=entry_point)
 
     if f"def {entry_point}(" in code:
         # Response is a complete function. Prepend any imports from the

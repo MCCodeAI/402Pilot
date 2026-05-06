@@ -27,6 +27,10 @@ class JsonlPregenStore:
                 f"Run `python -m scripts.run_pregen ...` first."
             )
         for path in sorted(pregen_dir.glob("*.jsonl")):
+            # judge_cache.jsonl lives in the same directory but holds judge
+            # scoring entries (not PregenRecord rows); skip it.
+            if path.name == "judge_cache.jsonl":
+                continue
             self._load_file(path)
 
     def _load_file(self, path: Path) -> None:

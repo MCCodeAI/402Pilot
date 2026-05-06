@@ -36,7 +36,7 @@ class Policy(Protocol):
 
     Implementations: ``policies/fixed.py``, ``policies/rule.py``,
     ``policies/eg.py``, ``policies/ts.py``, ``policies/dts.py``,
-    ``policies/linucb.py``, ``policies/padcts.py``.
+    ``policies/linucb.py``, ``policies/padct.py``.
     """
 
     def select(
@@ -56,12 +56,20 @@ class Policy(Protocol):
         context: ContextVector,
         arm: ProviderId,
         utility: float,
+        observed_cost: float,
     ) -> None:
-        """Incorporate the post-call utility ``u_t`` into the posterior.
+        """Incorporate the post-call utility AND observed cost into the policy.
 
         Per system_design §2.6, the policy is updated with utility (not
-        payment-aware reward) so that the posterior tracks provider quality
-        independent of decision-time budget pressure.
+        payment-aware reward) so that the quality dimension of the posterior
+        tracks provider quality independent of decision-time budget pressure.
+
+        ``observed_cost`` is the raw $/call actually charged this round,
+        AFTER any scenario transformation. Payment-aware learners
+        (PA-DCT) maintain a separate posterior over cost so that price
+        shocks propagate into the policy's beliefs the same way quality
+        shocks do. Non-learning policies (Random, Fixed, BudgetRule) ignore
+        this argument.
         """
         ...
 

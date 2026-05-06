@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>402Pilot Interactive Explainer</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">402Pilot Interactive Explainer</p>
+          <h1>Learning What to Pay For</h1>
+          <p class="hero-subtitle">Agent 微支付市场中的支付决策层：在 x402 执行付款前，学习哪个 provider 值得调用。</p>
+        </div>
+        <div class="run-chip">
+          <span>30 seeds</span>
+          <strong>10,000 rounds</strong>
+        </div>
+      </header>
+
+      <section class="section architecture-section" aria-label="402Pilot architecture">
+        <div class="section-head row-head">
+          <div>
+            <p class="eyebrow">System Architecture</p>
+            <h2>402Pilot 在 x402 之前做选择，在反馈之后学习</h2>
+          </div>
+          <p class="section-note">灰色是协议/外部服务边界，蓝色是 402Pilot 的决策层。</p>
+        </div>
+        <article class="panel architecture-panel">
+          <div class="arch-grid">
+            <div class="arch-node external planner">
+              <span>Agent Planner</span>
+              <strong>task descriptor</strong>
+              <small>type · prompt · budget snapshot</small>
+            </div>
+
+            <div class="arch-core" aria-label="402Pilot decision layer">
+              <div class="arch-core-title">402Pilot decision layer</div>
+              <div class="arch-node">
+                <span>1 · Context Encoder</span>
+                <strong>x_t</strong>
+                <small>task type + difficulty + wallet + provider EWMA</small>
+              </div>
+              <div class="arch-node">
+                <span>2 · Budget Manager</span>
+                <strong>λ_norm = λ / (1 + λ)</strong>
+                <small>affordability filter + budget pressure</small>
+              </div>
+              <div class="arch-node selector">
+                <span>3 · Service Selector</span>
+                <strong>a* = argmax [(1-λ)·û_k - λ·ĉ_k]</strong>
+                <small>PA-DCT: contextual TS + quality/cost posteriors</small>
+              </div>
+              <div class="arch-node updater">
+                <span>6 · Policy Updater</span>
+                <strong>posterior(q, c) ← utility, cost</strong>
+                <small>discount γ keeps the learner adaptive</small>
+              </div>
+            </div>
+
+            <div class="arch-node external executor">
+              <span>x402 Executor</span>
+              <strong>pay_and_call(a*)</strong>
+              <small>settlement is unchanged</small>
+            </div>
+
+            <div class="arch-node external provider">
+              <span>Provider Market</span>
+              <strong>P-cheap · P-mid · P-premium · P-adv · P-flaky</strong>
+              <small>cost · latency · response · failure</small>
+            </div>
+
+            <div class="arch-node evaluator">
+              <span>Evaluator</span>
+              <strong>q ∈ [0, 1]</strong>
+              <small>pass@1 · EM/F1 · cached judge score</small>
+            </div>
+
+            <div class="arch-node reward">
+              <span>Reward Calculator</span>
+              <strong>utility = q - ν·failure</strong>
+              <strong>PA_reward = (1-λ)·utility - λ·c̃</strong>
+              <small>posterior updates use utility; accounting uses PA_reward</small>
+            </div>
+          </div>
+          <div class="arch-paths" aria-label="architecture paths">
+            <div><span>选择路径</span><strong>task → x_t → λ_norm → a* → x402 payment → provider</strong></div>
+            <div><span>学习路径</span><strong>response/cost/failure → q → utility / PA_reward → posterior(q,c) → next round</strong></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+              <p class="eyebrow">Provider Market</p>
+          <h2>价格、质量、可靠性不总是同向</h2>
+        </div>
+        <div id="providerCards" class="provider-grid"></div>
+      </section>
+
+      <section class="section two-col">
+        <article class="panel chart-panel">
+          <div class="section-head row-head">
+            <div>
+              <p class="eyebrow">Scenario Replay</p>
+              <h2>S1/S2/S3 中 provider 选择比例</h2>
+            </div>
+            <div id="adaptationTabs" class="segmented"></div>
+          </div>
+          <div id="scenarioNote" class="event-note"></div>
+          <div id="armShareChart" class="chart-box"></div>
+          <div id="chartLegend" class="legend"></div>
+        </article>
+
+        <article class="panel microscope-panel">
+          <div class="section-head row-head">
+            <div>
+              <p class="eyebrow">Round Microscope</p>
+              <h2>把单轮决策拆开看</h2>
+            </div>
+            <div id="roundTabs" class="round-tabs"></div>
+          </div>
+          <div id="roundMicroscope"></div>
+        </article>
+      </section>
+
+      <section class="section">
+        <div class="section-head row-head">
+          <div>
+            <p class="eyebrow">Experiment Results</p>
+            <h2>先看结论卡，再看策略横向条形图</h2>
+          </div>
+          <div class="toolbar">
+            <div id="resultScenarioTabs" class="segmented"></div>
+            <div id="metricTabs" class="segmented compact"></div>
+          </div>
+        </div>
+        <div class="result-grid">
+          <article class="panel">
+            <div id="metricCards" class="metric-grid"></div>
+          </article>
+          <article class="panel">
+            <div id="resultChart" class="chart-box result-chart"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <p class="eyebrow">Ablation</p>
+          <h2>从完整 PA-DCT 中拿掉一个组件，会坏在哪里</h2>
+        </div>
+        <div class="ablation-layout">
+          <div>
+            <div id="ablationMap" class="component-map"></div>
+            <div id="ablationToggles" class="ablation-grid"></div>
+          </div>
+          <article class="panel ablation-summary">
+            <div class="risk-meter">
+              <span id="riskFill"></span>
+            </div>
+            <div id="ablationSummary"></div>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>独立实现：viz-explainer/</span>
+        <span>数据口径：S1/S2 scenario_sweep，S3 scenario_sweep_s3promo_v2</span>
+      </footer>
+    </main>
+
+    <script src="./data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

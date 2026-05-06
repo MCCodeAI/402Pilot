@@ -21,7 +21,7 @@ reward:
   mu: 0.05
   nu: 0.5
 policy:
-  name: "padcts"
+  name: "padct"
   kwargs: {}
 x402:
   anvil_rpc_url: "http://leaked"

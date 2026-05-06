@@ -1,0 +1,25 @@
+.caption {
+  display: block;
+  margin: 12px 0 0 0;
+  padding: 10px 14px;
+  background: #f6f6f4;
+  border-left: 3px solid var(--c-accent);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--c-text-soft);
+}
+
+.label {
+  display: inline-block;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin-right: 8px;
+  vertical-align: 1px;
+}
+
+.body {
+  color: var(--c-text-soft);
+}

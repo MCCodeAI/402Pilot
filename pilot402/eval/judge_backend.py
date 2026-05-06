@@ -20,6 +20,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -177,15 +178,44 @@ class CachedJudgeBackend:
 # ---------------------------------------------------------------------------
 
 
-JUDGE_RUBRIC = """You are evaluating an answer to a question. Score the answer \
-on a scale of 0.0 to 1.0 based on three criteria:
+JUDGE_RUBRIC = """You are a STRICT evaluator scoring an answer on a 0.0 to \
+1.0 scale. Be skeptical of confident-sounding answers and verify every \
+factual claim mentally before scoring.
 
-1. Factual accuracy — are the claims correct?
-2. Completeness — does the answer address the question fully?
-3. Absence of hallucination — does the answer avoid fabricated details?
+Score bands (use the full range, do not cluster at 1.0):
 
-Output ONLY a single JSON object: {"q": <float between 0.0 and 1.0>}. Do not \
-include any other text, commentary, or formatting."""
+  0.95 – 1.00  Outstanding: factually flawless, comprehensive, well-organized,
+               no hallucinations whatsoever. Reserved for truly excellent
+               answers — at most 10% of answers should land here.
+  0.75 – 0.94  Strong: correct on the core question, minor omissions or
+               minor wording issues, no factual errors.
+  0.50 – 0.74  Adequate: answers the question but contains one notable
+               factual error, omits an important aspect, or includes
+               misleading framing.
+  0.25 – 0.49  Poor: contains multiple factual errors, fabricates a
+               source/date/entity, or gives a confidently-stated wrong
+               answer to a key sub-question.
+  0.00 – 0.24  Unusable: refuses, off-topic, near-empty, or wrong on
+               the central claim.
+
+Calibration anchors:
+- A polished, articulate answer with ONE confidently-stated factual
+  error (wrong date, wrong attribution, fabricated reference) should
+  score in the 0.30–0.50 band, NOT in the 0.7+ band, even if the
+  surrounding prose reads well.
+- An answer that is correct but markedly less complete than a
+  textbook treatment should land in 0.55–0.75, not 0.85+.
+- Score on substance, not on length, formatting, or rhetorical polish.
+
+Three criteria contribute to the score:
+1. Factual accuracy — every checkable claim must be correct.
+2. Completeness — does the answer cover the core sub-questions?
+3. Absence of hallucination — fabricated names, dates, citations,
+   or rules count strongly against the score.
+
+Output ONLY a single JSON object: {"q": <float between 0.0 and 1.0>}. \
+Do not include any other text, commentary, code fences, or formatting \
+around the JSON."""
 
 
 _JSON_OBJECT_RE = re.compile(r"\{[^{}]*\}", re.DOTALL)
@@ -225,7 +255,7 @@ class AnthropicJudgeClient:
             model=request.model_id,
             system=JUDGE_RUBRIC,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=128,
+            max_tokens=1024,
             temperature=0.0,
         )
         # Concatenate text blocks from the response.
@@ -245,6 +275,10 @@ def _parse_judge_score(body: str) -> float:
     Returns 0.0 if no valid score is found — the cache layer will record
     the zero so the run is reproducible, and an analyst can grep the cache
     for q=0 to find judge-format failures.
+
+    On parse failure, prints a diagnostic to stderr so the caller can
+    inspect what the judge actually returned (truncated reasoning output,
+    refusal, off-format text, etc.).
     """
 
     candidates = _JSON_OBJECT_RE.findall(body)
@@ -256,4 +290,116 @@ def _parse_judge_score(body: str) -> float:
         q = payload.get("q")
         if isinstance(q, (int, float)):
             return float(q)
+    print(
+        "\n[judge parse failure → q=0 fallback]\n"
+        f"  body[0:500]: {body[:500]!r}\n",
+        file=sys.stderr,
+    )
     return 0.0
+
+
+# ---------------------------------------------------------------------------
+# OpenRouterJudgeClient — alternative implementation routing through
+# OpenRouter's OpenAI-compatible API, for users who hold an OpenRouter
+# key instead of (or in addition to) a native Anthropic key.
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class OpenRouterJudgeClient:
+    """LLM-as-judge via OpenRouter's OpenAI-compatible chat completions API.
+
+    OpenRouter aggregates many providers (including Anthropic) behind a
+    single OpenAI-shaped endpoint. To use Claude through OpenRouter:
+
+    1. Put the OpenRouter key in ``ANTHROPIC_API_KEY`` (we treat that
+       env var as the generic "judge key" — it is fed to whichever
+       client this picks).
+    2. Set ``JUDGE_PROVIDER=openrouter`` in ``.env``.
+    3. Set ``JUDGE_MODEL`` to an OpenRouter model id such as
+       ``anthropic/claude-sonnet-4.6`` (note the ``anthropic/`` prefix).
+
+    The Anthropic native client (``AnthropicJudgeClient``) talks to
+    ``api.anthropic.com`` and uses the Messages schema; this client
+    routes through OpenRouter and uses chat completions. The two are
+    NOT interchangeable at the wire level — we have both so the user
+    can pick whichever matches their key.
+    """
+
+    api_key: str
+    base_url: str = "https://openrouter.ai/api/v1"
+    timeout_s: float = 60.0
+    _client: Any = field(init=False, repr=False, default=None)
+
+    def __post_init__(self) -> None:
+        try:
+            from openai import OpenAI
+        except ImportError as exc:
+            raise ImportError(
+                "The 'openai' package is required for OpenRouterJudgeClient. "
+                "Install with `pip install -e \".[pregen]\"`."
+            ) from exc
+        self._client = OpenAI(
+            api_key=self.api_key,
+            base_url=self.base_url,
+            timeout=self.timeout_s,
+        )
+
+    def evaluate(self, request: JudgeRequest) -> float:
+        import time
+
+        max_retries = 4
+        base_delay = 1.0
+
+        prompt = (
+            f"Question:\n{request.question}\n\n"
+            f"Answer:\n{request.response}\n\n"
+            f"Score this answer."
+        )
+        # No provider preference — OpenRouter picks the routing that fits
+        # the model id. Retry on rate-limit (4xx 429 / SDK RateLimitError)
+        # with exponential backoff so concurrent judge calls don't lose
+        # data when a gateway throttles.
+        last_exc: Exception | None = None
+        for attempt in range(max_retries):
+            try:
+                resp = self._client.chat.completions.create(
+                    model=request.model_id,
+                    messages=[
+                        {"role": "system", "content": JUDGE_RUBRIC},
+                        {"role": "user", "content": prompt},
+                    ],
+                    max_tokens=1024,
+                    temperature=0.0,
+                )
+                body = resp.choices[0].message.content or ""
+                return _parse_judge_score(body)
+            except Exception as exc:
+                last_exc = exc
+                cls_name = type(exc).__name__
+                is_rate_limit = (
+                    "RateLimit" in cls_name
+                    or "Throttl" in cls_name
+                    or "429" in str(exc)
+                )
+                if is_rate_limit and attempt < max_retries - 1:
+                    time.sleep(base_delay * (2 ** attempt))
+                    continue
+                # Non-retryable or exhausted — diagnostic dump and re-raise.
+                print(
+                    "\n--- OpenRouter judge call failed -------------------",
+                    file=sys.stderr,
+                )
+                print(f"model_id: {request.model_id}", file=sys.stderr)
+                print(
+                    f"question[0:300]: {request.question[:300]!r}",
+                    file=sys.stderr,
+                )
+                print(
+                    f"response[0:300]: {request.response[:300]!r}",
+                    file=sys.stderr,
+                )
+                print(f"error: {exc!r}", file=sys.stderr)
+                print("-----------------------------------------------------\n", file=sys.stderr)
+                raise
+        raise last_exc or RuntimeError("OpenRouter rate limit retries exhausted")

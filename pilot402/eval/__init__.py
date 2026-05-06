@@ -20,6 +20,7 @@ from pilot402.eval.judge_backend import (
     JudgeClient,
     JudgeRequest,
     MockJudgeClient,
+    OpenRouterJudgeClient,
 )
 from pilot402.eval.metric_backend import (
     em_score,
@@ -36,6 +37,7 @@ __all__ = [
     "JudgeClient",
     "JudgeRequest",
     "MockJudgeClient",
+    "OpenRouterJudgeClient",
     "backend_for",
     "em_score",
     "f1_score",

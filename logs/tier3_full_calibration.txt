@@ -1,0 +1,45 @@
+Loaded 20575 PregenRecords from data/pregen
+
+=== Mean quality by (provider × task_type) ===
+
+Provider                  T1              T2             T3a             T3b
+----------------------------------------------------------------------------
+P-cheap     0.71±0.45(n=820)0.73±0.36(n=1100)0.45±0.47(n=1095)0.58±0.28(n=1100)
+P-mid       0.88±0.32(n=820)0.80±0.32(n=1100)0.78±0.37(n=1095)0.84±0.24(n=1100)
+P-premium   0.92±0.27(n=820)0.82±0.30(n=1100)0.82±0.33(n=1095)0.91±0.19(n=1100)
+P-adv       0.63±0.48(n=820)0.64±0.42(n=1100)0.60±0.45(n=1095)0.73±0.32(n=1100)
+P-flaky     0.53±0.50(n=820)0.48±0.46(n=1100)0.46±0.48(n=1095)0.50±0.45(n=1100)
+
+=== Quality gap to P-mid baseline (P-mid − P-x) ===
+
+Target adversarial gap (P-mid − P-adv): [0.30, 0.50]
+
+Provider            T1        T2       T3a       T3b
+----------------------------------------------------
+P-cheap          0.170     0.070     0.326     0.258
+P-mid            0.000     0.000     0.000     0.000
+P-premium       -0.039    -0.025    -0.047    -0.073
+P-adv            0.249     0.154     0.178     0.104
+P-flaky          0.351     0.317     0.312     0.336
+
+=== Failure rates by provider ===
+
+Target P-flaky rate: ~40% (2 in 5 versions force a billed timeout)
+
+  P-cheap        0 / 4115 = 0.00%
+  P-mid          0 / 4115 = 0.00%
+  P-premium      0 / 4115 = 0.00%
+  P-adv          0 / 4115 = 0.00%
+  P-flaky      1646 / 4115 = 40.00%
+
+=== Recorded charge by provider (sum of cost_usdc) ===
+
+(This is the x402 charge price, not the underlying API bill.)
+
+  P-cheap      4115 calls  =  $2.0575
+  P-mid        4115 calls  =  $8.2300
+  P-premium    4115 calls  =  $82.3000
+  P-adv        4115 calls  =  $8.2300
+  P-flaky      4115 calls  =  $8.2300
+  GRAND TOTAL               =  $109.0475
+
