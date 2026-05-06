@@ -1,31 +1,28 @@
 % 402Pilot: An x402 Decision Layer for Autonomous Agent Micropayments
-%
-% Compiles out-of-the-box with article + geometry as a stub layout.
-% Swap to the venue's style file (NeurIPS / ICML / ICLR / AAAI) before
-% submission — see paper/README.md for instructions.
+% NeurIPS 2026 submission. Default options = anonymized for double-blind review.
+% Camera-ready: replace \usepackage{neurips_2026} with \usepackage[final]{neurips_2026}.
+% arXiv preprint: \usepackage[preprint]{neurips_2026}.
 
 \documentclass{article}
 
-% ---------------------------------------------------------------------
-% Stub preamble (works without venue .sty). Replace as needed.
-% ---------------------------------------------------------------------
+\usepackage{neurips_2026}
+
+% --- Standard packages (mirrors the NeurIPS template, plus algorithm + graphicx) ---
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[margin=1in]{geometry}    % stub layout; venue .sty supersedes
-\usepackage{microtype}
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage{booktabs}
-\usepackage{amsmath, amsfonts, amssymb}
+\usepackage{amsfonts}
+\usepackage{amsmath, amssymb}
 \usepackage{nicefrac}
+\usepackage{microtype}
 \usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 
-% ---------------------------------------------------------------------
-% Notation macros — mirror logs/notation.md §10. Keep in sync.
-% ---------------------------------------------------------------------
+% --- Notation macros (mirror logs/notation.md §10) ---
 \newcommand{\nrm}{\mathrm{norm}}
 \newcommand{\lamn}{\lambda_{\nrm}}
 \newcommand{\bex}{\mathrm{burn\_excess}}
@@ -42,18 +39,18 @@
 \newcommand{\Reg}{\mathrm{Regret}}
 \newcommand{\AdaptT}{\tau_{\mathrm{adapt}}}
 
-% ---------------------------------------------------------------------
-% Title block
-% ---------------------------------------------------------------------
 \title{402Pilot: An x402 Decision Layer for\\Autonomous Agent Micropayments}
-\author{
+
+% Author block. NeurIPS hides this automatically during anonymized
+% submission; for camera-ready, populate with real names + affiliations.
+\author{%
   Anonymous Author(s)\\
   Affiliation\\
   \texttt{email}
 }
-\date{}
 
 \begin{document}
+
 \maketitle
 
 \begin{abstract}
@@ -69,12 +66,19 @@
 \input{sections/07_discussion}
 \input{sections/08_conclusion}
 
-% ---------------------------------------------------------------------
-\bibliographystyle{plain}
+\begin{ack}
+% Camera-ready only — funding + competing-interests disclosure.
+% NeurIPS auto-hides this section during anonymized submission.
+\end{ack}
+
+\bibliographystyle{plainnat}
 \bibliography{references}
 
-% ---------------------------------------------------------------------
+%----------------------------------------------------------------------
 \appendix
 \input{sections/A_appendix_notation}
+
+\newpage
+\input{checklist.tex}
 
 \end{document}

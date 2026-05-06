@@ -1,76 +1,82 @@
-# 402Pilot — Paper Source
+# 402Pilot — Paper Source (NeurIPS 2026)
 
-LaTeX source. Output: `main.pdf`.
+LaTeX source. Output: `neurips_2026.pdf`.
+
+## File map
+
+```
+paper/
+├── neurips_2026.tex             ← root (compile this)
+├── neurips_2026.sty             ← NeurIPS 2026 official style file
+├── checklist.tex                ← NeurIPS reproducibility checklist (mandatory)
+├── references.bib               ← BibTeX (provisional keys; verify before submission)
+├── sections/
+│   ├── 00_abstract.tex          ← TODO
+│   ├── 01_introduction.tex      ← TODO
+│   ├── 02_related_work.tex      ← ✅ draft v1
+│   ├── 03_problem_formulation.tex
+│   ├── 04_layer.tex
+│   ├── 05_method.tex            ← Algorithm 1 spec in logs/algorithm_box.md
+│   ├── 06_evaluation.tex        ← numbers in logs/ablation_4metrics_table.md, logs/significance_table.md
+│   ├── 07_discussion.tex
+│   ├── 08_conclusion.tex
+│   └── A_appendix_notation.tex  ← port logs/notation.md
+└── figures/                     ← placeholder; figures generated near terminal
+```
 
 ## Compile locally
 
 ```bash
 cd paper
-latexmk -pdf main.tex
+latexmk -pdf neurips_2026.tex
 ```
 
 If `latexmk` is missing:
 
 ```bash
-pdflatex main && bibtex main && pdflatex main && pdflatex main
+pdflatex neurips_2026 && bibtex neurips_2026 && pdflatex neurips_2026 && pdflatex neurips_2026
 ```
 
-## Upload to Overleaf
+## Overleaf
 
-1. From the repo root:
+This `paper/` directory IS the Overleaf project root (via `git subtree`). Sync via:
 
-   ```bash
-   zip -r 402pilot-paper.zip paper/ -x 'paper/*.aux' 'paper/*.log' \
-        'paper/*.bbl' 'paper/*.blg' 'paper/*.out' 'paper/main.pdf'
-   ```
+```bash
+# From repo root, push paper/ to Overleaf:
+git subtree push --prefix=paper https://git@git.overleaf.com/<PROJECT_ID> master
 
-2. In Overleaf: **New Project → Upload Project → choose `402pilot-paper.zip`**.
-3. Set **Compiler** to **pdfLaTeX** (Menu → Compiler).
-4. Hit **Recompile**.
-
-The skeleton uses a stub `\documentclass{article}` plus `geometry` so it compiles immediately, no venue style file required.
-
-## Switch to a venue template
-
-To match a specific venue's typesetting, swap the preamble in `main.tex`. The body content (`sections/`, `references.bib`, the notation macros) is venue-agnostic.
-
-| Venue | Add | Replace `\usepackage[margin=1in]{geometry}` with |
-|---|---|---|
-| **NeurIPS 2024** | `neurips_2024.sty` | `\usepackage[final]{neurips_2024}` |
-| **ICML 2024**    | `icml2024.sty`, `icml2024.bst`, `fancyhdr.sty` | `\usepackage{icml2024}`, also `\bibliographystyle{icml2024}` |
-| **ICLR 2024**    | `iclr2024_conference.sty`, `iclr2024_conference.bst` | `\usepackage{iclr2024_conference}` |
-| **AAAI 2026**    | `aaai2026.sty` | `\usepackage{aaai2026}` |
-
-In Overleaf the cleanest path is: **New Project → Templates → NeurIPS** (or ICML / ICLR / AAAI), then copy `paper/sections/`, `paper/references.bib`, and the notation macro block from `paper/main.tex` into the template's `main.tex`.
-
-## Layout
-
+# Or pull Overleaf changes back into local paper/:
+git subtree pull --prefix=paper https://git@git.overleaf.com/<PROJECT_ID> master --squash
 ```
-paper/
-├── main.tex                          ← root
-├── references.bib                    ← BibTeX (provisional keys; verify before submission)
-├── sections/
-│   ├── 00_abstract.tex               ← TODO  (write last)
-│   ├── 01_introduction.tex           ← TODO
-│   ├── 02_related_work.tex           ← ✅ draft v1
-│   ├── 03_problem_formulation.tex    ← TODO
-│   ├── 04_layer.tex                  ← TODO
-│   ├── 05_method.tex                 ← TODO  (Algorithm 1: see logs/algorithm_box.md)
-│   ├── 06_evaluation.tex             ← TODO  (numbers in logs/ablation_4metrics_table.md, logs/significance_table.md)
-│   ├── 07_discussion.tex             ← TODO
-│   ├── 08_conclusion.tex             ← TODO
-│   └── A_appendix_notation.tex       ← TODO  (port logs/notation.md)
-└── figures/                          ← placeholder; figures created near terminal
-```
+
+Username is `git` (already in URL); password is your Overleaf **Git Authentication Token**.
+
+In Overleaf settings: **Compiler = pdfLaTeX**, **Main document = neurips_2026.tex**.
+
+## Submission track switching
+
+Default track (`\usepackage{neurips_2026}`) = Main Track, anonymized for double-blind review. Other tracks set the option explicitly:
+
+| Track | Option |
+|---|---|
+| Main Track | `\usepackage{neurips_2026}` (default) or `\usepackage[main]{neurips_2026}` |
+| Position Paper | `\usepackage[position]{neurips_2026}` |
+| Evaluations & Datasets | `\usepackage[eandd]{neurips_2026}` |
+| Creative AI | `\usepackage[creativeai]{neurips_2026}` |
+| Workshop (single-blind) | `\usepackage[sglblindworkshop]{neurips_2026}` |
+| Workshop (double-blind) | `\usepackage[dblblindworkshop]{neurips_2026}` |
+| arXiv preprint | `\usepackage[preprint]{neurips_2026}` |
+| Camera-ready | append `, final` to the option, e.g. `\usepackage[main, final]{neurips_2026}` |
+
+For workshops, also set `\workshoptitle{...}` after `\title{...}`.
 
 ## Notation reference
 
-Single source of truth for symbols and naming: `../logs/notation.md`. The LaTeX macros at the top of `main.tex` mirror that file. Keep them in sync.
+Single source of truth: `../logs/notation.md`. The LaTeX macros in `neurips_2026.tex` mirror its §10. Keep them in sync.
 
 ## Citation keys
 
-Provisional. Confirm exact author / venue / arXiv ID before submission, especially the placeholders flagged with `note = {Verify ...}` in `references.bib`:
+Provisional. Confirm exact author / venue / arXiv ID before submission, especially:
 
 - `aamas2026reverseauction` — closest adjacent paper
-- `sok2026agentpayments` — agent payments survey
-- `mixllm2024`, `qi2023dsts`, `a402` — author / venue placeholders
+- `sok2026agentpayments`, `mixllm2024`, `qi2023dsts`, `a402` — placeholders flagged in `references.bib`.
