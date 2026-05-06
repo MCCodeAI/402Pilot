@@ -5,77 +5,78 @@
 
 \begin{figure}[t]
 \centering
-\resizebox{\textwidth}{!}{%
+\resizebox{0.98\textwidth}{!}{%
 \begin{tikzpicture}[
   font=\footnotesize,
-  node distance=1.15cm and 1.0cm,
+  node distance=1.5cm and 1.3cm,
   block/.style={
-    draw=black!55,
-    rounded corners=2pt,
-    align=center,
-    minimum height=0.78cm,
-    text width=2.15cm,
-    inner sep=4pt,
-    fill=white
+    draw=black!55, rounded corners=2pt, align=center,
+    minimum height=0.95cm, text width=2.1cm, inner sep=4pt, fill=white
   },
   pilotblock/.style={block, draw=blue!55!black, fill=blue!5},
   extblock/.style={block, draw=black!45, fill=black!7},
   payblock/.style={block, draw=black!45, fill=black!10, dashed},
-  arrow/.style={-{Stealth[length=2.0mm]}, line width=0.45pt},
-  feedback/.style={-{Stealth[length=2.0mm]}, line width=0.45pt, dashed},
+  arrow/.style={-{Stealth[length=2.0mm]}, line width=0.5pt},
+  feedback/.style={-{Stealth[length=2.0mm]}, line width=0.5pt, dashed},
   lab/.style={font=\scriptsize, fill=white, inner sep=1.5pt}
 ]
 
-\node[extblock] (agent) {Agent\\planner};
+% Top row: forward path
+\node[extblock] (agent) {Agent};
 \node[pilotblock, right=of agent] (ctx) {Context\\encoder\\$\mathbf{x}_t$};
-\node[pilotblock, right=of ctx] (wallet) {Wallet /\\budget\\$\lambda_t,\mathcal{A}_t$};
-\node[pilotblock, right=of wallet, text width=2.35cm] (select) {PA-DCT\\\texttt{policy.select}\\$a_t$};
-\node[payblock, right=of select, text width=2.3cm] (x402) {Payment\\protocol stack\\(e.g., x402)};
-\node[payblock, right=of x402] (provider) {Chosen\\provider\\$a_t$};
-\node[extblock, below=1.1cm of x402, text width=2.35cm] (eval) {Outcome\\evaluator\\$q_t,c_t,f_t$};
-\node[pilotblock, below=1.1cm of select, text width=2.45cm] (update) {Reward split +\\\texttt{policy.update}\\$u_t=q_t-\nu f_t$};
+\node[pilotblock, right=of ctx, text width=2.3cm] (select) {PA-DCT\\\texttt{policy.select}\\$\to a_t$};
+\node[payblock, right=of select] (x402) {x402\\stack};
+\node[payblock, right=of x402] (provider) {Provider};
 
+% Bottom row: wallet | update | evaluator (all inside 402Pilot)
+\node[pilotblock, below=of ctx] (wallet) {Wallet\\$\lambda_t,\,\mathcal{A}_t$};
+\node[pilotblock, below=of select, text width=2.3cm] (update) {\texttt{policy.update}\\$u_t = q_t - \nu f_t$};
+\node[pilotblock, below=of x402] (eval) {Evaluator\\$(q_t,c_t,f_t)$};
+
+% Background fits — eval now inside pilotbox; provider+x402 in paybox
 \begin{scope}[on background layer]
   \node[
-    draw=blue!45!black,
-    fill=blue!3,
-    rounded corners=4pt,
-    inner xsep=7pt,
-    inner ysep=9pt,
-    fit=(ctx) (wallet) (select) (update)
+    draw=blue!45!black, fill=blue!4,
+    rounded corners=4pt, inner xsep=8pt, inner ysep=14pt,
+    fit=(ctx) (select) (wallet) (update) (eval)
   ] (pilotbox) {};
   \node[
-    draw=black!35,
-    fill=black!4,
-    rounded corners=4pt,
-    dashed,
-    inner xsep=7pt,
-    inner ysep=9pt,
+    draw=black!35, fill=black!5,
+    rounded corners=4pt, dashed, inner xsep=8pt, inner ysep=10pt,
     fit=(x402) (provider)
   ] (paybox) {};
 \end{scope}
 
 \node[anchor=north west, font=\scriptsize\bfseries, text=blue!55!black]
-  at ([xshift=2pt,yshift=-2pt]pilotbox.north west) {402Pilot decision layer};
-\node[anchor=north west, font=\scriptsize\bfseries, text=black!55]
-  at ([xshift=2pt,yshift=-2pt]paybox.north west) {delegated settlement / service execution};
+  at ([xshift=4pt,yshift=-4pt]pilotbox.north west) {402Pilot decision layer};
+\node[anchor=north, font=\scriptsize\bfseries, text=black!55]
+  at ([yshift=-4pt]paybox.north) {settlement \& service};
 
+% --- Forward arrows (top row) ---
 \draw[arrow] (agent) -- node[lab, above] {(1) task} (ctx);
-\draw[arrow] (ctx) -- node[lab, above] {(2) context} (wallet);
-\draw[arrow] (wallet) -- node[lab, above] {(3) budget pressure + feasible arms} (select);
-\draw[arrow] (select) -- node[lab, above] {(4) chosen arm} (x402);
-\draw[arrow] (x402) -- node[lab, above] {(5) paid call} (provider);
-\draw[arrow] (provider.south) |- node[lab, pos=0.28, right] {response} (eval.east);
-\draw[arrow] (eval) -- node[lab, below] {(6) observed outcome} (update);
-\draw[feedback] (update.north) -- node[lab, right] {(7) update Q/C posteriors} (select.south);
-\draw[feedback] (update.west) -| node[lab, pos=0.25, below] {\texttt{record\_spend}$(c_t)$} (wallet.south);
+\draw[arrow] (ctx) -- node[lab, above] {(2) $\mathbf{x}_t$} (select);
+\draw[arrow] (select) -- node[lab, above] {(4) $a_t$} (x402);
+\draw[arrow] (x402) -- node[lab, above] {(5) call} (provider);
 
-\node[font=\scriptsize, align=center, text=black!65, below=0.18cm of update, text width=4.4cm]
-  {Posteriors are updated with utility and realized cost; payment-aware reward is logged for accounting.};
+% Wallet → select (diagonal up-right)
+\draw[arrow] (wallet.north east) -- node[lab, pos=0.55] {(3) $\lambda,\mathcal{A}$} ([xshift=-6pt]select.south);
+
+% Provider → eval (response, vertical, crosses boundary)
+\draw[arrow] (provider.south) -- node[lab, right] {response} (eval.north);
+
+% --- Feedback arrows (bottom row) ---
+% Eval → update (bottom row right-to-left)
+\draw[arrow] (eval) -- node[lab, above] {(6) $q,c,f$} (update);
+
+% Update → select (vertical up, slight right shift to avoid wallet→select)
+\draw[feedback] ([xshift=8pt]update.north) -- node[lab, right, pos=0.5] {(7) $u_t,c_t$} ([xshift=8pt]select.south);
+
+% Update → wallet (record spend, leftward dashed)
+\draw[feedback] (update.west) -- node[lab, above] {\texttt{record\_spend}} (wallet.east);
 
 \end{tikzpicture}%
 }
-\caption{The 402Pilot decision-layer architecture. Per round: (1) task arrives from the agent; (2) the context encoder produces $\mathbf{x}_t$; (3) the wallet exposes $\lambda_t$ and the affordable-arm set; (4) \texttt{policy.select} returns $a_t$; (5) the underlying payment protocol settles and calls the chosen provider (grayed: outside the layer); (6) the evaluator returns $(q_t, c_t, f_t)$; (7) \texttt{policy.update} incorporates the observation. Only steps 2--4 and 7 are inside 402Pilot; settlement is delegated unchanged.}
+\caption{The 402Pilot decision-layer architecture. Per round: (1) the agent submits a task; (2) context encoder produces $\mathbf{x}_t$; (3) wallet exposes budget pressure $\lambda_t$ and the affordable set $\mathcal{A}_t$; (4) \texttt{policy.select} returns $a_t$; (5) the x402 stack settles and calls the chosen provider (grayed: outside the layer); (6) the evaluator scores the response into $(q_t, c_t, f_t)$; (7) \texttt{policy.update} incorporates utility $u_t = q_t - \nu f_t$ and observed cost $c_t$ — \emph{not} payment-aware reward $r_t$. Settlement is delegated unchanged.}
 \label{fig:architecture}
 \end{figure}
 
