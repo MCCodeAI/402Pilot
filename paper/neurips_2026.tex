@@ -26,7 +26,10 @@
 \newcommand{\nrm}{\mathrm{norm}}
 \newcommand{\lamn}{\lambda_{\nrm}}
 \newcommand{\bex}{\mathrm{burn\_excess}}
-\newcommand{\padct}{PA\nobreakdash-DCT}
+% \padct must be robust because it appears in body text only; in moving args
+% (section / caption / TOC) we use the literal "PA-DCT" instead, which is
+% safer than relying on \protect.
+\DeclareRobustCommand{\padct}{PA\nobreakdash-DCT}
 \newcommand{\rt}{r_t}
 \newcommand{\ut}{u_t}
 \newcommand{\ctilde}{\tilde c_t}
@@ -67,7 +70,7 @@
 \input{sections/08_conclusion}
 
 \begin{ack}
-% Camera-ready only — funding + competing-interests disclosure.
+% Camera-ready only --- funding + competing-interests disclosure.
 % NeurIPS auto-hides this section during anonymized submission.
 \end{ack}
 

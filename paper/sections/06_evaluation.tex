@@ -8,7 +8,7 @@
 We construct \emph{402Pilot-Bench}, a replay-based benchmark in which all LLM responses are pre-generated and frozen. The dataset comprises $824$ tasks across coding (HumanEval; pass@1), multi-hop QA (HotpotQA; max EM/F1 against gold), and web search (TriviaQA closed-form, plus a custom open-ended subset; LLM-as-judge with a structured rubric). For each (task, provider) pair we pre-generate $V = 5$ response versions, yielding $20{,}575$ total responses scored once at pre-generation time and replayed deterministically across all bandit experiments. Pre-generation decouples bandit evaluation from inference noise and enables exact reproduction of any seed; it also caps the cost of large-scale ablation sweeps by amortizing inference once across thousands of replays.
 
 \paragraph{Providers.}
-Five heterogeneous provider pipelines, calibrated to expose the same-tier-different-quality phenomenon central to the regime. Table~\ref{tab:providers} summarizes the configuration; the key design point is that P-mid, P-adv, and P-flaky share both base price (\$0.002/call) and base model, so no static rule can distinguish them—only reward feedback can.
+Five heterogeneous provider pipelines, calibrated to expose the same-tier-different-quality phenomenon central to the regime. Table~\ref{tab:providers} summarizes the configuration; the key design point is that P-mid, P-adv, and P-flaky share both base price (\$0.002/call) and base model, so no static rule can distinguish them---only reward feedback can.
 
 \begin{table}[t]
 \centering
@@ -33,9 +33,9 @@ Tasks fall into four types treated separately because their evaluators differ: T
 \paragraph{Scenarios.}
 Three calibrated market scenarios:
 \begin{itemize}
-\item \emph{S1 — Stationary.} No mid-run changes; provider behaviour is drawn iid throughout the run.
-\item \emph{S2 — Mid outage.} \texttt{MidOutageScenario(outage\_start=3000, outage\_end=5500, outage\_failure\_rate=0.30)}. Within the $2{,}500$-round outage window, P-mid fails $30\%$ of calls; outside the window, P-mid behaves nominally.
-\item \emph{S3 — Premium promotion.} \texttt{PremiumDropScenario(shock\_round=1000, price\_multiplier=0.2)}. At round $1{,}000$ the effective price of P-premium drops from \$0.01 to \$0.002 (matching the mid tier). The agent has $9{,}000$ post-shock rounds to detect the change and migrate spend.
+\item \emph{S1 --- Stationary.} No mid-run changes; provider behaviour is drawn iid throughout the run.
+\item \emph{S2 --- Mid outage.} \texttt{MidOutageScenario(outage\_start=3000, outage\_end=5500, outage\_failure\_rate=0.30)}. Within the $2{,}500$-round outage window, P-mid fails $30\%$ of calls; outside the window, P-mid behaves nominally.
+\item \emph{S3 --- Premium promotion.} \texttt{PremiumDropScenario(shock\_round=1000, price\_multiplier=0.2)}. At round $1{,}000$ the effective price of P-premium drops from \$0.01 to \$0.002 (matching the mid tier). The agent has $9{,}000$ post-shock rounds to detect the change and migrate spend.
 \end{itemize}
 
 \paragraph{Scale.}
@@ -49,7 +49,7 @@ Six baselines plus an offline upper bound, all evaluated on identical seeds:
 \begin{itemize}
 \item \textbf{Random.} Uniform draw from the affordable set each round.
 \item \textbf{Always-P-cheap / Always-P-mid / Always-P-premium.} Three fixed-arm policies covering the price tiers; Always-P-premium is the strongest non-adaptive baseline on quality alone.
-\item \textbf{BudgetRule.} A threshold heuristic over remaining wallet fraction—prefer P-premium while the wallet is ample, downgrade to P-mid or P-cheap as the wallet thins. Instantiates a FrugalGPT-style fixed escalation rule~\citep{chen2023frugalgpt}.
+\item \textbf{BudgetRule.} A threshold heuristic over remaining wallet fraction---prefer P-premium while the wallet is ample, downgrade to P-mid or P-cheap as the wallet thins. Instantiates a FrugalGPT-style fixed escalation rule~\citep{chen2023frugalgpt}.
 \item \textbf{PA-DCT.} Ours.
 \item \textbf{True Oracle (upper bound).} A free-running policy that, each round, peeks at every affordable arm's actual outcome at the round's realized response version and picks the one with the highest payment-aware reward at the wallet's current $\lambda_t$. The Oracle owns its own wallet and so its own $\lambda$ trajectory; it is the upper bound for the scenario, not for any fixed-$\lambda$ trajectory.
 \end{itemize}
@@ -111,7 +111,7 @@ A side-effect of contextual updates: PA-DCT identifies P-adv as low-utility with
 \subsection{Ablations: which classical components transfer}
 \label{sec:eval-ablations}
 
-We disable each of the four named components of PA-DCT in turn—Payment-aware ($-P$), Discount ($-D$), Contextual ($-C$), Thompson sampling ($-TS$)—and measure all four metrics in each scenario. Table~\ref{tab:ablations} reports deltas relative to full PA-DCT.
+We disable each of the four named components of PA-DCT in turn---Payment-aware ($-P$), Discount ($-D$), Contextual ($-C$), Thompson sampling ($-TS$)---and measure all four metrics in each scenario. Table~\ref{tab:ablations} reports deltas relative to full PA-DCT.
 
 \begin{table}[t]
 \centering
@@ -131,7 +131,7 @@ Variant & cum-PA & ROI & Regret & --- & cum-PA & ROI & Regret & AdaptT & cum-PA 
 Removing the budget-pressure weighting forces selection by raw utility, causing the policy to favour high-quality but expensive arms and exhaust the wallet early. Cumulative reward collapses to negative across all three scenarios: $\mathrm{cum\text{-}PA} = -1{,}710 \pm 588$ in S1, $-1{,}966 \pm 507$ in S2, and only $+4{,}528 \pm 369$ in S3 because the round-$1{,}000$ price drop bails the policy out post-shock. \emph{Conclusion}: payment-awareness is necessary in the agent-native regime in absolute terms; no other ingredient compensates.
 
 \paragraph{$-D$ (no discount, $\gamma=1$): visible only on adaptation time.}
-With $\gamma = 1$, cumulative reward in all three scenarios is within $\pm 250$ of full PA-DCT—indistinguishable on the headline metric. But under shocks the discount earns its keep: in S2, full PA-DCT recovers in $1{,}467$ rounds versus $2{,}249$ for $-D$, a $35\%$ acceleration. In S3 the gap is smaller ($200$ vs $279$ rounds) because the $9{,}000$-round post-shock window is long enough for either variant to converge on the new optimum. Cumulative reward dilutes the recovery-speed signal across the full run; adaptation\_time isolates it. \emph{Conclusion}: discount earns its place specifically on adaptation\_time in shock scenarios; cumulative reward alone would call $-D$ a free win.
+With $\gamma = 1$, cumulative reward in all three scenarios is within $\pm 250$ of full PA-DCT---indistinguishable on the headline metric. But under shocks the discount earns its keep: in S2, full PA-DCT recovers in $1{,}467$ rounds versus $2{,}249$ for $-D$, a $35\%$ acceleration. In S3 the gap is smaller ($200$ vs $279$ rounds) because the $9{,}000$-round post-shock window is long enough for either variant to converge on the new optimum. Cumulative reward dilutes the recovery-speed signal across the full run; adaptation\_time isolates it. \emph{Conclusion}: discount earns its place specifically on adaptation\_time in shock scenarios; cumulative reward alone would call $-D$ a free win.
 
 \paragraph{$-C$ (no contextual, $K_b = 1$): scenario-dependent.}
 A single global bucket actually \emph{helps} adaptation in S2 ($1{,}176$ vs full $1{,}467$ rounds): the outage hits all task types uniformly, so per-bucket fragmentation slows the policy down. In S3, where the price shock makes P-premium especially valuable on hard tasks (T3b), bucketing pays off: full PA-DCT adapts in $200$ rounds vs $-C$'s $398$. \emph{Conclusion}: contextual bucketing helps when shock structure is heterogeneous across task types; when the shock is uniform, it adds overhead without information. Practitioners should tune $K_b$ to expected drift heterogeneity.
