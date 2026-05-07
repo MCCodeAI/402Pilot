@@ -43,3 +43,10 @@ dist/
 .ruff_cache/
 .coverage
 htmlcov/
+
+# Slide decks and Word documents — kept local, not in git
+*.pptx
+*.docx
+
+# Local-only experiment outputs
+outputs/

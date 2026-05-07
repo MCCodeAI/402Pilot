@@ -56,31 +56,42 @@ button {
   align-items: end;
   justify-content: space-between;
   gap: 24px;
-  min-height: 128px;
-  padding-bottom: 22px;
+  min-height: 118px;
+  padding-bottom: 18px;
+}
+
+.header-actions {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.lang-toggle button {
+  min-width: 54px;
 }
 
 .topbar h1 {
-  max-width: 860px;
-  margin: 4px 0 0;
-  font-size: clamp(44px, 6vw, 84px);
-  line-height: 0.98;
+  max-width: 980px;
+  margin: 6px 0 0;
+  font-size: clamp(27px, 2.9vw, 42px);
+  line-height: 1.08;
   letter-spacing: 0;
 }
 
 .hero-subtitle {
-  max-width: 840px;
-  margin: 14px 0 0;
+  max-width: 640px;
+  margin: 8px 0 0;
   color: var(--muted);
-  font-size: clamp(16px, 1.6vw, 22px);
-  line-height: 1.45;
+  font-size: 14px;
+  line-height: 1.42;
+  font-weight: 520;
 }
 
 .eyebrow {
   margin: 0;
   color: var(--blue);
-  font-size: 13px;
-  font-weight: 760;
+  font-size: 20px;
+  font-weight: 880;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -104,7 +115,7 @@ button {
 }
 
 .run-chip strong {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .section {
@@ -117,8 +128,8 @@ button {
 
 .section-head h2 {
   margin: 5px 0 0;
-  font-size: 28px;
-  line-height: 1.16;
+  font-size: clamp(18px, 1.35vw, 22px);
+  line-height: 1.2;
   letter-spacing: 0;
 }
 
@@ -130,11 +141,11 @@ button {
 }
 
 .section-note {
-  max-width: 360px;
+  max-width: 340px;
   margin: 0;
   color: var(--muted);
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .intro-grid,
@@ -175,6 +186,146 @@ button {
 
 .architecture-panel {
   padding: 22px;
+}
+
+.architecture-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.path-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.path-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.path-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.path-legend i {
+  width: 18px;
+  height: 4px;
+  border-radius: 999px;
+}
+
+.decision-swatch {
+  background: var(--blue);
+}
+
+.learning-swatch {
+  background: var(--green);
+}
+
+.formula-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 8px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 14px;
+}
+
+.formula-pills span {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.formula-pills b {
+  color: var(--blue);
+}
+
+.layer-diagram {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.layer-diagram img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+#pathOverlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.path-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 7;
+  stroke-dasharray: 18 14;
+  animation: pathTravel 1.6s linear infinite;
+  opacity: 0.88;
+}
+
+.decision-path {
+  stroke: rgba(37, 99, 235, 0.88);
+}
+
+.learning-path {
+  stroke: rgba(21, 144, 95, 0.9);
+}
+
+.path-dot {
+  opacity: 0.92;
+  stroke: #fff;
+  stroke-width: 3;
+}
+
+.decision-dot {
+  fill: var(--blue);
+}
+
+.learning-dot {
+  fill: var(--green);
+}
+
+.layer-diagram[data-path-mode="decision"] .learning-path,
+.layer-diagram[data-path-mode="decision"] .learning-dot,
+.layer-diagram[data-path-mode="learning"] .decision-path,
+.layer-diagram[data-path-mode="learning"] .decision-dot {
+  opacity: 0.08;
+}
+
+.layer-diagram[data-path-mode="none"] .path-line,
+.layer-diagram[data-path-mode="none"] .path-dot {
+  opacity: 0;
+}
+
+@keyframes pathTravel {
+  from {
+    stroke-dashoffset: 44;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 .arch-grid {
@@ -338,7 +489,7 @@ button {
 
 .arch-paths span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
 }
 
@@ -446,7 +597,7 @@ button {
 
 .formula-stack span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 720;
 }
 
@@ -490,7 +641,7 @@ button {
   min-height: 38px;
   margin: 6px 0 14px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -504,7 +655,7 @@ button {
 .provider-card .note {
   margin: 14px 0 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -519,7 +670,7 @@ button {
   align-items: center;
   gap: 8px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .track,
@@ -586,6 +737,42 @@ button {
   min-height: 30px;
   margin: -4px 0 8px;
   font-size: 15px;
+}
+
+.adaptation-insights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.insight-card {
+  min-height: 86px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.insight-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.insight-card strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.insight-card p {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.35;
 }
 
 .chart-box {
@@ -692,7 +879,7 @@ button {
 .meta-item span {
   display: block;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .meta-item strong {
@@ -734,7 +921,7 @@ button {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfcfe;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .candidate-row.chosen {
@@ -792,7 +979,7 @@ button {
 .metric-card span {
   display: block;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .metric-card strong {
@@ -805,12 +992,70 @@ button {
 .metric-card p {
   margin: 8px 0 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
 .result-chart {
   min-height: 430px;
+}
+
+.result-matrix {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.matrix-row {
+  display: grid;
+  grid-template-columns: 148px repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.matrix-cell {
+  min-height: 54px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.matrix-cell.header {
+  background: var(--panel-soft);
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.matrix-cell.metric-label {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.matrix-cell strong {
+  font-size: 18px;
+}
+
+.matrix-cell span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.matrix-cell.good {
+  border-color: rgba(21, 144, 95, 0.22);
+  background: rgba(21, 144, 95, 0.08);
+}
+
+.matrix-cell.warn {
+  border-color: rgba(216, 137, 18, 0.24);
+  background: rgba(216, 137, 18, 0.08);
+}
+
+.matrix-cell.bad {
+  border-color: rgba(209, 75, 75, 0.24);
+  background: rgba(209, 75, 75, 0.08);
 }
 
 .component-map {
@@ -838,7 +1083,7 @@ button {
 
 .component-chip span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .component-chip strong {
@@ -881,7 +1126,7 @@ button {
   min-height: 48px;
   margin: 9px 0 12px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -918,6 +1163,24 @@ button {
   line-height: 1.55;
 }
 
+.ablation-list {
+  display: grid;
+  gap: 10px;
+}
+
+.ablation-list div {
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.ablation-list strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+
 .footer {
   display: flex;
   justify-content: space-between;
@@ -925,7 +1188,7 @@ button {
   margin-top: 24px;
   padding: 18px 0 0;
   border-top: 1px solid var(--line);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 @media (max-width: 1120px) {
@@ -980,9 +1243,19 @@ button {
   }
 
   .topbar,
+  .architecture-toolbar,
   .row-head,
   .footer {
     align-items: stretch;
+    flex-direction: column;
+  }
+
+  .header-actions {
+    justify-items: start;
+  }
+
+  .path-controls {
+    align-items: flex-start;
     flex-direction: column;
   }
 
@@ -998,15 +1271,20 @@ button {
   .provider-grid,
   .ablation-grid,
   .component-map,
+  .adaptation-insights,
   .metric-grid,
   .round-meta,
   .reward-grid {
     grid-template-columns: 1fr;
   }
 
+  .matrix-row {
+    grid-template-columns: 1fr;
+  }
+
   .candidate-row {
     grid-template-columns: 86px 1fr 52px 52px 52px;
-    font-size: 12px;
+    font-size: 14px;
   }
 
   .arch-core {
