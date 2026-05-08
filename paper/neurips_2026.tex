@@ -23,6 +23,16 @@
 \usetikzlibrary{arrows.meta, backgrounds, fit, positioning}
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
+\usepackage{amsthm}
+% natbib is auto-loaded by neurips_2026.sty; we only need amsthm for theorems.
+
+% --- Theorem environments for §5.5 + Appendix B ---
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
 
 % --- Notation macros (mirror logs/notation.md §10) ---
 \newcommand{\nrm}{\mathrm{norm}}
@@ -82,6 +92,7 @@
 %----------------------------------------------------------------------
 \appendix
 \input{sections/A_appendix_notation}
+\input{sections/B_appendix_proofs}
 
 \newpage
 \input{checklist.tex}

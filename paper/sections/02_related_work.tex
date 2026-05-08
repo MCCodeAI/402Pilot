@@ -11,4 +11,32 @@ The x402 V2 Discovery extension makes candidate services visible through structu
 Classical bandit work provides several ingredients for online provider selection under uncertainty. Budgeted Thompson Sampling samples both reward and cost posteriors and selects arms by reward--cost tradeoff under a finite budget~\citep{xia2015bts}; bandits with knapsacks provide the broader constrained-resource framing~\citep{badanidiyuru2018bandits}. Discounted Thompson Sampling addresses non-stationary rewards by exponentially down-weighting old observations~\citep{qi2023dsts}. Contextual Thompson Sampling models action value as a function of task context~\citep{agrawal2013contextualts}, with LinUCB as a canonical frequentist counterpart~\citep{li2010linucb}. 402Pilot differs from this literature in its operating regime rather than by treating any one ingredient as new: the learner is the spending agent itself, payments are made per call, costs are observed through market-facing quotes, and the policy must adapt without a human operator resetting budgets or intervening after price and quality shocks.
 
 \paragraph{Cost-aware LLM routing and adaptive selection.}
-A growing literature studies quality--cost tradeoffs in LLM routing. FrugalGPT uses cascades to reduce cost while preserving answer quality~\citep{chen2023frugalgpt}; RouteLLM, Hybrid LLM, AutoMix, MixLLM, and LLM Bandit learn to assign prompts to cheaper or stronger models based on predicted quality, preference, cost, or latency~\citep{ong2024routellm,ding2024hybridllm,madaan2024automix,mixllm2024,llmbandit2025}. These systems are close in motivation, but they generally assume a platform-controlled router, published price cards, and offline or semi-online evaluation over static model APIs. Truthful reverse auctions for adaptive selection via contextual multi-armed bandits study an adjacent provider-selection problem in which strategic providers submit bids and the mechanism designer seeks truthful allocation and payment rules~\citep{aamas2026reverseauction}. 402Pilot studies a different market interface: x402-style quote-and-pay APIs, where the buyer observes payable endpoints and must adapt its own spending policy over time. Thus, prior LLM routing and reverse-auction mechanisms address model selection and incentive compatibility; 402Pilot addresses autonomous buyer-side adaptation under wallet pressure and non-stationary provider behavior.
+A growing literature studies quality--cost tradeoffs in LLM routing. FrugalGPT uses cascades to reduce cost while preserving answer quality~\citep{chen2023frugalgpt}; RouteLLM, Hybrid LLM, AutoMix, MixLLM, and LLM Bandit learn to assign prompts to cheaper or stronger models based on predicted quality, preference, cost, or latency~\citep{ong2024routellm,ding2024hybridllm,madaan2024automix,mixllm2024,llmbandit2025}. These systems are close in motivation, but they generally assume a platform-controlled router, published price cards, and offline or semi-online evaluation over static model APIs.
+
+\paragraph{Reverse auctions and mechanism design over agent markets.}
+Truthful reverse auctions for adaptive selection via contextual multi-armed bandits study an adjacent provider-selection problem in which strategic providers submit bids and the mechanism designer seeks truthful allocation and payment rules~\citep{aamas2026reverseauction}. 402Pilot studies a different market interface: x402-style quote-and-pay APIs, where the buyer observes payable endpoints and must adapt its own spending policy over time. Thus, prior LLM routing and reverse-auction mechanisms address model selection and incentive compatibility; 402Pilot addresses autonomous buyer-side adaptation under wallet pressure and non-stationary provider behavior.
+
+\paragraph{Positioning against prior bandit and routing methods.}
+Table~\ref{tab:prior-bandits} summarizes how representative prior methods cover the three agent-native ingredients (budget, drift, context) and the underlying setting. Each prior method addresses a subset; PA-DCT combines all three in the agent-native micropayment-buyer regime.
+
+\begin{table}[t]
+\centering
+\caption{Coverage of the three agent-native ingredients across representative bandit and LLM-routing methods. ``Setting'' marks methods designed (rather than retrofitted) for an autonomous buyer over programmable micropayments. PA-DCT is the only entry that combines all four.}
+\label{tab:prior-bandits}
+\begin{tabular}{lcccc}
+\toprule
+Method & Budget & Discount & Context & Setting \\
+\midrule
+BTS~\citep{xia2015bts}                          & \checkmark & --         & --         & -- \\
+DS-TS~\citep{qi2023dsts}                        & --         & \checkmark & --         & -- \\
+Contextual TS~\citep{agrawal2013contextualts}   & --         & --         & \checkmark & -- \\
+Sliding-Window TS                               & --         & \checkmark & --         & -- \\
+TV-Reward Contextual TS                         & --         & \checkmark & \checkmark & -- \\
+C2MAB-V (LLM routing)                           & partial    & --         & \checkmark & -- \\
+NeuralLinUCB~\citep{li2010linucb}               & --         & --         & \checkmark & -- \\
+Combinatorial + change-point                    & \checkmark & \checkmark & --         & -- \\
+\midrule
+\textbf{PA-DCT (ours)}                          & \checkmark & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}

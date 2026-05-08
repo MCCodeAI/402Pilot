@@ -5,7 +5,7 @@
 \label{sec:eval-setup}
 
 \paragraph{Pre-generated dataset.}
-We construct \emph{402Pilot-Bench}, a replay-based benchmark in which all LLM responses are pre-generated and frozen. The dataset comprises $824$ tasks across coding (HumanEval; pass@1), multi-hop QA (HotpotQA; max EM/F1 against gold), and web search (TriviaQA closed-form, plus a custom open-ended subset; LLM-as-judge with a structured rubric). For each (task, provider) pair we pre-generate $V = 5$ response versions, yielding $20{,}575$ total responses scored once at pre-generation time and replayed deterministically across all bandit experiments. Pre-generation decouples bandit evaluation from inference noise and enables exact reproduction of any seed; it also caps the cost of large-scale ablation sweeps by amortizing inference once across thousands of replays.
+We construct \emph{402Pilot-Bench}, a replay-based benchmark in which all LLM responses are pre-generated and frozen. The dataset comprises $823$ tasks across three domains---coding (HumanEval; pass@1), multi-hop QA (HotpotQA; max EM/F1 against gold), and web search (TriviaQA closed-form, plus a custom open-ended subset; LLM-as-judge with a structured rubric). The web-search domain is split into two evaluation buckets because closed-form and open-ended sub-tasks use different evaluators (deterministic max EM/F1 vs.\ cached LLM-as-judge), yielding the four-bucket context partition (T1/T2/T3a/T3b) that PA-DCT uses for contextual bucketing ($K_b = 4$). For each (task, provider) pair we pre-generate $V = 5$ response versions, yielding $823 \times 5 \times 5 = 20{,}575$ total responses scored once at pre-generation time and replayed deterministically across all bandit experiments. Pre-generation decouples bandit evaluation from inference noise and enables exact reproduction of any seed; it also caps the cost of large-scale ablation sweeps by amortizing inference once across thousands of replays.
 
 \paragraph{Providers.}
 Five heterogeneous provider pipelines, calibrated to expose the same-tier-different-quality phenomenon central to the regime. Table~\ref{tab:providers} summarizes the configuration; the key design point is that P-mid, P-adv, and P-flaky share both base price (\$0.002/call) and base model, so no static rule can distinguish them---only reward feedback can.
@@ -27,8 +27,8 @@ P-flaky    & GPT-5.4-mini  & 40\% timeout injection         & $0.002$  & unrelia
 \end{tabular}
 \end{table}
 
-\paragraph{Task types.}
-Tasks fall into four types treated separately because their evaluators differ: T1 coding (HumanEval pass@1, deterministic), T2 multi-hop QA (HotpotQA max EM/F1, deterministic given gold), T3a web-search closed-form (TriviaQA-web, deterministic max EM/F1), T3b web-search open-ended (custom, LLM-as-judge against a fixed rubric, cached at pre-generation). PA-DCT's contextual bucketing operates at the granularity of these four types ($K_b = 4$).
+\paragraph{Task domains and evaluation buckets.}
+Tasks come from three domains (coding, multi-hop QA, web search) but are split into four evaluation buckets because the web-search domain uses two different evaluators (deterministic max EM/F1 for closed-form vs.\ LLM-as-judge for open-ended). The four buckets are: T1 coding (HumanEval pass@1, deterministic), T2 multi-hop QA (HotpotQA max EM/F1, deterministic given gold), T3a web-search closed-form (TriviaQA-web, deterministic max EM/F1), T3b web-search open-ended (custom, LLM-as-judge against a fixed rubric, cached at pre-generation). PA-DCT's contextual bucketing operates at the granularity of these four buckets ($K_b = 4$).
 
 \paragraph{Scenarios.}
 Three calibrated market scenarios:
@@ -55,12 +55,13 @@ Six baselines plus an offline upper bound, all evaluated on identical seeds:
 \end{itemize}
 
 \paragraph{Metrics.}
-Four metrics, locked in advance:
+Five metrics, locked in advance:
 \begin{itemize}
-\item \emph{Task success rate.} Mean per-round quality $\bar q = (1/T)\sum_t q_t$, a proxy for task-level success at the granularity of the per-task evaluator.
-\item \emph{ROI.} $\sum_t q_t / \sum_t c_t$, the quality yield per dollar.
-\item \emph{Cumulative regret.} $R^{\mathrm{Oracle}}_T - R^{\pi}_T$, the gap to True Oracle on cumulative payment-aware reward.
-\item \emph{Adaptation time.} Rounds for the trailing-$200$-round ROI to recover within $5\%$ of its pre-event level after a shock (S2 and S3 only; undefined in S1).
+\item \emph{Cumulative payment-aware reward (cum-PA).} $R^\pi_T = \sum_t r_t$, the primary objective the policy optimizes; all paired-bootstrap significance tests are computed on cum-PA.
+\item \emph{Task success rate ($\bar q$).} Mean per-round quality $\bar q = (1/T)\sum_t q_t$, a proxy for task-level success at the granularity of the per-task evaluator.
+\item \emph{ROI.} $\sum_t q_t / \sum_t c_t$, the quality yield per dollar (a high-ROI policy can spend very little, so it must be read alongside $\bar q$).
+\item \emph{Cumulative regret.} $R^{\mathrm{Oracle}}_T - R^{\pi}_T$, the gap to True Oracle on cum-PA.
+\item \emph{Adaptation time (AdaptT).} Rounds for the trailing-$200$-round ROI to recover within $5\%$ of its pre-event level after a shock (S2 and S3 only; undefined in S1).
 \end{itemize}
 
 \subsection{Main results}
