@@ -36,9 +36,11 @@ PA_reward = (1 − λ_norm) · utility − λ_norm · c̃     # ranking criterio
 
 **Non-stationarity via discounted sufficient statistics.** Exponential discount on per-arm posteriors lets the policy adapt to provider drift without forgetting stable arms too quickly.
 
----
+If `latexmk` is missing:
 
-## Benchmark: 402Pilot-Bench
+```bash
+pdflatex neurips_2026 && bibtex neurips_2026 && pdflatex neurips_2026 && pdflatex neurips_2026
+```
 
 Five heterogeneous provider agents, three task types, three market scenarios, 30 seeds × 10,000 rounds per cell. All responses pre-generated from real LLM calls (20,575 frozen `PregenRecord`s); experiments replay from fixed fixtures for reproducibility.
 
@@ -122,9 +124,9 @@ PA-DCT outperforms the strongest fixed/rule baseline on every scenario, with sta
 
 Ablations reveal that **P** is uniformly necessary (cum_PA collapses to negative without it), **D** primarily speeds up shock recovery (35% faster in S2), **C** helps when task-type heterogeneity is exploitable (S3) but not when shocks are uniform (S2), and **TS** reduces seed variance 5–9× without changing the mean. See `logs/ablation_4metrics_table.md` for the full 4 × 4 × 3 matrix.
 
----
+For workshops, also set `\workshoptitle{...}` after `\title{...}`.
 
-## Repository Layout
+## Notation reference
 
 ```
 402Pilot/
