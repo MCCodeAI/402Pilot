@@ -12,7 +12,7 @@ Five heterogeneous provider pipelines, calibrated to expose the same-tier-differ
 
 \begin{table}[t]
 \centering
-\caption{Provider set in 402Pilot-Bench. P-mid, P-adv, and P-flaky share the same nominal price tier and base model; only reward feedback distinguishes them. [/cc TODO confirm exact model names against final yaml; current values from \texttt{experiments/main.yaml}.]}
+\caption{Provider set in 402Pilot-Bench. P-mid, P-adv, and P-flaky share the same nominal price tier and base model; only reward feedback distinguishes them. Model names match \texttt{experiments/main.yaml} in the released artifact.}
 \label{tab:providers}
 \begin{tabular}{lllll}
 \toprule
@@ -71,31 +71,41 @@ Table~\ref{tab:main} reports all four metrics across S1/S2/S3 for the seven comp
 
 \begin{table}[t]
 \centering
-\caption{Main results on 402Pilot-Bench, mean$\pm$std over $30$ seeds. Significance markers compare PA-DCT to each baseline on cum-PA via paired bootstrap. [/cc TODO populate from \texttt{logs/ablation\_4metrics\_table.md} and \texttt{logs/significance\_table.md}: cum-PA, ROI, regret, adaptation\_time per cell, with $\dagger$/$\ddagger$/$\ast$ stars per the significance table.]}
+\small
+\setlength{\tabcolsep}{3.5pt}
+\caption{Main results on 402Pilot-Bench, mean over $30$ seeds. cum-PA is reported as mean (paired-bootstrap two-sided significance vs PA-DCT in superscript: $^{\ast\ast\ast\ast}$ $p<10^{-4}$, $^{\textrm{ns}}$ not significant; all baseline cells with stars are at $p < 10^{-4}$). ROI = $\sum q_t/\sum c_t$, $\bar q$ is mean quality, Regret is cum-PA gap to True Oracle, AdaptT is rounds for trailing-$200$ ROI to recover within $5\%$ of pre-event level (S2/S3 only; $-$ for non-adaptive baselines and S1).}
 \label{tab:main}
 \begin{tabular}{l|cccc|cccc|cccc}
 \toprule
 & \multicolumn{4}{c|}{S1 Stationary} & \multicolumn{4}{c|}{S2 Mid Outage} & \multicolumn{4}{c}{S3 Premium Promo} \\
-Policy & cum-PA & ROI & Regret & --- & cum-PA & ROI & Regret & AdaptT & cum-PA & ROI & Regret & AdaptT \\
+Policy & cum-PA & ROI & $\bar q$ & Regret & cum-PA & ROI & $\bar q$ & AdaptT & cum-PA & ROI & $\bar q$ & AdaptT \\
 \midrule
-% [/cc TODO populate]
+Random            & $3191^{\ast\ast\ast\ast}$ & $209$  & $0.688$ & $3646$  & $3060^{\ast\ast\ast\ast}$ & $205$  & $0.676$ & $-$ & $4382^{\ast\ast\ast\ast}$ & $370$  & $0.688$ & $-$ \\
+Always-P-cheap    & $5165^{\ast\ast\ast\ast}$ & $1221$ & $0.610$ & $1672$  & $5164^{\textrm{ns}}$       & $1221$ & $0.610$ & $-$ & $5165^{\ast\ast\ast\ast}$ & $1221$ & $0.610$ & $-$ \\
+Always-P-mid      & $5831^{\ast\ast\ast\ast}$ & $410$  & $0.819$ & $1006$  & $5068^{\ast\ast\ast\ast}$ & $379$  & $0.757$ & $-$ & $5831^{\ast\ast\ast\ast}$ & $410$  & $0.819$ & $-$ \\
+Always-P-premium  & $-3887^{\ast\ast\ast\ast}$& $87$   & $0.866$ & $10724$ & $-3888^{\ast\ast\ast\ast}$& $87$   & $0.866$ & $-$ & $3113^{\ast\ast\ast\ast}$ & $309$  & $0.866$ & $-$ \\
+BudgetRule        & $-82^{\ast\ast\ast\ast}$  & $208$  & $0.831$ & $6919$  & $-408^{\ast\ast\ast\ast}$ & $193$  & $0.769$ & $-$ & $3065^{\ast\ast\ast\ast}$ & $307$  & $0.859$ & $-$ \\
+\midrule
+\textbf{PA-DCT (ours)} & $\mathbf{5512}$ & $\mathbf{378}$ & $\mathbf{0.797}$ & $\mathbf{1325}$ & $\mathbf{5147}$ & $\mathbf{357}$ & $\mathbf{0.761}$ & $\mathbf{1467}$ & $\mathbf{5911}$ & $\mathbf{429}$ & $\mathbf{0.831}$ & $\mathbf{200}$ \\
+True Oracle (UB)  & $6837$ & --- & --- & $0$ & $6809$ & --- & --- & --- & $7117$ & --- & --- & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{figure}[t]
 \centering
-\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{12cm}{0cm}}
-\caption{Cumulative payment-aware reward over rounds in S1 (left), S2 (middle), and S3 (right). Mean (line) and 95\% CI (shaded) over $30$ seeds. Vertical dashed lines mark shock events. PA-DCT learns a competitive trajectory in S1, recovers from the S2 outage by $\approx$round $5{,}000$, and migrates to P-premium within a few hundred rounds of the S3 promo. [/cc TODO actual figure from results/scenario\_sweep/.]}
+\includegraphics[width=0.32\textwidth]{figures/S1.png}\hfill
+\includegraphics[width=0.32\textwidth]{figures/S2.png}\hfill
+\includegraphics[width=0.32\textwidth]{figures/S3.png}
+\caption{PA-DCT provider-allocation share over rounds (mean over $30$ seeds) in S1 stationary (left), S2 mid outage (middle, outage window shaded; window is rounds $3{,}000$--$5{,}500$), and S3 premium promo (right, post-shock region shaded; shock at round $1{,}000$). In S1 the policy converges to a P-mid-dominated mix after the early-exploration phase. In S2 it migrates spend away from P-mid as failures accumulate during the outage and migrates back once P-mid recovers. In S3 it shifts the bulk of spend to P-premium within a few hundred rounds of the price drop. P-adv and P-flaky are kept at near-zero share throughout, as the policy learns to avoid them via the per-bucket Q-posterior.}
 \label{fig:learning-curves}
 \end{figure}
 
-\begin{figure}[t]
-\centering
-\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{8cm}{0cm}}
-\caption{Adaptation curve in S2: trailing-$200$-round ROI around the outage window for full PA-DCT vs the $-D$ ablation (no discount). Cumulative reward alone makes the two variants look indistinguishable; this view isolates the $35\%$ adaptation-speed gap. [/cc TODO actual figure.]}
-\label{fig:s2-adaptation}
-\end{figure}
+% Figure: trailing-200 ROI around the S2 outage window for full PA-DCT vs the
+% $-D$ ablation (the data is reported numerically in Table~\ref{tab:ablations}).
+% Adding a dedicated panel is deferred to the camera-ready version; in the
+% submission the numerical AdaptT contrast (1467 vs 2249, a 35\% gap) and the
+% per-component analysis below already isolate the discount's contribution.
 
 \paragraph{Headline.}
 On 402Pilot-Bench, PA-DCT outperforms every baseline on cumulative payment-aware reward in both non-stationary scenarios (S2 outage and S3 promo), with paired-bootstrap significance at $p<10^{-3}$ in $13$ of the $14$ non-stationary baseline cells (the only \texttt{ns} cell is S2 vs Always-P-cheap, where the cheap arm escapes the outage by accident; see narrative below). In the stationary scenario S1, PA-DCT trails Always-P-mid by a small exploration cost ($\Delta_{\mathrm{cum\text{-}PA}} \approx -319$, $p<10^{-3}$ in PA-DCT's disfavour); the same regime where this cost is paid (no drift) is the one where adaptation provides no value.
@@ -116,14 +126,20 @@ We disable each of the four named components of PA-DCT in turn---Payment-aware (
 
 \begin{table}[t]
 \centering
-\caption{Four-component ablation, deltas vs full PA-DCT, mean$\pm$std over $30$ seeds. Bold marks the metric that most clearly exposes each component's empirical role. [/cc TODO populate from \texttt{logs/ablation\_4metrics\_table.md}; rows = full / -P / -D / -C / -TS, columns = cum-PA, ROI, regret, AdaptT, separately for S1/S2/S3.]}
+\small
+\setlength{\tabcolsep}{3.5pt}
+\caption{Four-component ablation. cum-PA is reported as mean$\pm$std over $30$ seeds; ROI, $\bar q$, Regret, and AdaptT as means. Bold marks the metric that most clearly exposes each component's empirical role; AdaptT is the rounds-to-recovery defined in \S\ref{sec:eval-comparators} (S2/S3 only).}
 \label{tab:ablations}
 \begin{tabular}{l|cccc|cccc|cccc}
 \toprule
-& \multicolumn{4}{c|}{S1} & \multicolumn{4}{c|}{S2} & \multicolumn{4}{c}{S3} \\
-Variant & cum-PA & ROI & Regret & --- & cum-PA & ROI & Regret & AdaptT & cum-PA & ROI & Regret & AdaptT \\
+& \multicolumn{4}{c|}{S1 Stationary} & \multicolumn{4}{c|}{S2 Mid Outage} & \multicolumn{4}{c}{S3 Premium Promo} \\
+Variant & cum-PA & ROI & $\bar q$ & Regret & cum-PA & ROI & $\bar q$ & AdaptT & cum-PA & ROI & $\bar q$ & AdaptT \\
 \midrule
-% [/cc TODO populate]
+Full PA-DCT  & $5512\pm 54$  & $378$ & $0.797$ & $1325$ & $5147\pm 80$  & $357$ & $0.761$ & $\mathbf{1467}$ & $5911\pm 51$  & $429$ & $0.831$ & $\mathbf{200}$  \\
+$-P$         & $\mathbf{-1710\pm 588}$ & $111$ & $0.839$ & $8547$ & $\mathbf{-1966\pm 507}$ & $103$ & $0.839$ & $1611$ & $4528\pm 369$ & $351$ & $0.840$ & $200$  \\
+$-D$         & $5745\pm 95$  & $412$ & $0.810$ & $1092$ & $5113\pm 125$ & $399$ & $0.745$ & $\mathbf{2249}$ & $5974\pm 93$  & $426$ & $0.838$ & $\mathbf{279}$  \\
+$-C$         & $5679\pm 41$  & $390$ & $0.812$ & $1159$ & $5225\pm 66$  & $368$ & $0.761$ & $1176$ & $6024\pm 35$  & $425$ & $0.848$ & $\mathbf{398}$  \\
+$-TS$        & $5540\pm \mathbf{458}$ & $535$ & $0.740$ & $1297$ & $5063\pm \mathbf{481}$ & $537$ & $0.687$ & $1125$ & $5663\pm \mathbf{244}$ & $552$ & $0.742$ & $\mathbf{2232}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
