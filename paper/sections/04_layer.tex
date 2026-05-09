@@ -13,10 +13,10 @@
 \paragraph{Two stable interfaces.}
 A policy is any object exposing
 \begin{align*}
-&\mathtt{select}(\mathbf{x}_t,\, \mathcal{A}_t,\, \mathrm{wallet\_state}) \to a_t \in \mathcal{A}_t, \\
+&\mathtt{select}(\mathbf{x}_t,\, \mathcal{A}_t) \to a_t \in \mathcal{A}_t, \\
 &\mathtt{update}(\mathbf{x}_t,\, a_t,\, \ut,\, c_t) \to \emptyset,
 \end{align*}
-where $\mathcal{A}_t \subseteq \{1, \ldots, K\}$ is the set of providers that fit in the remaining wallet at the current effective prices. Affordability is enforced by the wallet, not the policy: a policy never has to reason about hard budget constraints, only about picking well from a feasible set. The two methods are the only points of contact with the rest of the stack; everything else (priors, posteriors, internal state) is private to the policy.
+where $\mathcal{A}_t \subseteq \{1, \ldots, K\}$ is the set of providers that fit in the remaining wallet at the current effective prices. Affordability is enforced by the wallet, not the policy: a policy never has to reason about hard budget constraints, only about picking well from a feasible set. The two methods are the only points of contact with the rest of the stack; everything else (priors, posteriors, internal state) is private to the policy. Wallet pressure is not a method argument: a payment-aware policy holds a reference to the wallet object as a constructor dependency and reads $\lambda_t$ on demand inside its own \texttt{select}, so non-payment-aware comparators (Random, Always-X) carry no wallet dependency at all and the interface stays uniform across the policy zoo. This narrow interface and explicit dependency ordering are what let the same harness drive every comparator in \S\ref{sec:eval-comparators}.
 
 \paragraph{Update signal: utility, not payment-aware reward.}
 A subtle but load-bearing commitment: the layer feeds \emph{utility} $\ut$ to \texttt{policy.update}, not the payment-aware reward $\rt$. This decoupling lets the posterior track \emph{intrinsic provider quality} independently of decision-time budget pressure. If we instead updated on $\rt$, beliefs about a provider would shift purely because the wallet drained, defeating the purpose of having a posterior. Concretely: the same provider should not look worse to the policy late in a budget-tight run than it did early in the run when the wallet was full. Decision-time budget pressure enters only inside \texttt{select}, through $\lamn$, never inside \texttt{update}.

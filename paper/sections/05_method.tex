@@ -21,7 +21,7 @@ Each cell carries the standard discounted sufficient statistics $n^{a,k}_t \in \
 The C-posterior uses the analogous form with $(\thetac{a}{k}, \Sigmac{a}{k})$, $\bar c_a$ in place of $\mu_{0,q}$, $\sigma^2_c$ in place of $\sigma^2_q$, and a separate pair of sufficient statistics over realized costs.
 
 \paragraph{Why a learned cost posterior.}
-In stationary settings with known prices, a fixed scalar $\bar c_a$ would suffice for cost. The agent-native regime drops both assumptions: prices can change mid-run (S3 in our benchmark), and the agent only sees prices through quoted observations from the market. Treating cost as a Gaussian posterior over realized $c_t$ lets the policy detect price shocks the same way the Q-posterior detects quality shocks---through the effective sample count $n^{a,k}_t$ and the discount that reweights stale observations. We demonstrate empirically (\S\ref{sec:eval-ablations}) that disabling this and pinning cost to $\bar c_a$ collapses adaptation to S3.
+In stationary settings with known prices, a fixed scalar $\bar c_a$ would suffice for cost. The agent-native regime drops both assumptions: prices can change mid-run (S3 in our benchmark), and the agent only sees prices through quoted observations from the market. Treating cost as a Gaussian posterior over realized $c_t$ lets the policy detect price shocks the same way the Q-posterior detects quality shocks---through the effective sample count $n^{a,k}_t$ and the discount that reweights stale observations. The dedicated $-C_{\mathrm{post}}$ ablation in \S\ref{sec:eval-ablations} pins cost to $\bar c_a$ and confirms the prediction empirically: under the S3 promo, P-premium share stays at the pre-shock $\approx\!4\%$, $\bar q$ stays at the S1 level $0.797$, and the cum-PA gap to full PA-DCT is $-230$ at $p<10^{-4}$.
 
 \subsection{Discounted sufficient statistics}
 \label{sec:method-discount}
@@ -56,7 +56,7 @@ At each round, the wallet exposes $\lambda_t$ and the affordable set $\mathcal{A
 The chosen arm is $a_t = \arg\max_{a \in \mathcal{A}_t} \pi_a$. Algorithm~\ref{alg:padct} fixes the per-round procedure end-to-end, with each block annotated by the PA-DCT component it implements.
 
 \begin{algorithm}[t]
-\caption{PA-DCT (Payment-Aware Discounted Contextual Thompson sampling). Block annotations P, D, C, TS mark the four ablatable components.}
+\caption{PA-DCT (Payment-Aware Discounted Contextual Thompson sampling). Block annotations P, D, C, TS mark four ablatable components; the cost posterior (whose update appears in line~17 and whose sample appears in line~13) is the fifth, ablated by the $-C_{\mathrm{post}}$ row of Table~\ref{tab:ablations}.}
 \label{alg:padct}
 \begin{algorithmic}[1]
 \Require Provider set $\{1,\ldots,K\}$ with spec costs $\bar c_a$; discount $\gamma$; failure penalty $\nu$; cost normalizer $c_{\max}$; encoder $k(\cdot)$; priors $(\mu_{0,q}, \sigma^2_{0,q}, \sigma^2_q)$ and $(\bar c_a, \sigma^2_{0,c}, \sigma^2_c)$; wallet sharpness $\alpha$.

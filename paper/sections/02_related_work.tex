@@ -16,27 +16,44 @@ A growing literature studies quality--cost tradeoffs in LLM routing. FrugalGPT u
 \paragraph{Reverse auctions and mechanism design over agent markets.}
 Truthful reverse auctions for adaptive selection via contextual multi-armed bandits study an adjacent provider-selection problem in which strategic providers submit bids and the mechanism designer seeks truthful allocation and payment rules~\citep{aamas2026reverseauction}. 402Pilot studies a different market interface: x402-style quote-and-pay APIs, where the buyer observes payable endpoints and must adapt its own spending policy over time. Thus, prior LLM routing and reverse-auction mechanisms address model selection and incentive compatibility; 402Pilot addresses autonomous buyer-side adaptation under wallet pressure and non-stationary provider behavior.
 
-\paragraph{Positioning against prior bandit and routing methods.}
-Table~\ref{tab:prior-bandits} summarizes how representative prior methods cover the three agent-native ingredients (budget, drift, context) and the underlying setting. Each prior method addresses a subset; PA-DCT combines all three in the agent-native micropayment-buyer regime.
+\paragraph{Positioning against prior bandit, routing, and protocol work.}
+Table~\ref{tab:prior-bandits} groups representative prior work into four bands---classical bandits, LLM routing, mechanism design over agent markets, and programmable payment protocols---and checks each on five policy-side axes plus a sixth ``Layer'' column for protocol substrates. Each prior method addresses a subset of the policy-side axes; PA-DCT is the only entry that combines all five, and is policy-side-only by design (it sits above payment protocols rather than replacing them, the ``Layer'' column).
 
 \begin{table}[t]
 \centering
-\caption{Coverage of the three agent-native ingredients across representative bandit and LLM-routing methods. ``Setting'' marks methods designed (rather than retrofitted) for an autonomous buyer over programmable micropayments. PA-DCT is the only entry that combines all four.}
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{Coverage of agent-native ingredients across bandit, LLM-routing, and protocol-layer work. ``Budget'' is finite, observed wallet pressure (not just a hard cap); ``Discount'' is non-stationary forgetting on the policy side; ``Context'' is task-conditioned value; ``Cost-as-signal'' is a posterior/learned model over realized cost (not a fixed price card); ``Setting'' marks methods designed (not retrofitted) for an autonomous buyer over programmable micropayments. ``Layer'' marks work that supplies the payment substrate but no buyer-side policy. PA-DCT is the only entry that combines all five policy-side axes.}
 \label{tab:prior-bandits}
-\begin{tabular}{lcccc}
+\begin{tabular}{lcccccc}
 \toprule
-Method & Budget & Discount & Context & Setting \\
+Method & Budget & Discount & Context & Cost-as-signal & Setting & Layer \\
 \midrule
-BTS~\citep{xia2015bts}                          & \checkmark & --         & --         & -- \\
-DS-TS~\citep{qi2023dsts}                        & --         & \checkmark & --         & -- \\
-Contextual TS~\citep{agrawal2013contextualts}   & --         & --         & \checkmark & -- \\
-Sliding-Window TS                               & --         & \checkmark & --         & -- \\
-TV-Reward Contextual TS                         & --         & \checkmark & \checkmark & -- \\
-C2MAB-V (LLM routing)                           & partial    & --         & \checkmark & -- \\
-NeuralLinUCB~\citep{li2010linucb}               & --         & --         & \checkmark & -- \\
-Combinatorial + change-point                    & \checkmark & \checkmark & --         & -- \\
+\multicolumn{7}{l}{\emph{Classical bandits}} \\
+BTS~\citep{xia2015bts}                                 & \checkmark & --         & --         & --         & -- & -- \\
+BwK~\citep{badanidiyuru2018bandits}                    & \checkmark & --         & --         & --         & -- & -- \\
+DS-TS~\citep{qi2023dsts}                               & --         & \checkmark & --         & --         & -- & -- \\
+Contextual TS~\citep{agrawal2013contextualts}          & --         & --         & \checkmark & --         & -- & -- \\
+NeuralLinUCB~\citep{li2010linucb}                      & --         & --         & \checkmark & --         & -- & -- \\
+Combinatorial + change-point                           & \checkmark & \checkmark & --         & --         & -- & -- \\
 \midrule
-\textbf{PA-DCT (ours)}                          & \checkmark & \checkmark & \checkmark & \checkmark \\
+\multicolumn{7}{l}{\emph{LLM routing / cost-aware selection}} \\
+FrugalGPT~\citep{chen2023frugalgpt}                    & partial    & --         & partial    & --         & -- & -- \\
+RouteLLM~\citep{ong2024routellm}                       & --         & --         & \checkmark & --         & -- & -- \\
+Hybrid LLM~\citep{ding2024hybridllm}                   & --         & --         & \checkmark & --         & -- & -- \\
+MixLLM~\citep{mixllm2024}                              & partial    & --         & \checkmark & --         & -- & -- \\
+LLM Bandit~\citep{llmbandit2025}                       & partial    & --         & \checkmark & --         & -- & -- \\
+\midrule
+\multicolumn{7}{l}{\emph{Mechanism design over agent markets}} \\
+Reverse-auction CMAB~\citep{aamas2026reverseauction}   & --         & --         & \checkmark & --         & -- & -- \\
+\midrule
+\multicolumn{7}{l}{\emph{Programmable payment protocols (substrate, not policy)}} \\
+x402 V2~\citep{coinbase2025x402v2}                     & --         & --         & --         & --         & -- & \checkmark \\
+AP2~\citep{google2025ap2}                              & --         & --         & --         & --         & -- & \checkmark \\
+A2A--x402~\citep{a2ax402}                              & --         & --         & --         & --         & -- & \checkmark \\
+A402~\citep{a402}                                      & --         & --         & --         & --         & -- & \checkmark \\
+\midrule
+\textbf{PA-DCT (ours)}                                 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & -- \\
 \bottomrule
 \end{tabular}
 \end{table}

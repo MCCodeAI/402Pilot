@@ -172,12 +172,13 @@ $\AdaptT$        & rounds for trailing-200 ROI to recover $\leq 5\%$ of pre-even
 \toprule
 Label & Means & Effect on PA-DCT \\
 \midrule
-$-P$  & no payment-aware    & force $\lamn = 0$ in $\pi_a$ \\
-$-D$  & no discount         & $\gamma = \gamma_c = 1$ \\
-$-C$  & no contextual       & $K_b = 1$ (single global bucket) \\
-$-TS$ & no Thompson sampling & rank arms by posterior means $\thetaq{a}{k}, \thetac{a}{k}$ \\
+$-P$            & no payment-aware ranking  & force $\lamn = 0$ in $\pi_a$ \\
+$-D$            & no discount               & $\gamma = \gamma_c = 1$ \\
+$-C$            & no contextual bucketing   & $K_b = 1$ (single global bucket) \\
+$-TS$           & no Thompson sampling      & rank arms by posterior means $\thetaq{a}{k}, \thetac{a}{k}$ \\
+$-C_{\mathrm{post}}$ & no learned cost posterior & pin $\hatc{a}{k} = \bar c_a$; skip C-posterior discount and update \\
 \bottomrule
 \end{tabular}
 
-The ``full'' configuration enables all four; each ablation flips exactly one
-flag and leaves the other three at their default values.
+The ``full'' configuration enables all five; each ablation flips exactly one
+flag and leaves the others at their default values.
