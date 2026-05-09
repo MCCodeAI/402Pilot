@@ -25,6 +25,7 @@ Table~\ref{tab:prior-bandits} groups representative prior work into four bands--
 \setlength{\tabcolsep}{4pt}
 \caption{Coverage of agent-native ingredients across bandit, LLM-routing, and protocol-layer work. ``Budget'' is finite, observed wallet pressure (not just a hard cap); ``Discount'' is non-stationary forgetting on the policy side; ``Context'' is task-conditioned value; ``Cost-as-signal'' is a posterior/learned model over realized cost (not a fixed price card); ``Setting'' marks methods designed (not retrofitted) for an autonomous buyer over programmable micropayments. ``Layer'' marks work that supplies the payment substrate but no buyer-side policy. PA-DCT is the only entry that combines all five policy-side axes.}
 \label{tab:prior-bandits}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccccc}
 \toprule
 Method & Budget & Discount & Context & Cost-as-signal & Setting & Layer \\
@@ -55,5 +56,6 @@ A402~\citep{a402}                                      & --         & --        
 \midrule
 \textbf{PA-DCT (ours)}                                 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & -- \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}

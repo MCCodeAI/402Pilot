@@ -75,6 +75,7 @@ Table~\ref{tab:main} reports the scenario-relevant subset of the five locked met
 \setlength{\tabcolsep}{3.5pt}
 \caption{Main results on 402Pilot-Bench, mean over $30$ seeds. cum-PA is reported as mean (paired-bootstrap two-sided significance vs PA-DCT in superscript: $^{\ast\ast\ast\ast}$ $p<10^{-4}$, $^{\textrm{ns}}$ not significant; all baseline cells with stars are at $p < 10^{-4}$). ROI = $\sum q_t/\sum c_t$, $\bar q$ is mean quality, Regret is cum-PA gap to True Oracle, AdaptT is rounds for trailing-$200$ ROI to recover within $5\%$ of pre-event level (S2/S3 only; $-$ for non-adaptive baselines and S1).}
 \label{tab:main}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{l|cccc|cccc|cccc}
 \toprule
 & \multicolumn{4}{c|}{S1 Stationary} & \multicolumn{4}{c|}{S2 Mid Outage} & \multicolumn{4}{c}{S3 Premium Promo} \\
@@ -89,7 +90,8 @@ BudgetRule        & $-82^{\ast\ast\ast\ast}$  & $208$  & $0.831$ & $6919$  & $-4
 \textbf{PA-DCT (ours)} & $\mathbf{5512}$ & $\mathbf{378}$ & $\mathbf{0.797}$ & $\mathbf{1325}$ & $\mathbf{5147}$ & $\mathbf{357}$ & $\mathbf{0.761}$ & $\mathbf{1467}$ & $\mathbf{5911}$ & $\mathbf{429}$ & $\mathbf{0.831}$ & $\mathbf{200}$ \\
 True Oracle (UB)  & $6837$ & --- & --- & $0$ & $6809$ & --- & --- & --- & $7117$ & --- & --- & --- \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \begin{figure}[t]
@@ -130,6 +132,7 @@ We disable each component of PA-DCT in turn---Payment-aware ranking ($-P$), Disc
 \setlength{\tabcolsep}{3.5pt}
 \caption{Component ablation. cum-PA is reported as mean$\pm$std over $30$ seeds; ROI, $\bar q$, Regret, and AdaptT as means. Bold marks the metric that most clearly exposes each component's empirical role; AdaptT is the rounds-to-recovery defined in \S\ref{sec:eval-comparators} (S2/S3 only). The $-C_{\mathrm{post}}$ row pins cost to the spec scalar $\bar c_a$ (no posterior, no discount over realized cost); since this only changes how cost is consumed under price drift, it matters in S3 and is reported there only ($-$ marks scenarios where it coincides with full PA-DCT).}
 \label{tab:ablations}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{l|cccc|cccc|cccc}
 \toprule
 & \multicolumn{4}{c|}{S1 Stationary} & \multicolumn{4}{c|}{S2 Mid Outage} & \multicolumn{4}{c}{S3 Premium Promo} \\
@@ -142,7 +145,8 @@ $-C$             & $5679\pm 41$  & $390$ & $0.812$ & $1159$ & $5225\pm 66$  & $3
 $-TS$            & $5540\pm \mathbf{458}$ & $535$ & $0.740$ & $1297$ & $5063\pm \mathbf{481}$ & $537$ & $0.687$ & $1125$ & $5663\pm \mathbf{244}$ & $552$ & $0.742$ & $\mathbf{2232}$ \\
 $-C_{\mathrm{post}}$ & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ & $\mathbf{5681\pm 54}$ & $423$ & $\mathbf{0.797}$ & $\infty$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \paragraph{$-P$ (no payment-aware): uniformly fatal.}
