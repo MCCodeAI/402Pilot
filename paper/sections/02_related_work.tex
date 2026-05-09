@@ -25,12 +25,12 @@ Table~\ref{tab:prior-bandits} groups representative prior work into four bands--
 \setlength{\tabcolsep}{4pt}
 \caption{Coverage of agent-native ingredients across bandit, LLM-routing, and protocol-layer work. ``Budget'' is finite, observed wallet pressure (not just a hard cap); ``Discount'' is non-stationary forgetting on the policy side; ``Context'' is task-conditioned value; ``Cost-as-signal'' is a posterior/learned model over realized cost (not a fixed price card); ``Setting'' marks methods designed (not retrofitted) for an autonomous buyer over programmable micropayments. ``Layer'' marks work that supplies the payment substrate but no buyer-side policy. PA-DCT is the only entry that combines all five policy-side axes.}
 \label{tab:prior-bandits}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{lcccccc}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X cccccc@{}}
 \toprule
 Method & Budget & Discount & Context & Cost-as-signal & Setting & Layer \\
 \midrule
-\multicolumn{7}{l}{\emph{Classical bandits}} \\
+\multicolumn{7}{@{}l}{\emph{Classical bandits}} \\
 BTS~\citep{xia2015bts}                                 & \checkmark & --         & --         & --         & -- & -- \\
 BwK~\citep{badanidiyuru2018bandits}                    & \checkmark & --         & --         & --         & -- & -- \\
 DS-TS~\citep{qi2023dsts}                               & --         & \checkmark & --         & --         & -- & -- \\
@@ -38,17 +38,17 @@ Contextual TS~\citep{agrawal2013contextualts}          & --         & --        
 NeuralLinUCB~\citep{li2010linucb}                      & --         & --         & \checkmark & --         & -- & -- \\
 Combinatorial + change-point                           & \checkmark & \checkmark & --         & --         & -- & -- \\
 \midrule
-\multicolumn{7}{l}{\emph{LLM routing / cost-aware selection}} \\
+\multicolumn{7}{@{}l}{\emph{LLM routing / cost-aware selection}} \\
 FrugalGPT~\citep{chen2023frugalgpt}                    & partial    & --         & partial    & --         & -- & -- \\
 RouteLLM~\citep{ong2024routellm}                       & --         & --         & \checkmark & --         & -- & -- \\
 Hybrid LLM~\citep{ding2024hybridllm}                   & --         & --         & \checkmark & --         & -- & -- \\
 MixLLM~\citep{mixllm2024}                              & partial    & --         & \checkmark & --         & -- & -- \\
 LLM Bandit~\citep{llmbandit2025}                       & partial    & --         & \checkmark & --         & -- & -- \\
 \midrule
-\multicolumn{7}{l}{\emph{Mechanism design over agent markets}} \\
+\multicolumn{7}{@{}l}{\emph{Mechanism design over agent markets}} \\
 Reverse-auction CMAB~\citep{aamas2026reverseauction}   & --         & --         & \checkmark & --         & -- & -- \\
 \midrule
-\multicolumn{7}{l}{\emph{Programmable payment protocols (substrate, not policy)}} \\
+\multicolumn{7}{@{}l}{\emph{Programmable payment protocols (substrate, not policy)}} \\
 x402 V2~\citep{coinbase2025x402v2}                     & --         & --         & --         & --         & -- & \checkmark \\
 AP2~\citep{google2025ap2}                              & --         & --         & --         & --         & -- & \checkmark \\
 A2A--x402~\citep{a2ax402}                              & --         & --         & --         & --         & -- & \checkmark \\
@@ -56,6 +56,5 @@ A402~\citep{a402}                                      & --         & --        
 \midrule
 \textbf{PA-DCT (ours)}                                 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & -- \\
 \bottomrule
-\end{tabular}%
-}
+\end{tabularx}
 \end{table}
