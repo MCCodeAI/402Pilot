@@ -1,0 +1,186 @@
+\section{402Pilot-Bench Dataset Card}
+\label{appendix:dataset}
+
+402Pilot-Bench is the replay benchmark introduced as Contribution C4
+(\S\ref{sec:intro}); it is the artifact every empirical claim in this
+paper is computed against. This appendix is a datasheet
+in the spirit of \citet{gebru2021datasheets}, covering composition,
+collection, evaluation, intended use, and limitations. We treat the
+benchmark as a first-class deliverable: the release ships with
+deterministic seed and split protocols so that other policies can be
+dropped into the same harness and produce numbers comparable to ours.
+
+\subsection{Composition}
+\label{app:dataset-composition}
+
+\paragraph{Tasks.}
+402Pilot-Bench contains $823$ unique tasks drawn from three public
+sources plus one custom subset, partitioned into four evaluation
+buckets used by PA-DCT's contextual structure ($K_b = 4$). Counts and
+sources are reported in Table~\ref{tab:dataset-card}.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Per-bucket composition of 402Pilot-Bench. The web-search domain
+splits into closed-form (T3a) and open-ended (T3b) sub-buckets because
+the two use different evaluators (deterministic max EM/F1 vs.\ cached
+LLM-as-judge). One TriviaQA item is excluded across all providers due
+to a deterministic content-filter rejection on the cheapest provider's
+API; excluding it for every provider keeps quality comparisons
+apples-to-apples.}
+\label{tab:dataset-card}
+\begin{tabular}{lllrl}
+\toprule
+Bucket & Domain & Source & Tasks & License \\
+\midrule
+T1  & Coding             & HumanEval~\citep{chen2021humaneval}             & $164$ & MIT \\
+T2  & Multi-hop QA       & HotpotQA~\citep{yang2018hotpotqa}               & $220$ & CC BY-SA 4.0 \\
+T3a & Web search (closed)& TriviaQA web split~\citep{joshi2017triviaqa}    & $219$ & Apache-2.0 \\
+T3b & Web search (open)  & Custom open-ended subset (this work)            & $220$ & Same as artifact \\
+\midrule
+\multicolumn{3}{l}{\textbf{Total}} & $\mathbf{823}$ & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Pre-generated responses.}
+For each (task, provider) pair we pre-generate $V = 5$ response versions,
+yielding $823 \times 5 \times 5 = 20{,}575$ total responses. Each response
+is stored on disk with the schema \texttt{(schema\_version, task\_id,
+task\_type, provider\_id, version, response, cost\_usdc, latency\_s,
+failure\_flag, failure\_code, quality\_score, generated\_at, temperature)}
+in JSONL, with one file per (provider, bucket) pair. Quality scores are
+computed once at pre-generation time and cached, so all bandit results
+are deterministic given the seed.
+
+\paragraph{Sampling.}
+HumanEval includes all $164$ canonical tasks. The HotpotQA, TriviaQA, and
+open-ended subsets are sampled from their source datasets using
+NumPy-default RNG with a fixed seed (constant in the loader source);
+sampled indices are sorted and recorded in the per-source cache file so
+the sample is reproducible from the cache regardless of upstream
+dataset changes. The TriviaQA exclusion is a single-task content-filter
+skip-list applied at load time across all providers; the on-disk cache
+retains the full $220$-task sample, and removing the entry from the
+skip list restores it without rebuilding.
+
+\subsection{Provider configuration}
+\label{app:dataset-providers}
+
+The five providers are summarized in Table~\ref{tab:providers} of the
+main text and instantiated in \texttt{experiments/main.yaml}. We
+emphasize three design points:
+
+\begin{itemize}
+\item P-mid, P-adv, and P-flaky share the same base price (\$0.002/call)
+  and base model. They are distinguishable only by behavior --- correct
+  answers (P-mid), fluent-but-wrong answers (P-adv), and a $40\%$
+  timeout-injection rate (P-flaky) --- and not by any static metadata. A
+  policy that ranks providers by spec sheet alone cannot tell them apart.
+\item P-cheap (\$0.0005/call, weakest model) and P-premium (\$0.01/call,
+  strongest model + tool use) anchor the cost--quality frontier and
+  participate in S3, where P-premium's effective price drops to \$0.002
+  at round $1{,}000$ to create the promotional opportunity.
+\item Adversarial behavior (P-adv) is implemented through a system-prompt
+  modification, not by changing the underlying model; flaky behavior
+  (P-flaky) is implemented through a probabilistic timeout wrapper. Both
+  are deterministic given the per-call seed.
+\end{itemize}
+
+\subsection{Evaluation protocol}
+\label{app:dataset-eval}
+
+Each bucket carries its own evaluator, fixed at pre-generation time.
+
+\begin{itemize}
+\item \textbf{T1 Coding (HumanEval).} pass@1 over the canonical test
+  cases. Deterministic; quality $q_t \in \{0, 1\}$.
+\item \textbf{T2 Multi-hop QA (HotpotQA).} Maximum of EM and F1 against
+  the gold answer string. Deterministic given the gold answer; quality
+  $q_t \in [0, 1]$.
+\item \textbf{T3a Web search closed-form (TriviaQA-web).} Maximum of EM
+  and F1 against the canonical answer plus the alias set provided by
+  TriviaQA. Deterministic; quality $q_t \in [0, 1]$.
+\item \textbf{T3b Web search open-ended.} LLM-as-judge with a fixed
+  rubric (criteria: factual correctness, completeness, conciseness),
+  prompted against a strong reference judge model. The judge is queried
+  once at pre-generation per (task, provider, version) tuple and the
+  resulting quality score is cached on disk; bandit replays read from
+  the cache and never re-query the judge. Cached quality scores
+  $q_t \in [0, 1]$ are persisted in a separate \texttt{judge\_cache.jsonl}
+  file alongside the per-provider response files.
+\end{itemize}
+
+\paragraph{Failure flag.} Independently of the quality score, every
+response carries a binary \texttt{failure\_flag}. The flag is set when
+the provider call times out, the response cannot be parsed, or the
+upstream API rejects the request. For P-flaky the flag fires
+probabilistically by design; for the other providers it surfaces only
+genuine API-side failures. Utility is $\ut = q_t - \nu f_t$ with
+$\nu = 0.5$ (\S\ref{sec:problem}); the bandit treats failures as a
+distinct signal from low quality.
+
+\subsection{Intended use}
+\label{app:dataset-intended-use}
+
+402Pilot-Bench is intended for benchmarking buyer-side decision policies
+in the agent-native bandit regime: budget-aware, non-stationary,
+contextual provider selection over a small set of paid LLM endpoints.
+The release decouples bandit evaluation from inference noise (responses
+are frozen) and lets a new policy be compared against ours on identical
+seed paths in a few CPU-hours. Out of scope: protocol-level questions
+(settlement, dispute resolution), strategic-provider mechanism design
+(\S\ref{sec:discuss}), and any setting that requires live LLM calls
+during the bandit loop. We do not recommend this benchmark for
+training-time decisions or for studies that need within-trial
+counterfactual access to non-chosen arms; both are outside the
+single-call replay model.
+
+\subsection{Limitations and known issues}
+\label{app:dataset-limitations}
+
+\paragraph{Frozen responses.} Pre-generation captures provider behavior
+at calibration time. Real LLM markets evolve on timescales shorter than
+a research cycle; live deployment should be preceded by re-pre-generation
+against the deployment-time model versions. The discount $\gamma$ helps
+the policy adapt within a fixed dataset, but it is not a substitute for
+refreshing the dataset.
+
+\paragraph{Evaluator-bounded P-adv detection on T3b.} The LLM-as-judge
+on the open-ended sub-bucket occasionally accepts fluent-but-wrong
+answers from P-adv. PA-DCT therefore identifies P-adv on T3b more slowly
+and less completely than on the deterministic-evaluator buckets
+(\S\ref{sec:eval-main}). This is an evaluator limit, not a policy
+limit; with a tighter judge, a verifier in the loop, or human spot
+checks the gap should close.
+
+\paragraph{Single content-filter exclusion.} The DashScope API used by
+P-cheap rejects one TriviaQA question outright; we exclude that
+question from \emph{every} provider's task set so the comparison stays
+apples-to-apples. The total task count after exclusion is $823$ (i.e.\
+$220 \to 219$ in T3a). The skip list and the rationale for each entry
+are documented in the loader source.
+
+\paragraph{Provider heterogeneity is calibrated, not real.} The five
+providers are designed to expose specific phenomena (same-tier
+quality differences, adversarial fluency, flakiness, price shocks) in a
+controlled and reproducible way. Real-world provider mixes will differ;
+we do not claim the calibrated set spans the deployment-time provider
+distribution.
+
+\paragraph{Single-language, single-modality.} All tasks are
+English-language text-in / text-out. Multi-lingual, code-execution
+sandboxed, and multi-modal extensions are natural follow-up benchmarks.
+
+\subsection{Distribution and maintenance}
+\label{app:dataset-distribution}
+
+The pre-generated responses, the loader code, the scenario classes, the
+configuration YAML, and the scripts that regenerate every table and
+figure in the paper are released as the supplemental artifact. Bug fixes
+that change the on-disk cache will bump a \texttt{schema\_version} field;
+fixes that change only the load-time filter (such as the content-filter
+skip list) leave the cache file untouched. The artifact is anonymized for
+review; the post-acceptance repository will track issues and pull
+requests for new tasks, providers, and scenarios.
