@@ -140,7 +140,7 @@ in $\pi_a$.
 \subsection{Scenarios}
 \label{app:notation-scenarios}
 
-\begin{tabular}{lll}
+\begin{tabularx}{\textwidth}{@{}ll>{\raggedright\arraybackslash}X@{}}
 \toprule
 Tag & Class & Parameters \\
 \midrule
@@ -148,12 +148,12 @@ S1 & \texttt{StationaryScenario} & --- (identity transform) \\
 S2 & \texttt{MidOutageScenario}  & \texttt{outage\_start=3000}, \texttt{outage\_end=5500}, \texttt{outage\_failure\_rate=0.30} \\
 S3 & \texttt{PremiumDropScenario} & \texttt{shock\_round=1000}, \texttt{price\_multiplier=0.2} \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 
 \subsection{Metrics}
 \label{app:notation-metrics}
 
-\begin{tabular}{lll}
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
 \toprule
 Symbol & Definition & Notes \\
 \midrule
@@ -163,7 +163,7 @@ $R^\pi_T$        & $\sum_t r_t$ & cumulative payment-aware reward (cum-PA) \\
 $\Reg_T$         & $R^{\mathrm{Oracle}}_T - R^\pi_T$ & cumulative regret vs.\ True Oracle \\
 $\AdaptT$        & rounds for trailing-200 ROI to recover $\leq 5\%$ of pre-event level & defined for S2 / S3 only \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 
 \subsection{Ablation labels}
 \label{app:notation-ablations}

@@ -14,17 +14,18 @@ Five heterogeneous provider pipelines, calibrated to expose the same-tier-differ
 \centering
 \caption{Provider set in 402Pilot-Bench. P-mid, P-adv, and P-flaky share the same nominal price tier and base model; only reward feedback distinguishes them. Model names match \texttt{experiments/main.yaml} in the released artifact.}
 \label{tab:providers}
-\begin{tabular}{lllll}
+\small
+\begin{tabularx}{\textwidth}{@{}llXcX@{}}
 \toprule
-Provider   & Model         & Tools / behaviour              & Base price (\$/call) & Notes \\
+Provider   & Model         & Tools / behaviour              & Price (\$/call) & Notes \\
 \midrule
 P-cheap    & qwen3.5-flash & none, parametric memory only   & $0.0005$ & weakest, cheapest \\
 P-mid      & GPT-5.4-mini  & BM25 retrieval                 & $0.002$  & reliable mid tier \\
-P-premium  & GPT-5.4       & CoT + tool use                 & $0.01$   & strongest, most expensive \\
+P-premium  & GPT-5.4       & CoT + tool use                 & $0.01$   & strongest, priciest \\
 P-adv      & GPT-5.4-mini  & adversarial system prompt      & $0.002$  & fluent but wrong \\
 P-flaky    & GPT-5.4-mini  & 40\% timeout injection         & $0.002$  & unreliable mid \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \paragraph{Task domains and evaluation buckets.}
@@ -73,7 +74,7 @@ Table~\ref{tab:main} reports the scenario-relevant subset of the five locked met
 \centering
 \small
 \setlength{\tabcolsep}{3.5pt}
-\caption{Main results on 402Pilot-Bench, mean over $30$ seeds. cum-PA is reported as mean (paired-bootstrap two-sided significance vs PA-DCT in superscript: $^{\ast\ast\ast\ast}$ $p<10^{-4}$, $^{\textrm{ns}}$ not significant; all baseline cells with stars are at $p < 10^{-4}$). ROI = $\sum q_t/\sum c_t$, $\bar q$ is mean quality, Regret is cum-PA gap to True Oracle, AdaptT is rounds for trailing-$200$ ROI to recover within $5\%$ of pre-event level (S2/S3 only; $-$ for non-adaptive baselines and S1).}
+\caption{Main results on 402Pilot-Bench, mean over $30$ seeds. cum-PA is reported as mean (paired-bootstrap two-sided significance vs PA-DCT in superscript: $^{\ast\ast\ast\ast}$ $p<10^{-4}$, $^{\textrm{ns}}$ not significant; all baseline cells with stars are at $p < 10^{-4}$). ROI = $\sum q_t/\sum c_t$, $\bar q$ is mean quality, Regret is cum-PA gap to True Oracle, AdaptT is rounds for trailing-$200$ ROI to recover within $5\%$ of pre-event level (S2/S3 only). AdaptT is marked $-$ for non-adaptive baselines (Random, Always-X, BudgetRule), and for the True Oracle row (which by construction reads round-$t$ outcomes and so does not undergo a recovery process). True Oracle's $\bar q$ and ROI are reported on its own wallet trajectory (it is the per-round upper bound on cum-PA, not a fixed-$\lambda$ comparator).}
 \label{tab:main}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{l|cccc|cccc|cccc}
@@ -88,7 +89,7 @@ Always-P-premium  & $-3887^{\ast\ast\ast\ast}$& $87$   & $0.866$ & $10724$ & $-3
 BudgetRule        & $-82^{\ast\ast\ast\ast}$  & $208$  & $0.831$ & $6919$  & $-408^{\ast\ast\ast\ast}$ & $193$  & $0.769$ & $-$ & $3065^{\ast\ast\ast\ast}$ & $307$  & $0.859$ & $-$ \\
 \midrule
 \textbf{PA-DCT (ours)} & $\mathbf{5512}$ & $\mathbf{378}$ & $\mathbf{0.797}$ & $\mathbf{1325}$ & $\mathbf{5147}$ & $\mathbf{357}$ & $\mathbf{0.761}$ & $\mathbf{1467}$ & $\mathbf{5911}$ & $\mathbf{429}$ & $\mathbf{0.831}$ & $\mathbf{200}$ \\
-True Oracle (UB)  & $6837$ & --- & --- & $0$ & $6809$ & --- & --- & --- & $7117$ & --- & --- & --- \\
+True Oracle (UB)  & $6837$ & $561$ & $0.901$ & $0$ & $6809$ & $551$ & $0.901$ & $-$ & $7117$ & $722$ & $0.906$ & $-$ \\
 \bottomrule
 \end{tabular}%
 }
@@ -130,7 +131,7 @@ We disable each component of PA-DCT in turn---Payment-aware ranking ($-P$), Disc
 \centering
 \small
 \setlength{\tabcolsep}{3.5pt}
-\caption{Component ablation. cum-PA is reported as mean$\pm$std over $30$ seeds; ROI, $\bar q$, Regret, and AdaptT as means. Bold marks the metric that most clearly exposes each component's empirical role; AdaptT is the rounds-to-recovery defined in \S\ref{sec:eval-comparators} (S2/S3 only). The $-C_{\mathrm{post}}$ row pins cost to the spec scalar $\bar c_a$ (no posterior, no discount over realized cost); since this only changes how cost is consumed under price drift, it matters in S3 and is reported there only ($-$ marks scenarios where it coincides with full PA-DCT).}
+\caption{Component ablation. cum-PA is reported as mean$\pm$std over $30$ seeds; ROI, $\bar q$, Regret, and AdaptT as means. Bold marks the metric that most clearly exposes each component's empirical role; AdaptT is the rounds-to-recovery defined in \S\ref{sec:eval-comparators} (S2/S3 only). The $-C_{\mathrm{post}}$ row pins cost to the spec scalar $\bar c_a$ (no posterior, no discount over realized cost); the released ablation script (\texttt{scripts/run\_s3\_promo\_v2\_ablation.py}) was run on S3 only because the cost posterior matters under price drift and the realized prices in S1/S2 match $\bar c_a$ throughout, so we did not collect S1/S2 data---those cells are marked \texttt{n.r.} (not run) rather than inferred.}
 \label{tab:ablations}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{l|cccc|cccc|cccc}
@@ -143,7 +144,7 @@ $-P$             & $\mathbf{-1710\pm 588}$ & $111$ & $0.839$ & $8547$ & $\mathbf
 $-D$             & $5745\pm 95$  & $412$ & $0.810$ & $1092$ & $5113\pm 125$ & $399$ & $0.745$ & $\mathbf{2249}$ & $5974\pm 93$  & $426$ & $0.838$ & $\mathbf{279}$  \\
 $-C$             & $5679\pm 41$  & $390$ & $0.812$ & $1159$ & $5225\pm 66$  & $368$ & $0.761$ & $1176$ & $6024\pm 35$  & $425$ & $0.848$ & $\mathbf{398}$  \\
 $-TS$            & $5540\pm \mathbf{458}$ & $535$ & $0.740$ & $1297$ & $5063\pm \mathbf{481}$ & $537$ & $0.687$ & $1125$ & $5663\pm \mathbf{244}$ & $552$ & $0.742$ & $\mathbf{2232}$ \\
-$-C_{\mathrm{post}}$ & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ & $\mathbf{5681\pm 54}$ & $423$ & $\mathbf{0.797}$ & $\infty$ \\
+$-C_{\mathrm{post}}$ & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & $\mathbf{5681\pm 54}$ & $423$ & $\mathbf{0.797}$ & $\infty$ \\
 \bottomrule
 \end{tabular}%
 }
@@ -162,7 +163,7 @@ A single global bucket actually \emph{helps} adaptation in S2 ($1{,}176$ vs full
 Greedy variants achieve cum-PA within $\pm 50$ of full PA-DCT on every scenario, but seed-to-seed standard deviation is $5$--$9\times$ higher (full $\approx 50$--$80$; $-TS$ $244$--$481$). More tellingly, in S3 the greedy variant fails to detect the price shock in $6$ of $30$ seeds (adaptation\_time $2{,}232$ vs full $200$, an $11\times$ slowdown when it does detect, undefined in the $6$ that do not). \emph{Conclusion}: Thompson sampling is what makes shock detection routine instead of luck-of-initialization-dependent; the cum-PA-mean similarity hides this.
 
 \paragraph{$-C_{\mathrm{post}}$ (no learned cost posterior, $c$ pinned to $\bar c_a$): isolates the price-shock signal.}
-With cost held to the spec scalar, the policy is structurally blind to price drift: the C-posterior never updates, so a price drop cannot show up in the sampled $\hatc{a}{k}$ that feeds the decision rule. In S1 and S2 the realized prices match $\bar c_a$ throughout, so $-C_{\mathrm{post}}$ coincides with full PA-DCT and we report $-$ for those columns. In S3, where P-premium's effective price drops to the mid tier at round $1{,}000$, $-C_{\mathrm{post}}$ keeps treating P-premium as ten-times-more-expensive than mid for the entire post-shock $9{,}000$-round window: P-premium share never crosses $4\%$ (vs $\approx 60\%$ for full PA-DCT), $\bar q$ stays at the S1 level $0.797$, and AdaptT is undefined ($\infty$) because the trailing-$200$ ROI never registers a regime change. The cum-PA gap of $-230$ ($p<10^{-4}$, paired bootstrap, $30$ seeds) is the price-shock-specific value of the dual posterior. \emph{Conclusion}: removing the learned cost posterior collapses S3 to the no-shock baseline. The four classical components $(P,D,C,TS)$ together cannot recover this; the cost posterior is the structural commitment that makes price shocks first-class observations rather than configuration metadata.
+With cost held to the spec scalar, the policy is structurally blind to price drift: the C-posterior never updates, so a price drop cannot show up in the sampled $\hatc{a}{k}$ that feeds the decision rule. We measure this on S3, where P-premium's effective price drops to the mid tier at round $1{,}000$ and the cost-posterior pathway has something to track: $-C_{\mathrm{post}}$ keeps treating P-premium as ten-times-more-expensive than mid for the entire post-shock $9{,}000$-round window, P-premium share never crosses $4\%$ (vs $\approx\!60\%$ for full PA-DCT), $\bar q$ stays at the S1 level $0.797$, and AdaptT is undefined ($\infty$) because the trailing-$200$ ROI never registers a regime change. The cum-PA gap of $-230$ ($p<10^{-4}$, paired bootstrap, $30$ seeds) is the price-shock-specific value of the dual posterior. We did not run the S1/S2 cells of this ablation: realized prices match $\bar c_a$ throughout in those scenarios, so we expect (but did not measure) coincidence with full PA-DCT---the table's $-C_{\mathrm{post}}$ row marks those cells \texttt{n.r.} rather than inferring values. \emph{Conclusion}: removing the learned cost posterior collapses S3 to the no-shock baseline. The four classical components $(P,D,C,TS)$ together cannot recover this; the cost posterior is the structural commitment that makes price shocks first-class observations rather than configuration metadata.
 
 \paragraph{Why five metrics, not one.}
 No single classical bandit metric reveals all of these contributions. Cumulative reward alone misses $-D$'s contribution entirely and underweights $-TS$'s variance-control role. ROI alone over-rewards $-TS$ (greedy locks onto cheap arms with high $q/\$$ ratio while missing better-quality opportunities). AdaptT without cumulative reward would miss $-P$'s catastrophic collapse. Mean quality $\bar q$ exposes $-C_{\mathrm{post}}$'s failure to migrate to P-premium under the S3 promo (where it stays at the S1 quality level, $0.797$) even though its cum-PA gap is moderate. Regret to the Oracle isolates the cost of $-P$ in the stationary regime where AdaptT is undefined. The five metrics together expose each component on the axis where it matters; this is the multi-metric evaluation framework we recommend for future work in this regime.
