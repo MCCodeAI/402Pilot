@@ -14,7 +14,7 @@ Classical bandit work provides several ingredients for online provider selection
 A growing literature studies quality--cost tradeoffs in LLM routing. FrugalGPT uses cascades to reduce cost while preserving answer quality~\citep{chen2023frugalgpt}; RouteLLM, Hybrid LLM, AutoMix, MixLLM, and LLM Bandit learn to assign prompts to cheaper or stronger models based on predicted quality, preference, cost, or latency~\citep{ong2024routellm,ding2024hybridllm,madaan2024automix,mixllm2024,llmbandit2025}. These systems are close in motivation, but they generally assume a platform-controlled router, published price cards, and offline or semi-online evaluation over static model APIs.
 
 \paragraph{Reverse auctions and mechanism design over agent markets.}
-Truthful reverse auctions for adaptive selection via contextual multi-armed bandits study an adjacent provider-selection problem in which strategic providers submit bids and the mechanism designer seeks truthful allocation and payment rules~\citep{aamas2026reverseauction}. 402Pilot studies a different market interface: x402-style quote-and-pay APIs, where the buyer observes payable endpoints and must adapt its own spending policy over time. Thus, prior LLM routing and reverse-auction mechanisms address model selection and incentive compatibility; 402Pilot addresses autonomous buyer-side adaptation under wallet pressure and non-stationary provider behavior.
+Truthful reverse auctions for adaptive selection via contextual multi-armed bandits study an adjacent provider-selection problem in which strategic providers submit bids and the mechanism designer seeks truthful allocation and payment rules~\citep{patra2026reverseauction}. 402Pilot studies a different market interface: x402-style quote-and-pay APIs, where the buyer observes payable endpoints and must adapt its own spending policy over time. Thus, prior LLM routing and reverse-auction mechanisms address model selection and incentive compatibility; 402Pilot addresses autonomous buyer-side adaptation under wallet pressure and non-stationary provider behavior.
 
 \paragraph{Positioning against prior bandit, routing, and protocol work.}
 Table~\ref{tab:prior-bandits} groups representative prior work into four bands---classical bandits, LLM routing, mechanism design over agent markets, and programmable payment protocols---and checks each on five policy-side axes plus a sixth ``Layer'' column for protocol substrates. Each prior method addresses a subset of the policy-side axes; PA-DCT is the only entry that combines all five, and is policy-side-only by design (it sits above payment protocols rather than replacing them, the ``Layer'' column).
@@ -46,7 +46,7 @@ MixLLM~\citep{mixllm2024}                              & partial    & --        
 LLM Bandit~\citep{llmbandit2025}                       & partial    & --         & \checkmark & --         & -- & -- \\
 \midrule
 \multicolumn{7}{@{}l}{\emph{Mechanism design over agent markets}} \\
-Reverse-auction CMAB~\citep{aamas2026reverseauction}   & --         & --         & \checkmark & --         & -- & -- \\
+Reverse-auction CMAB~\citep{patra2026reverseauction}   & --         & --         & \checkmark & --         & -- & -- \\
 \midrule
 \multicolumn{7}{@{}l}{\emph{Programmable payment protocols (substrate, not policy)}} \\
 x402 V2~\citep{coinbase2025x402v2}                     & --         & --         & --         & --         & -- & \checkmark \\
