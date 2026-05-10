@@ -56,7 +56,7 @@ At each round, the wallet exposes $\lambda_t$ and the affordable set $\mathcal{A
 The chosen arm is $a_t = \arg\max_{a \in \mathcal{A}_t} \pi_a$. Algorithm~\ref{alg:padct} fixes the per-round procedure end-to-end, with each block annotated by the PA-DCT component it implements.
 
 \begin{algorithm}[t]
-\caption{PA-DCT (Payment-Aware Discounted Contextual Thompson sampling). Block annotations P, D, C, TS mark four ablatable components; the cost posterior (whose update appears in line~17 and whose sample appears in line~13) is the fifth, ablated by the $-C_{\mathrm{post}}$ row of Table~\ref{tab:ablations}.}
+\caption{PA-DCT (Payment-Aware Discounted Contextual Thompson sampling). Block annotations P, D, C, TS mark the four conceptual components. The learned cost posterior is the structural commitment inside the payment-aware (P) component (its sample appears in line~13 and its update in line~17); we isolate it diagnostically with the $-C_{\mathrm{post}}$ row of Table~\ref{tab:ablations} to attribute the price-shock channel of payment-awareness without conflating it with wallet weighting.}
 \label{alg:padct}
 \begin{algorithmic}[1]
 \Require Provider set $\{1,\ldots,K\}$ with spec costs $\bar c_a$; discount $\gamma$; failure penalty $\nu$; cost normalizer $c_{\max}$; encoder $k(\cdot)$; priors $(\mu_{0,q}, \sigma^2_{0,q}, \sigma^2_q)$ and $(\bar c_a, \sigma^2_{0,c}, \sigma^2_c)$; wallet sharpness $\alpha$.

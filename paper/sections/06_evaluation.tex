@@ -125,13 +125,13 @@ A side-effect of contextual updates: PA-DCT identifies P-adv as low-utility with
 \subsection{Ablations: which classical components transfer}
 \label{sec:eval-ablations}
 
-We disable each component of PA-DCT in turn---Payment-aware ranking ($-P$), Discount ($-D$), Contextual bucketing ($-C$), Thompson sampling ($-TS$), and the learned cost posterior ($-C_{\mathrm{post}}$, which pins cost to the spec scalar $\bar c_a$ and so disables every cost-shock signal)---and measure the scenario-relevant metrics in each scenario. Table~\ref{tab:ablations} reports deltas relative to full PA-DCT.
+We disable each of PA-DCT's four conceptual components in turn---Payment-aware ranking ($-P$), Discount ($-D$), Contextual bucketing ($-C$), Thompson sampling ($-TS$)---and additionally run a diagnostic ablation that isolates the cost-posterior pathway inside payment-awareness ($-C_{\mathrm{post}}$, which pins cost to the spec scalar $\bar c_a$ and so disables the cost-shock channel of $P$ while leaving wallet-pressure weighting intact). Table~\ref{tab:ablations} reports deltas relative to full PA-DCT.
 
 \begin{table}[t]
 \centering
 \small
 \setlength{\tabcolsep}{3.5pt}
-\caption{Component ablation. cum-PA is reported as mean$\pm$std over $30$ seeds; ROI, $\bar q$, Regret, and AdaptT as means. Bold marks the metric that most clearly exposes each component's empirical role; AdaptT is the rounds-to-recovery defined in \S\ref{sec:eval-comparators} (S2/S3 only). The $-C_{\mathrm{post}}$ row pins cost to the spec scalar $\bar c_a$ (no posterior, no discount over realized cost); the released ablation script (\texttt{scripts/run\_s3\_promo\_v2\_ablation.py}) was run on S3 only because the cost posterior matters under price drift and the realized prices in S1/S2 match $\bar c_a$ throughout, so we did not collect S1/S2 data---those cells are marked \texttt{n.r.} (not run) rather than inferred.}
+\caption{Component ablation: rows $-P,-D,-C,-TS$ ablate the four conceptual components of PA-DCT; row $-C_{\mathrm{post}}$ is a diagnostic isolation of the cost-posterior pathway inside $P$ (it pins cost to the spec scalar $\bar c_a$ while leaving wallet-pressure weighting intact). cum-PA is reported as mean$\pm$std over $30$ seeds; ROI, $\bar q$, Regret, and AdaptT as means. Bold marks the metric that most clearly exposes each component's empirical role; AdaptT is the rounds-to-recovery defined in \S\ref{sec:eval-comparators} (S2/S3 only). The $-C_{\mathrm{post}}$ ablation script (\texttt{scripts/run\_s3\_promo\_v2\_ablation.py}) was run on S3 only because the cost posterior matters under price drift and the realized prices in S1/S2 match $\bar c_a$ throughout, so we did not collect S1/S2 data---those cells are marked \texttt{n.r.} (not run) rather than inferred.}
 \label{tab:ablations}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{l|cccc|cccc|cccc}
