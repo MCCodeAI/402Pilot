@@ -1,7 +1,7 @@
 \section{Method: PA-DCT}
 \label{sec:method}
 
-PA-DCT is an instance of contextual Thompson sampling adapted to the agent-native regime (\S\ref{sec:intro}). Each (arm, task-type-bucket) cell maintains \emph{two} independent Gaussian posteriors---one over utility, one over cost---both tracked through discounted sufficient statistics. At decision time, the policy samples both posteriors and ranks affordable arms by a budget-pressure-weighted score; on receipt of the realized outcome, only the chosen cell's posteriors are updated, after a global discount sweep over every cell.
+PA-DCT is an instance of contextual Thompson sampling adapted to the agent-native payment decision-making setting (\S\ref{sec:intro}). Each (arm, task-type-bucket) cell maintains \emph{two} independent Gaussian posteriors---one over utility, one over cost---both tracked through discounted sufficient statistics. At decision time, the policy samples both posteriors and ranks affordable arms by a budget-pressure-weighted score; on receipt of the realized outcome, only the chosen cell's posteriors are updated, after a global discount sweep over every cell.
 
 \subsection{Dual Gaussian posteriors}
 \label{sec:method-posteriors}
@@ -21,7 +21,7 @@ Each cell carries the standard discounted sufficient statistics $n^{a,k}_t \in \
 The C-posterior uses the analogous form with $(\thetac{a}{k}, \Sigmac{a}{k})$, $\bar c_a$ in place of $\mu_{0,q}$, $\sigma^2_c$ in place of $\sigma^2_q$, and a separate pair of sufficient statistics over realized costs.
 
 \paragraph{Why a learned cost posterior.}
-In stationary settings with known prices, a fixed scalar $\bar c_a$ would suffice for cost. The agent-native regime drops both assumptions: prices can change mid-run (S3 in our benchmark), and the agent only sees prices through quoted observations from the market. Treating cost as a Gaussian posterior over realized $c_t$ lets the policy detect price shocks the same way the Q-posterior detects quality shocks---through the effective sample count $n^{a,k}_t$ and the discount that reweights stale observations. The dedicated $-C_{\mathrm{post}}$ ablation in \S\ref{sec:eval-ablations} pins cost to $\bar c_a$ and confirms the prediction empirically: under the S3 promo, P-premium share stays at the pre-shock $\approx\!4\%$, $\bar q$ stays at the S1 level $0.797$, and the cum-PA gap to full PA-DCT is $-230$ at $p<10^{-4}$.
+In stationary settings with known prices, a fixed scalar $\bar c_a$ would suffice for cost. The agent-native payment decision-making setting drops both assumptions: prices can change mid-run (S3 in our benchmark), and the agent only sees prices through quoted observations from the market. Treating cost as a Gaussian posterior over realized $c_t$ lets the policy detect price shocks the same way the Q-posterior detects quality shocks---through the effective sample count $n^{a,k}_t$ and the discount that reweights stale observations. The dedicated $-C_{\mathrm{post}}$ ablation in \S\ref{sec:eval-ablations} pins cost to $\bar c_a$ and confirms the prediction empirically: under the S3 promo, P-premium share stays at the pre-shock $\approx\!4\%$, $\bar q$ stays at the S1 level $0.797$, and the cum-PA gap to full PA-DCT is $-230$ at $p<10^{-4}$.
 
 \subsection{Discounted sufficient statistics}
 \label{sec:method-discount}
@@ -37,7 +37,7 @@ n^{a_t, k_t}_t \mathrel{+}= 1, \quad
 S^{a_t, k_t}_t \mathrel{+}= \ut\,\,(\text{Q-posterior}), \quad
 {S_c}^{a_t, k_t}_t \mathrel{+}= c_t\,\,(\text{C-posterior}).
 \end{equation}
-Discounting applies regardless of whether a cell was pulled this round---non-stationarity is wall-clock, not pull-conditional. We use $\gamma = 0.999$ for both posteriors (effective half-life $\approx 693$ rounds), chosen to react cleanly within the shock windows we evaluate (S2 covers $2{,}500$ rounds, S3 has $9{,}000$ post-shock rounds) without forgetting the stationary baseline too quickly. The role of the discount in the agent-native regime is isolated empirically by the $-D$ ablation in \S\ref{sec:eval-ablations}, and analytically by the recovery-horizon corollary (Cor.~\ref{cor:recovery}).
+Discounting applies regardless of whether a cell was pulled this round---non-stationarity is wall-clock, not pull-conditional. We use $\gamma = 0.999$ for both posteriors (effective half-life $\approx 693$ rounds), chosen to react cleanly within the shock windows we evaluate (S2 covers $2{,}500$ rounds, S3 has $9{,}000$ post-shock rounds) without forgetting the stationary baseline too quickly. The role of the discount in the agent-native payment decision-making setting is isolated empirically by the $-D$ ablation in \S\ref{sec:eval-ablations}, and analytically by the recovery-horizon corollary (Cor.~\ref{cor:recovery}).
 
 \subsection{Decision rule}
 \label{sec:method-decision}
