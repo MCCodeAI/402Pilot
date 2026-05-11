@@ -1,60 +1,41 @@
 \section{Related Work}
 \label{sec:related-work}
 
-\paragraph{Agent payment protocols.}
-Recent agent-payment protocols make it possible for software agents to pay for services at machine speed. x402 embeds per-request payment into HTTP and its V2 release adds automatic discovery, dynamic payment recipients, extensible payment schemes, and dynamic service metadata~\citep{coinbase2025x402v2}. AP2 provides a payment-agnostic authorization framework for agent-led commerce~\citep{google2025ap2}, while A2A--x402 brings x402-style cryptocurrency payments into the Agent-to-Agent protocol~\citep{a2ax402}. A402 targets a different layer: it binds cryptocurrency payment to service execution using atomic service channels~\citep{a402}. A recent SoK classifies blockchain-based agent payments around discovery, authorization, execution, and accounting~\citep{sok2026agentpayments}. These works answer how an agent can authenticate, authorize, and settle a payment. They do not answer which provider an autonomous agent should pay under a finite wallet, uncertain service quality, and changing prices. 402Pilot is therefore not a fork or replacement of x402: it is a decision layer that sits before payment execution and can, in principle, be attached to x402 or future programmable payment protocols.
-
-\paragraph{Discovery, ranking, and the missing buyer-side policy.}
-The x402 V2 Discovery extension makes candidate services visible through machine-readable metadata indexed by facilitators into a discovery directory~\citep{coinbase2025x402v2}, but the specification does not prescribe how a buyer should rank or choose among the listed endpoints. This turns endpoint selection into an explicit buyer-side problem: the agent must integrate the published metadata with its own observed utilities, failure rates, and realized costs into a single decision rule. Existing protocol documents and ecosystem registries expose the information needed for ranking, but leave the ranking policy itself unspecified. 402Pilot fills this algorithmic gap by treating provider choice as an online decision problem: after each paid call, observed utility, failure, and realized cost are fed back into the selector. This separation is important. Protocols provide the settlement substrate; 402Pilot provides a protocol-agnostic policy interface for deciding what to buy next.
+\paragraph{Programmable payment protocols and discovery.}
+Recent agent-payment protocols make it possible for software agents to pay for online services at machine speed. x402 embeds per-request payment into HTTP, and its V2 release adds automatic discovery, dynamic payment recipients, extensible payment schemes, and dynamic service metadata, including pricing information~\citep{coinbase2025x402v2}. AP2 provides a payment-agnostic authorization framework for agent-led commerce~\citep{google2025ap2}; A2A--x402 brings x402-style cryptocurrency payments into the Agent-to-Agent protocol~\citep{a2ax402}; and A402 binds cryptocurrency payment to service execution through atomic service channels~\citep{a402}. A recent SoK further organizes blockchain-based agent payments around discovery, authorization, execution, and accounting~\citep{sok2026agentpayments}. These works specify the substrate for making payable services visible and executable. They do not specify the buyer-side policy that ranks discovered endpoints, spends a finite wallet, and updates provider choice from realized prices, failures, and service outcomes. 402Pilot is therefore complementary to protocol work: it sits above payment execution and decides which payable endpoint to use.
 
 \paragraph{Budgeted, contextual, and non-stationary bandits.}
-Classical bandit work provides several ingredients for online provider selection under uncertainty. Budgeted Thompson Sampling samples both reward and cost posteriors and selects arms by reward--cost tradeoff under a finite budget~\citep{xia2015bts}; bandits with knapsacks provide the broader constrained-resource framing~\citep{badanidiyuru2018bandits}. Discounted Thompson Sampling addresses non-stationary rewards by exponentially down-weighting old observations~\citep{qi2023dsts}. Contextual Thompson Sampling models action value as a function of task context~\citep{agrawal2013contextualts}, with LinUCB as a canonical frequentist counterpart~\citep{li2010linucb}. 402Pilot differs from this literature in its operating regime rather than by treating any one ingredient as new: the learner is the spending agent itself, payments are made per call, costs are observed through market-facing quotes, and the policy must adapt without a human operator resetting budgets or intervening after price and quality shocks.
+Classical bandit work supplies the main algorithmic ingredients for our policy. Budgeted Thompson Sampling samples reward and cost posteriors under a finite budget~\citep{xia2015bts}, while bandits with knapsacks give a broader constrained-resource formulation~\citep{badanidiyuru2018bandits}. Contextual bandits estimate action value from task features, with Contextual Thompson Sampling and LinUCB as canonical examples~\citep{agrawal2013contextualts,li2010linucb}. Contextual bandits with knapsacks combine context with resource constraints~\citep{agrawal2016linearcbwk}. For non-stationary environments, discounted and sliding-window methods down-weight stale observations~\citep{garivier2011discounted,trovo2020sliding,qi2023dsts}, and weighted linear bandits extend this idea to drifting contextual rewards~\citep{russac2019weighted}. These results cover important subsets of our design space, but they are not formulated as buyer-side policies inside a protocol-mediated quote--pay--observe loop. In particular, they do not jointly address a draining wallet, task-conditioned provider quality, non-stationary quality and price, and realized payment cost as feedback in autonomous agent micropayments.
 
-\paragraph{Cost-aware LLM routing and adaptive selection.}
-A growing literature studies quality--cost tradeoffs in LLM routing. FrugalGPT uses cascades to reduce cost while preserving answer quality~\citep{chen2023frugalgpt}; RouteLLM, Hybrid LLM, AutoMix, MixLLM, and LLM Bandit learn to assign prompts to cheaper or stronger models based on predicted quality, preference, cost, or latency~\citep{ong2024routellm,ding2024hybridllm,madaan2024automix,mixllm2024,llmbandit2025}. These systems are close in motivation, but they generally assume a platform-controlled router, published price cards, and offline or semi-online evaluation over static model APIs.
-
-\paragraph{Reverse auctions and mechanism design over agent markets.}
-Truthful reverse auctions for adaptive selection via contextual multi-armed bandits study an adjacent provider-selection problem in which strategic providers submit bids and the mechanism designer seeks truthful allocation and payment rules~\citep{patra2026reverseauction}. 402Pilot studies a different market interface: x402-style quote-and-pay APIs, where the buyer observes payable endpoints and must adapt its own spending policy over time. Thus, prior LLM routing and reverse-auction mechanisms address model selection and incentive compatibility; 402Pilot addresses autonomous buyer-side adaptation under wallet pressure and non-stationary provider behavior.
-
-\paragraph{Positioning against prior bandit, routing, and protocol work.}
-Table~\ref{tab:prior-bandits} groups representative prior work into four bands---classical bandits, LLM routing, mechanism design over agent markets, and programmable payment protocols---and checks each on five policy-side axes plus a sixth ``Layer'' column for protocol substrates. Each prior method addresses a subset of the policy-side axes; PA-DCT is the only entry that combines all five, and is policy-side-only by design (it sits above payment protocols rather than replacing them, the ``Layer'' column).
+Table~\ref{tab:bandit-components} restricts the component comparison to bandit-family work, where the budget, drift-adaptation, and context axes are meaningful algorithmic distinctions. Protocol, routing, and mechanism-design work are compared textually rather than forced into these bandit-specific columns.
 
 \begin{table}[t]
 \centering
 \small
-\setlength{\tabcolsep}{4pt}
-\caption{Coverage of agent-native ingredients across bandit, LLM-routing, and protocol-layer work. ``Budget'' is finite, observed wallet pressure (not just a hard cap); ``Discount'' is non-stationary forgetting on the policy side; ``Context'' is task-conditioned value; ``Cost-as-signal'' is a posterior/learned model over realized cost (not a fixed price card); ``Setting'' marks methods designed (not retrofitted) for an autonomous buyer over programmable micropayments. ``Layer'' marks work that supplies the payment substrate but no buyer-side policy. PA-DCT is the only entry that combines all five policy-side axes.}
-\label{tab:prior-bandits}
-\small
-\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X cccccc@{}}
+\setlength{\tabcolsep}{6pt}
+\caption{Representative bandit-family components relative to PA-DCT. The table is intentionally limited to bandit methods; ``Budget'' means an explicit resource or wallet constraint in the decision rule, ``Drift'' means discounting, windows, or another mechanism for non-stationarity, and ``Context'' means task- or action-feature-conditioned value estimation.}
+\label{tab:bandit-components}
+\begin{tabularx}{0.92\textwidth}{@{}>{\raggedright\arraybackslash}Xccc@{}}
 \toprule
-Method & Budget & Discount & Context & Cost-as-signal & Setting & Layer \\
+Method & Budget & Drift & Context \\
 \midrule
-\multicolumn{7}{@{}l}{\emph{Classical bandits}} \\
-BTS~\citep{xia2015bts}                                 & \checkmark & --         & --         & --         & -- & -- \\
-BwK~\citep{badanidiyuru2018bandits}                    & \checkmark & --         & --         & --         & -- & -- \\
-DS-TS~\citep{qi2023dsts}                               & --         & \checkmark & --         & --         & -- & -- \\
-Contextual TS~\citep{agrawal2013contextualts}          & --         & --         & \checkmark & --         & -- & -- \\
-NeuralLinUCB~\citep{li2010linucb}                      & --         & --         & \checkmark & --         & -- & -- \\
-Combinatorial + change-point                           & \checkmark & \checkmark & --         & --         & -- & -- \\
+BTS~\citep{xia2015bts}                                & \checkmark & --         & --         \\
+BwK~\citep{badanidiyuru2018bandits}                   & \checkmark & --         & --         \\
+Linear CBwK~\citep{agrawal2016linearcbwk}             & \checkmark & --         & \checkmark \\
+DS-TS~\citep{qi2023dsts}                              & --         & \checkmark & --         \\
+Discounted UCB~\citep{garivier2011discounted}         & --         & \checkmark & --         \\
+Sliding-window TS~\citep{trovo2020sliding}            & --         & \checkmark & --         \\
+Contextual TS~\citep{agrawal2013contextualts}         & --         & --         & \checkmark \\
+LinUCB~\citep{li2010linucb}                           & --         & --         & \checkmark \\
+Weighted linear bandits~\citep{russac2019weighted}    & --         & \checkmark & \checkmark \\
 \midrule
-\multicolumn{7}{@{}l}{\emph{LLM routing / cost-aware selection}} \\
-FrugalGPT~\citep{chen2023frugalgpt}                    & partial    & --         & partial    & --         & -- & -- \\
-RouteLLM~\citep{ong2024routellm}                       & --         & --         & \checkmark & --         & -- & -- \\
-Hybrid LLM~\citep{ding2024hybridllm}                   & --         & --         & \checkmark & --         & -- & -- \\
-MixLLM~\citep{mixllm2024}                              & partial    & --         & \checkmark & --         & -- & -- \\
-LLM Bandit~\citep{llmbandit2025}                       & partial    & --         & \checkmark & --         & -- & -- \\
-\midrule
-\multicolumn{7}{@{}l}{\emph{Mechanism design over agent markets}} \\
-Reverse-auction CMAB~\citep{patra2026reverseauction}   & --         & --         & \checkmark & --         & -- & -- \\
-\midrule
-\multicolumn{7}{@{}l}{\emph{Programmable payment protocols (substrate, not policy)}} \\
-x402 V2~\citep{coinbase2025x402v2}                     & --         & --         & --         & --         & -- & \checkmark \\
-AP2~\citep{google2025ap2}                              & --         & --         & --         & --         & -- & \checkmark \\
-A2A--x402~\citep{a2ax402}                              & --         & --         & --         & --         & -- & \checkmark \\
-A402~\citep{a402}                                      & --         & --         & --         & --         & -- & \checkmark \\
-\midrule
-\textbf{PA-DCT (ours)}                                 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & -- \\
+\textbf{PA-DCT (ours)}                                & \checkmark & \checkmark & \checkmark \\
 \bottomrule
 \end{tabularx}
 \end{table}
+
+\paragraph{Cost-aware LLM routing.}
+A growing literature studies quality--cost tradeoffs in LLM routing. FrugalGPT uses cascades to reduce cost while preserving answer quality~\citep{chen2023frugalgpt}; RouteLLM, Hybrid LLM, AutoMix, MixLLM, and LLM Bandit learn to assign prompts to cheaper or stronger models based on predicted quality, preference, cost, or latency~\citep{ong2024routellm,ding2024hybridllm,madaan2024automix,mixllm2024,llmbandit2025}. This line is close in operational motivation because it also chooses among paid or costly inference options. The difference is the market interface: LLM routers typically operate as platform-side or service-layer selectors with published price cards and offline or semi-online evaluation over fixed model APIs. 402Pilot instead models a buyer that owns a wallet, observes payable endpoints through a protocol stack, makes an irreversible paid call to one provider, and updates from realized price and outcome feedback under reliability and price drift.
+
+\paragraph{Mechanism design over provider markets.}
+Reverse-auction mechanisms for contextual multi-armed bandits study a complementary provider-selection question: how a mechanism designer can elicit bids from strategic providers while maintaining truthful allocation and payment rules~\citep{patra2026reverseauction}. Our setting uses posted-price quote-and-pay endpoints rather than strategic bidding. The question is therefore not how to design a truthful market mechanism, but how a single autonomous buyer should spend over time once candidate payable services have already been exposed by the protocol layer.
