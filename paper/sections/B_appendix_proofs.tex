@@ -44,7 +44,7 @@ Therefore $\rt \in [-1, 1]$.
 
 \begin{remark}
 \label{rem:tighter-bound}
-A tighter bound holds in our specific setting: because $\lambda_t = \exp(\alpha\,\bex_t)$ with $\bex_t \geq 0$, we have $\lambda_t \geq 1$ and so $\lamn \geq 0.5$. Combined with $\ut \in [-0.5, 1]$, the achievable range is $\rt \in [-1, 0.5]$. The looser $[-1,1]$ bound stated in the proposition is what the regret analysis actually uses.
+The proof intentionally uses only $\lambda_t \geq 0$. In our budget-pressure schedule, $\bex_t$ is a normalized burn-rate deviation and can be negative when the buyer is spending below plan, so no one-sided lower bound such as $\lamn \geq 0.5$ is assumed. The $[-1,1]$ bound is the property used by the regret analysis.
 \end{remark}
 
 \subsection{Proposition~\ref{prop:consistency}: posterior consistency, stationary regime}

@@ -1,39 +1,73 @@
 \section{Problem Formulation}
 \label{sec:problem}
 
-\paragraph{Round protocol.}
-Time is discrete. At round $t \in \{0, 1, \ldots, T-1\}$ the agent observes a task context $\mathbf{x}_t$, must select one arm $a_t$ from a set of $K$ candidate providers, calls the chosen provider through a programmable payment protocol, pays the realized cost $c_t$, and observes the outcome of \emph{only} the chosen arm: a quality score $q_t \in [0, 1]$ produced by a per-task-type evaluator, the realized cost $c_t \in \mathbb{R}_{\geq 0}$ as quoted by the protocol, and a binary failure flag $f_t \in \{0, 1\}$ that triggers when the call times out or the response cannot be parsed. Outcomes for arms not chosen are unobserved---classical bandit feedback. The wallet evolves as $B_{t+1} = B_t - c_t$ with $B_0 = B$ a fixed initial budget, and the loop terminates when $T$ is reached or no affordable arm remains (bankruptcy).
+\paragraph{Quote--pay--observe setting.}
+We consider a single autonomous buyer with initial wallet budget $B$ that repeatedly chooses among $K$ payable service providers over rounds $t \in \{0,\ldots,T-1\}$. At the start of round $t$, the buyer observes a task context $\mathbf{x}_t \in \mathcal{X}$ and the wallet state $B_t$. A programmable payment interface exposes enough price information to determine which providers are affordable before payment; let $p_{a,t}$ denote the pre-payment quote for provider $a$, and define
+\begin{equation}
+\label{eq:affordable-set}
+\mathcal{A}_t = \{a \in \{1,\ldots,K\}: p_{a,t} \leq B_t\}.
+\end{equation}
+The quote is available before selection; the realized charged cost $c_t$ is observed after the selected payment and is kept as the cost feedback signal across rounds. If $\mathcal{A}_t$ is empty, the run stops. Otherwise, the buyer selects one provider $a_t \in \mathcal{A}_t$, commits to the paid call through the protocol, and cannot observe the service outcome before paying.
 
-\paragraph{Reward and utility.}
-We separate two reward channels. \emph{Utility} captures intrinsic provider quality, blended with a structural penalty for failures:
+\paragraph{Feedback and wallet dynamics.}
+After the selected call completes, the buyer observes only the chosen provider's outcome:
+\[
+(q_t, c_t, f_t) \sim \mathcal{D}_{a_t,t}(\cdot \mid \mathbf{x}_t),
+\]
+where $q_t \in [0,1]$ is a task-level quality score, $c_t \in \mathbb{R}_{\geq 0}$ is the realized charged cost, and $f_t \in \{0,1\}$ marks timeout, parse failure, or another non-delivery event. Outcomes and realized charges for unchosen providers are not observed as samples; this is the bandit feedback that makes provider choice a learning problem rather than a full-information ranking problem. The wallet evolves deterministically as
+\begin{equation}
+\label{eq:wallet}
+B_{t+1} = B_t - c_t, \qquad B_0 = B,
+\end{equation}
+and $\tau \leq T$ denotes the first round at which the horizon is reached or no provider is affordable.
+
+\paragraph{Utility and objective.}
+We separate intrinsic service delivery from payment pressure. Utility combines quality with a structural failure penalty:
 \begin{equation}
 \label{eq:utility}
-\ut = q_t - \nu \cdot f_t.
+\ut = q_t - \nu f_t.
 \end{equation}
-The failure penalty $\nu \cdot f_t$ models structural costs of timeouts---retry overhead, broken call chains, downstream agent stalling---beyond the trivial fact that $q_t$ is already $0$ on failure. We bundle quality and failure into a single utility because they evaluate the same axis (task delivery) at two extremes; the bandit treats $\ut$ as the signal that updates beliefs about a provider.
+The penalty captures retry overhead, broken call chains, and downstream agent stalls that are not fully represented by setting $q_t=0$ on failure.
 
-The \emph{payment-aware reward} folds in budget pressure:
+The payment-aware reward combines utility with normalized realized cost:
 \begin{equation}
 \label{eq:reward}
-\lamn = \frac{\lambda_t}{1 + \lambda_t}, \qquad
-\rt = (1 - \lamn)\,\ut - \lamn\,\ctilde,
+\ctilde = \mathrm{clip}(c_t/c_{\max},0,1), \qquad
+\lamn = \frac{\lambda_t}{1+\lambda_t}, \qquad
+\rt = (1-\lamn)\ut - \lamn\ctilde .
 \end{equation}
-where $\ctilde = \mathrm{clip}(c_t / c_{\max}, 0, 1)$ is the cost normalized by the highest provider price in our set, and $\lambda_t \geq 0$ is a budget-pressure multiplier described below. The convex-combination form puts utility and cost on the same $[0,1]$ scale and, through the sigmoid weighting $\lamn := \lambda_t/(1+\lambda_t) \in [0,1]$, keeps $\rt \in [-1, +1]$ regardless of the wallet state---a boundedness property we will rely on in Prop.~\ref{prop:reward-bounded} and which is required to invoke the standard contextual Gaussian-TS regret bound of Thm.~\ref{thm:stationary-regret}. As the wallet drains ($\lambda_t \to \infty$), $\lamn \to 1$ and cost-aware behaviour smoothly dominates without changing the units of utility. We do \emph{not} include a latency term: no scenario in our benchmark manipulates latency, and a calibration ablation showed it contributed under 1\% of reward magnitude in our setting; latency-aware bandits are explicit future work.
+Here $c_{\max}$ is a fixed cost normalizer and $\lambda_t \geq 0$ is the wallet-pressure multiplier defined below. The bounded weight $\lamn \in [0,1]$ keeps utility and cost comparable across wallet states while preserving the sign of failures. A policy $\pi$ aims to maximize the expected cumulative payment-aware reward
+\begin{equation}
+\label{eq:objective}
+J(\pi) = \mathbb{E}_{\pi}\!\left[\sum_{t=0}^{\tau-1} \rt \right],
+\end{equation}
+subject to the affordability constraint in Eq.~\eqref{eq:affordable-set}. In PA-DCT, beliefs are updated from the two observed channels $(\ut,c_t)$ rather than from the scalar $\rt$: $\ut$ tracks provider quality, $c_t$ tracks realized payment cost, and $\rt$ defines the decision/evaluation objective.
 
 \paragraph{Budget pressure.}
-$\lambda_t$ is a function of how fast the agent is spending versus a planned linear-burn schedule:
+The wallet-pressure multiplier is a deterministic function of cumulative spend. For $t>0$, define the realized burn rate as the fraction of the wallet spent per elapsed round,
+\begin{equation}
+\label{eq:burn-rate}
+\mathrm{actual\_burn\_rate}_t = \frac{(B-B_t)/B}{t},
+\qquad
+\mathrm{target\_rate} = \frac{1}{T}.
+\end{equation}
+The normalized burn deviation is
 \begin{equation}
 \label{eq:lambda}
-\lambda_t = \exp(\alpha \cdot \bex_t), \qquad
-\bex_t = \max\!\big(0,\,\mathrm{actual\_burn\_rate}_t - \mathrm{target\_rate}\big),
+\bex_t =
+\frac{\mathrm{actual\_burn\_rate}_t-\mathrm{target\_rate}}
+{\mathrm{target\_rate}},
+\qquad
+\lambda_t =
+\begin{cases}
+1, & t=0,\\
+\exp(\alpha \bex_t), & t>0,
+\end{cases}
 \end{equation}
-where $\mathrm{target\_rate} = 1/T$ corresponds to spending exactly $B$ over the full $T$ rounds. When the agent is on or under plan, $\bex_t = 0$, so $\lambda_t = 1$ and $\lamn = 0.5$; when burning fast, $\lambda_t$ rises super-exponentially in the excess and the cost penalty in $\rt$ swells. The $0.5$ baseline is intentional: an agent buying paid services should be cost-aware even when no excess pressure has accrued, otherwise it would treat dollars as free until the wallet was already in trouble. The sigmoid form $\lamn = \lambda_t/(1+\lambda_t)$ keeps cost-awareness bounded in $[0,1]$ and makes $0.5$ the equal-weighting fixed point at the on-plan rate, while still letting the rule scale toward $1$ when the agent is burning faster than plan. We confirm empirically (\S\ref{sec:eval-ablations}, $-P$ ablation) that removing this baseline weighting collapses cum-PA into the negatives across all three scenarios; cost-awareness is necessary in absolute terms, not only as a recovery mechanism. The wallet is the only stateful object that observes $\lambda_t$; the policy reads it through a defined interface (\S\ref{sec:layer}).
+with sharpness parameter $\alpha \geq 0$. Thus $\lamn=0.5$ when the buyer is exactly on the linear burn plan, decreases when the buyer is under-spending, and increases toward cost-dominated decisions when the wallet is being spent too quickly.
 
-\paragraph{Why a contextual bandit, not RL.}
-Each round produces one paid call and one observed outcome. There is no within-round multi-step credit assignment: the payment is irreversible (no rollback once on-chain), the reward is immediate, and the next round draws an independent task from the workload. This places our problem squarely in the \emph{contextual bandit} family. A reinforcement-learning formulation over multi-step trajectories would add modeling complexity (transition dynamics, discounted returns, function-approximator stability) without matching the problem structure. RL formulations of agentic shopping---where an agent plans a multi-call purchase under joint quality and price constraints---are a separate research direction and are out of scope here.
+\paragraph{Non-stationarity and scope.}
+Provider distributions $\mathcal{D}_{a,t}(\cdot \mid \mathbf{x})$ may change over time in utility, reliability, or realized cost. Change points are not announced to the policy. Tasks arrive from an exogenous workload stream, and providers are non-strategic posted-price endpoints: they expose quotes and deliver services rather than bidding strategically for allocation. Reverse auctions, multi-agent coordination, dispute resolution, and latency-aware routing are outside this formulation.
 
-\paragraph{Non-stationarity.}
-Provider behaviour is not assumed stationary. In our benchmark scenarios (\S\ref{sec:eval-setup}), reward distributions and effective prices change at known rounds; in deployment, drift is unannounced. The policy must therefore detect change and adapt without external intervention---the \emph{autonomy} property of agent-native payment decision-making introduced in \S\ref{sec:intro}. We do not assume bounds on the magnitude or frequency of drift; we evaluate empirically against three calibrated shock patterns (stationary, abrupt outage, abrupt price drop).
-
-\paragraph{Locked constants.}
-Across all experiments we fix $\nu = 0.5$, $\alpha = 2$, $T = 10{,}000$, $B = \$50$, $c_{\max} = \$0.01$ (the highest spec price). The budget is sized so that the strongest fixed baseline, Always-P-premium, exhausts the wallet near round $5{,}000$, ensuring budget pressure is materially felt by every policy in the second half of every run. None of these constants is tuned per scenario or per seed; the same numerical values appear in the released YAML configuration. Robustness to the discount factor $\gamma$ is examined through the $-D$ ablation in \S\ref{sec:eval-ablations}.
+\paragraph{Why a contextual bandit.}
+The only controlled action in a round is the provider choice $a_t$; the immediate feedback is the selected call's $(\ut,c_t)$, and the only persistent state affected by the action is deterministic wallet accounting. There is no delayed reward, within-round planning horizon, or latent transition model to learn. We therefore formulate agent-native payment decision-making as a contextual bandit with budget state and non-stationary feedback, rather than as a full reinforcement-learning problem.
