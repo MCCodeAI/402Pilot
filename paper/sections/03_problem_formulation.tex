@@ -1,35 +1,32 @@
 \section{Problem Formulation}
 \label{sec:problem}
 
-\paragraph{Quote--pay--observe setting.}
-We consider a single autonomous buyer with initial wallet budget $B$ that repeatedly chooses among $K$ payable service providers over rounds $t \in \{0,\ldots,T-1\}$. At the start of round $t$, the buyer observes a task context $\mathbf{x}_t \in \mathcal{X}$ and the wallet state $B_t$. A programmable payment interface exposes enough price information to determine which providers are affordable before payment; let $p_{a,t}$ denote the pre-payment quote for provider $a$, and define
+We formalize agent-native payment decision-making as a budgeted, non-stationary contextual bandit over protocol-quoted payable endpoints. The core loop is quote--pay--observe: a buyer sees a task and payment quotes, pays exactly one affordable provider before seeing service quality, and updates from only that paid call.
+
+\paragraph{Round protocol.}
+Consider a single autonomous buyer with initial wallet budget $B$ and $K$ payable service providers over rounds $t \in \{0,\ldots,T-1\}$. At the start of round $t$, the buyer observes a task context $\mathbf{x}_t \in \mathcal{X}$ and the wallet state $B_t$. A programmable payment interface exposes enough price information to determine which providers are affordable before payment; let $p_{a,t}$ denote the pre-payment quote for provider $a$, and define
 \begin{equation}
 \label{eq:affordable-set}
 \mathcal{A}_t = \{a \in \{1,\ldots,K\}: p_{a,t} \leq B_t\}.
 \end{equation}
-The quote is available before selection; the realized charged cost $c_t$ is observed after the selected payment and is kept as the cost feedback signal across rounds. If $\mathcal{A}_t$ is empty, the run stops. Otherwise, the buyer selects one provider $a_t \in \mathcal{A}_t$, commits to the paid call through the protocol, and cannot observe the service outcome before paying.
-
-\paragraph{Feedback and wallet dynamics.}
-After the selected call completes, the buyer observes only the chosen provider's outcome:
+If $\mathcal{A}_t$ is empty, the run stops. Otherwise, the buyer selects one provider $a_t \in \mathcal{A}_t$, commits to the paid call through the protocol, and cannot observe the service outcome before paying. The selected call then produces the only feedback sample for the round:
 \[
 (q_t, c_t, f_t) \sim \mathcal{D}_{a_t,t}(\cdot \mid \mathbf{x}_t),
 \]
-where $q_t \in [0,1]$ is a task-level quality score, $c_t \in \mathbb{R}_{\geq 0}$ is the realized charged cost, and $f_t \in \{0,1\}$ marks timeout, parse failure, or another non-delivery event. Outcomes and realized charges for unchosen providers are not observed as samples; this is the bandit feedback that makes provider choice a learning problem rather than a full-information ranking problem. The wallet evolves deterministically as
+where $q_t \in [0,1]$ is a task-level quality score, $c_t \in \mathbb{R}_{\geq 0}$ is the realized charged cost, and $f_t \in \{0,1\}$ marks timeout, parse failure, or another non-delivery event. The quote $p_{a,t}$ is available before selection; the realized charge $c_t$ is observed only after the selected payment and becomes the cost feedback signal. Outcomes and realized charges for unchosen providers are not observed, which makes provider choice a bandit problem rather than a full-information ranking problem. The wallet then evolves as
 \begin{equation}
 \label{eq:wallet}
 B_{t+1} = B_t - c_t, \qquad B_0 = B,
 \end{equation}
 and $\tau \leq T$ denotes the first round at which the horizon is reached or no provider is affordable.
 
-\paragraph{Utility and objective.}
-We separate intrinsic service delivery from payment pressure. Utility combines quality with a structural failure penalty:
+\paragraph{Payment-aware objective.}
+The round feedback provides two signals: service delivery and realized payment cost. We first summarize service delivery as utility,
 \begin{equation}
 \label{eq:utility}
 \ut = q_t - \nu f_t.
 \end{equation}
-The penalty captures retry overhead, broken call chains, and downstream agent stalls that are not fully represented by setting $q_t=0$ on failure.
-
-The payment-aware reward combines utility with normalized realized cost:
+The failure penalty captures retry overhead, broken call chains, and downstream agent stalls that are not fully represented by setting $q_t=0$ on failure. We then combine utility with normalized realized cost to obtain the payment-aware reward,
 \begin{equation}
 \label{eq:reward}
 \ctilde = \mathrm{clip}(c_t/c_{\max},0,1), \qquad
@@ -44,7 +41,7 @@ J(\pi) = \mathbb{E}_{\pi}\!\left[\sum_{t=0}^{\tau-1} \rt \right],
 subject to the affordability constraint in Eq.~\eqref{eq:affordable-set}. In PA-DCT, beliefs are updated from the two observed channels $(\ut,c_t)$ rather than from the scalar $\rt$: $\ut$ tracks provider quality, $c_t$ tracks realized payment cost, and $\rt$ defines the decision/evaluation objective.
 
 \paragraph{Budget pressure.}
-The wallet-pressure multiplier is a deterministic function of cumulative spend. For $t>0$, define the realized burn rate as the fraction of the wallet spent per elapsed round,
+It remains to define the wallet-pressure multiplier $\lambda_t$ used in Eq.~\eqref{eq:reward}. This multiplier is a deterministic function of cumulative spend. For $t>0$, define the realized burn rate as the fraction of the wallet spent per elapsed round,
 \begin{equation}
 \label{eq:burn-rate}
 \mathrm{actual\_burn\_rate}_t = \frac{(B-B_t)/B}{t},
@@ -66,8 +63,6 @@ The normalized burn deviation is
 \end{equation}
 with sharpness parameter $\alpha \geq 0$. Thus $\lamn=0.5$ when the buyer is exactly on the linear burn plan, decreases when the buyer is under-spending, and increases toward cost-dominated decisions when the wallet is being spent too quickly.
 
-\paragraph{Non-stationarity and scope.}
+\paragraph{Non-stationarity and learning class.}
 Provider distributions $\mathcal{D}_{a,t}(\cdot \mid \mathbf{x})$ may change over time in utility, reliability, or realized cost. Change points are not announced to the policy. Tasks arrive from an exogenous workload stream, and providers are non-strategic posted-price endpoints: they expose quotes and deliver services rather than bidding strategically for allocation. Reverse auctions, multi-agent coordination, dispute resolution, and latency-aware routing are outside this formulation.
-
-\paragraph{Why a contextual bandit.}
-The only controlled action in a round is the provider choice $a_t$; the immediate feedback is the selected call's $(\ut,c_t)$, and the only persistent state affected by the action is deterministic wallet accounting. There is no delayed reward, within-round planning horizon, or latent transition model to learn. We therefore formulate agent-native payment decision-making as a contextual bandit with budget state and non-stationary feedback, rather than as a full reinforcement-learning problem.
+Within this scope, the only controlled action is the provider choice $a_t$; the immediate feedback is the selected call's $(\ut,c_t)$, and the only persistent state affected by the action is deterministic wallet accounting. There is no delayed reward, within-round planning horizon, or latent transition model to learn. We therefore model agent-native payment decision-making as a contextual bandit with budget state and non-stationary feedback, rather than as a full reinforcement-learning problem.
