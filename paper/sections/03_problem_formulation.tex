@@ -1,22 +1,22 @@
 \section{Problem Formulation}
 \label{sec:problem}
 
-We formalize agent-native payment decision-making as a budgeted, non-stationary contextual bandit over protocol-priced payable endpoints.
+We formalize agent-native payment decision-making as a budgeted, non-stationary contextual bandit over protocol-mediated payable endpoints.
 
 \paragraph{Round protocol.}
-Consider a single autonomous buyer with initial wallet budget $B$ and $K$ payable service providers over rounds $t \in \{0,\ldots,T-1\}$. Let $p_{a,t}$ be the effective charge that would be incurred if provider $a$ were called at round $t$. The buyer does not observe the full vector $\mathbf{p}_t=(p_{1,t},\ldots,p_{K,t})$ before choosing. Instead, at the start of round $t$, it observes a task context $\mathbf{x}_t \in \mathcal{X}$, wallet state $B_t$, and the affordable set
+Consider a single autonomous buyer with initial wallet budget $B$ and $K$ payable service providers over rounds $t \in \{0,\ldots,T-1\}$. Let $p_{a,t}$ be the effective charge that would be incurred if provider $a$ were called at round $t$. The full vector $\mathbf{p}_t=(p_{1,t},\ldots,p_{K,t})$ is latent to the policy. At the start of round $t$, the buyer observes a task context $\mathbf{x}_t \in \mathcal{X}$, wallet state $B_t$, and the affordable set
 \begin{equation}
 \label{eq:affordable-set}
 \mathcal{A}_t = \{a \in \{1,\ldots,K\}: p_{a,t} \leq B_t\}.
 \end{equation}
-If $\mathcal{A}_t$ is empty, the run stops. Otherwise, the buyer selects one provider $a_t \in \mathcal{A}_t$, pays before observing service quality, and receives the only feedback sample for the round:
+The set $\mathcal{A}_t$ is a feasibility signal; numeric charges for unchosen providers are not observed. If $\mathcal{A}_t$ is empty, the run stops. Otherwise, the buyer selects one provider $a_t \in \mathcal{A}_t$, pays before observing service quality, and receives the only feedback sample for the round. The selected call reveals $c_t=p_{a_t,t}$ and produces the service outcome
 \[
-(q_t, c_t, f_t) \sim \mathcal{D}_{a_t,t}(\cdot \mid \mathbf{x}_t),
+(q_t, f_t) \sim \mathcal{D}_{a_t,t}(\cdot \mid \mathbf{x}_t),
 \]
-where $q_t \in [0,1]$ is a task-level quality score, $c_t \in \mathbb{R}_{\geq 0}$ is the realized charged cost, and $f_t \in \{0,1\}$ marks timeout, parse failure, or another non-delivery event. In this paper, the selected charge equals the effective provider price, $c_t=p_{a_t,t}$. Outcomes and costs for unchosen providers are not observed. The wallet then evolves as
+where $q_t \in [0,1]$ is a task-level quality score, $c_t \in \mathbb{R}_{\geq 0}$ is the realized charged cost, and $f_t \in \{0,1\}$ marks timeout, parse failure, or another non-delivery event. Outcomes for unchosen providers are not observed. The wallet then evolves as
 \begin{equation}
 \label{eq:wallet}
-B_{t+1} = B_t - c_t, \qquad B_0 = B
+B_{t+1} = B_t - c_t, \qquad B_0 = B.
 \end{equation}
 The stopping time $\tau$ equals $T$ if the run reaches the horizon, and otherwise is the first round with $\mathcal{A}_t=\emptyset$.
 
@@ -24,6 +24,7 @@ The environment is the sequence of tasks, latent effective charges, and provider
 \[
 \mathcal{E}=\{(\mathbf{x}_t,\mathbf{p}_t,\mathcal{D}_{1,t},\ldots,\mathcal{D}_{K,t})\}_{t=0}^{T-1}.
 \]
+The vector $\mathbf{p}_t$ is observed by the policy only through $\mathcal{A}_t$ and the selected charge $c_t$.
 
 \paragraph{Admissible policies.}
 Let $\mathcal{H}_t$ denote the information available immediately before selecting $a_t$:
@@ -55,7 +56,7 @@ The constant $\nu$ penalizes non-delivery beyond its effect on $q_t$. We then co
 \lamn = \frac{\lambda_t}{1+\lambda_t}, \qquad
 \rt = (1-\lamn)\ut - \lamn\ctilde .
 \end{equation}
-Here $c_{\max}>0$ is fixed before evaluation; in 402Pilot-Bench it is the maximum charged price, \$0.01. The multiplier $\lambda_t>0$ is defined below. For $0\leq\nu\leq1$, $\ut\in[-1,1]$; since $\ctilde\in[0,1]$ and $\lamn\in(0,1)$, the payment-aware reward satisfies $\rt\in[-1,1]$. Under environment $\mathcal{E}$, a policy $\pi$ aims to maximize
+Here $c_{\max}>0$ is a fixed cost normalizer chosen before evaluation. The multiplier $\lambda_t>0$ is defined below. For $0\leq\nu\leq1$, $\ut\in[-1,1]$; since $\ctilde\in[0,1]$ and $\lamn\in(0,1)$, the payment-aware reward satisfies $\rt\in[-1,1]$. Under environment $\mathcal{E}$, a policy $\pi$ aims to maximize
 \begin{equation}
 \label{eq:objective}
 J_{\mathcal{E}}(\pi) = \mathbb{E}^{\pi}_{\mathcal{E}}\!\left[\sum_{t=0}^{\tau-1} \rt \right],
@@ -87,4 +88,4 @@ The normalized burn deviation is
 with baseline $\lambda_0=1$ throughout and sharpness parameter $\alpha \geq 0$. Thus $\lamn=0.5$ when the buyer is exactly on the linear burn plan, decreases when the buyer is under-spending, and increases toward cost-dominated decisions when the wallet is being spent too quickly.
 
 \paragraph{Non-stationarity and learning class.}
-We allow both $\mathcal{D}_{a,t}(\cdot \mid \mathbf{x})$ and $p_{a,t}$ to vary with $t$, so quality, reliability, and effective price may drift. Change points are not announced to the policy. Tasks arrive from an exogenous workload stream, and providers are non-strategic posted-price endpoints: they charge for service rather than bidding strategically for allocation. Apart from wallet accounting and the policy's internal belief state, actions do not induce controlled Markovian transitions in the environment.
+We allow both $\mathcal{D}_{a,t}(\cdot \mid \mathbf{x})$ and $p_{a,t}$ to vary with $t$, so quality, reliability, and effective price may drift. Change points are not announced to the policy. Tasks arrive from an exogenous workload stream, and providers are non-strategic posted-price endpoints: they charge for service rather than bidding strategically for allocation. Apart from wallet accounting and the policy's internal belief state, actions do not induce controlled Markovian transitions in the environment. This yields a contextual bandit with budget state and non-stationary feedback, rather than a reinforcement-learning problem.
