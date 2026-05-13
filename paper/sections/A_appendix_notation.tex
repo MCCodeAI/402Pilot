@@ -32,9 +32,10 @@ $K_b$            & Number of context buckets & $K_b = 4$ (default); $K_b = 1$ un
 Symbol & Meaning & Domain / value \\
 \midrule
 $q_t$       & Quality score for chosen arm & $[0,1]$ (evaluator-grounded) \\
-$p_{a,t}$   & Effective charge if arm $a$ is called & defines $\mathcal{A}_t$; full vector unobserved \\
-$\mathcal{A}_t$ & Affordable provider set & $\{a:p_{a,t}\le B_t\}$, exposed to policy \\
-$c_t$       & Raw cost charged this round (USDC) & $\geq 0$ (e.g.\ \$0.0005, \$0.002, \$0.01) \\
+$\bar c_a$  & Nominal listed cost for arm $a$ & known before the run; defines $\mathcal{A}_t$ \\
+$p_{a,t}$   & Effective charge if arm $a$ is called & latent before selection; may drift \\
+$\mathcal{A}_t$ & Affordable provider set & $\{a:\bar c_a\le B_t\}$, exposed to policy \\
+$c_t$       & Raw cost charged this round (USDC) & selected charge $p_{a_t,t}$ \\
 $\ctilde$   & Normalized cost & $\mathrm{clip}(c_t/c_{\max},0,1)$, $c_{\max} = \$0.01$ \\
 $f_t$       & Failure flag (timeout / parse-failure) & $\{0,1\}$ \\
 $B$         & Total wallet budget & $B = \$50$ \\

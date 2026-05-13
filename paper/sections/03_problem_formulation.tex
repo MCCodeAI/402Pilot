@@ -4,12 +4,12 @@
 We formalize agent-native payment decision-making as a budgeted, non-stationary contextual bandit over protocol-mediated payable endpoints.
 
 \paragraph{Round protocol.}
-Consider a single autonomous buyer with initial wallet budget $B$ and $K$ payable service providers over rounds $t \in \{0,\ldots,T-1\}$. Let $p_{a,t}$ be the effective charge that would be incurred if provider $a$ were called at round $t$. The full vector $\mathbf{p}_t=(p_{1,t},\ldots,p_{K,t})$ is latent to the policy. At the start of round $t$, the buyer observes a task context $\mathbf{x}_t \in \mathcal{X}$, wallet state $B_t$, and the affordable set
+Consider a single autonomous buyer with initial wallet budget $B$ and $K$ payable service providers over rounds $t \in \{0,\ldots,T-1\}$. Each provider has a known nominal listed price $\bar c_a$, while $p_{a,t}$ denotes the effective charge that would be incurred if provider $a$ were called at round $t$. The full vector $\mathbf{p}_t=(p_{1,t},\ldots,p_{K,t})$ is latent to the policy. At the start of round $t$, the buyer observes a task context $\mathbf{x}_t \in \mathcal{X}$, wallet state $B_t$, and the affordable set
 \begin{equation}
 \label{eq:affordable-set}
-\mathcal{A}_t = \{a \in \{1,\ldots,K\}: p_{a,t} \leq B_t\}.
+\mathcal{A}_t = \{a \in \{1,\ldots,K\}: \bar c_a \leq B_t\}.
 \end{equation}
-The set $\mathcal{A}_t$ is a feasibility signal; numeric charges for unchosen providers are not observed. If $\mathcal{A}_t$ is empty, the run stops. Otherwise, the buyer selects one provider $a_t \in \mathcal{A}_t$, pays before observing service quality, and receives the only feedback sample for the round. The selected call reveals $c_t=p_{a_t,t}$ and produces the service outcome
+The set $\mathcal{A}_t$ is a feasibility signal based on listed prices; realized effective charges for unchosen providers are not observed. If $\mathcal{A}_t$ is empty, the run stops. Otherwise, the buyer selects one provider $a_t \in \mathcal{A}_t$, pays before observing service quality, and receives the only feedback sample for the round. The selected call reveals $c_t=p_{a_t,t}$ and produces the service outcome
 \[
 (q_t, f_t) \sim \mathcal{D}_{a_t,t}(\cdot \mid \mathbf{x}_t),
 \]
@@ -24,7 +24,7 @@ The environment is the sequence of tasks, latent effective charges, and provider
 \[
 \mathcal{E}=\{(\mathbf{x}_t,\mathbf{p}_t,\mathcal{D}_{1,t},\ldots,\mathcal{D}_{K,t})\}_{t=0}^{T-1}.
 \]
-The vector $\mathbf{p}_t$ is observed by the policy only through $\mathcal{A}_t$ and the selected charge $c_t$.
+The vector $\mathbf{p}_t$ is observed by the policy only through the selected charge $c_t$.
 
 \paragraph{Admissible policies.}
 Let $\mathcal{H}_t$ denote the information available immediately before selecting $a_t$:
