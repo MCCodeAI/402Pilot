@@ -1,7 +1,7 @@
 \section{Method: PA-DCT}
 \label{sec:method}
 
-PA-DCT is an instance of contextual Thompson sampling adapted to the agent-native payment decision-making setting (\S\ref{sec:intro}). Each (arm, task-type-bucket) cell maintains \emph{two} independent Gaussian posteriors---one over utility, one over cost---both tracked through discounted sufficient statistics. At decision time, the policy samples both posteriors and ranks affordable arms by a budget-pressure-weighted score; on receipt of the realized outcome, only the chosen cell's posteriors are updated, after a global discount sweep over every cell.
+PA-DCT is an instance of contextual Thompson sampling adapted to the agent-native payment decision-making setting (\S\ref{sec:intro}). Each (arm, task-type-bucket) cell maintains \emph{two} independent Gaussian posteriors---one over utility, one over cost---both tracked through discounted sufficient statistics. The scalar reward $\rt$ in Eq.~\eqref{eq:reward} is therefore a ranking and evaluation objective, not a posterior target. At decision time, the policy samples both posteriors and ranks affordable arms by a budget-pressure-weighted score; on receipt of the realized outcome, only the chosen cell's posteriors are updated, after a global discount sweep over every cell.
 
 \subsection{Dual Gaussian posteriors}
 \label{sec:method-posteriors}
