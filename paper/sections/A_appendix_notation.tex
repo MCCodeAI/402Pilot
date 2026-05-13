@@ -53,8 +53,9 @@ Symbol & Definition & Notes \\
 $\nu$       & Failure penalty constant & $\nu = 0.5$ (locked) \\
 $\ut$       & Utility, $\ut = q_t - \nu f_t$ & range $[-0.5,1]$; updates Q-posterior \\
 $\alpha$    & Sigmoid sharpness for budget pressure & $\alpha = 2.0$ (locked) \\
-$\lambda_t$ & Raw budget-pressure multiplier & $\lambda_t = \exp(\alpha\,\bex_t)$ \\
-$\lamn$     & Bounded sigmoid weight & $\lamn = \lambda_t/(1+\lambda_t) \in [0,1]$ \\
+$\bdev_t$   & Normalized burn deviation & signed deviation from target burn rate \\
+$\lambda_t$ & Raw budget-pressure multiplier & $\lambda_t = \exp(\alpha\,\bdev_t) > 0$ \\
+$\lamn$     & Bounded sigmoid weight & $\lamn = \lambda_t/(1+\lambda_t) \in (0,1)$ \\
 $\rt$       & Payment-aware reward & $\rt = (1-\lamn)\,\ut - \lamn\,\ctilde \in [-1,1]$ \\
 \bottomrule
 \end{tabular}

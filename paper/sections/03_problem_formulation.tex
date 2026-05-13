@@ -13,23 +13,34 @@ If $\mathcal{A}_t$ is empty, the run stops. Otherwise, the buyer selects one pro
 \[
 (q_t, c_t, f_t) \sim \mathcal{D}_{a_t,t}(\cdot \mid \mathbf{x}_t),
 \]
-where $q_t \in [0,1]$ is a task-level quality score, $c_t \in \mathbb{R}_{\geq 0}$ is the realized charged cost, and $f_t \in \{0,1\}$ marks timeout, parse failure, or another non-delivery event. The quote $p_{a,t}$ is available before selection; the realized charge $c_t$ is observed only after the selected payment and becomes the cost feedback signal. Outcomes and realized charges for unchosen providers are not observed, which makes provider choice a bandit problem rather than a full-information ranking problem. The wallet then evolves as
+where $q_t \in [0,1]$ is a task-level quality score, $c_t \in \mathbb{R}_{\geq 0}$ is the realized charged cost, and $f_t \in \{0,1\}$ marks timeout, parse failure, or another non-delivery event. The quote $p_{a,t}$ determines affordability before selection; the realized charge $c_t$ is logged after the selected payment. In fixed quoted-price calls these coincide, $c_t=p_{a_t,t}$, while the separate notation allows discounts, fees, or post-quote adjustments. Outcomes and realized charges for unchosen providers are not observed, which makes provider choice a bandit problem rather than a full-information ranking problem. The wallet then evolves as
 \begin{equation}
 \label{eq:wallet}
-B_{t+1} = B_t - c_t, \qquad B_0 = B,
+B_{t+1} = B_t - c_t, \qquad B_0 = B
 \end{equation}
-and $\tau \leq T$ denotes the first round at which the horizon is reached or no provider is affordable.
+The stopping time $\tau$ equals $T$ if the run reaches the horizon, and otherwise is the first round with $\mathcal{A}_t=\emptyset$.
+
+The environment is the sequence of tasks, quotes, and provider outcome laws
+\[
+\mathcal{E}=\{(\mathbf{x}_t,\mathbf{p}_t,\mathcal{D}_{1,t},\ldots,\mathcal{D}_{K,t})\}_{t=0}^{T-1}.
+\]
 
 \paragraph{Admissible policies.}
 Let $\mathcal{H}_t$ denote the information available immediately before selecting $a_t$:
 \[
 \mathcal{H}_t =
 \sigma\!\left(
-\{\mathbf{x}_s,\mathbf{p}_s,\mathcal{A}_s,a_s,q_s,c_s,f_s,B_s\}_{s<t},
-\mathbf{x}_t,\mathbf{p}_t,\mathcal{A}_t,B_t
+\{\mathbf{x}_s,\mathbf{p}_s,a_s,q_s,c_s,f_s\}_{s<t},
+\mathbf{x}_t,\mathbf{p}_t,B_t
 \right).
 \]
-An admissible policy is a non-anticipating sequence $\pi=\{\pi_t\}_{t=0}^{T-1}$ where each $\pi_t$ maps $\mathcal{H}_t$ to a distribution over $\mathcal{A}_t$. Thus the policy may use the current task, wallet state, available quotes, and past paid outcomes, but not unchosen outcomes, future quotes, or future shocks.
+An admissible policy is a non-anticipating sequence $\pi=\{\pi_t\}_{t=0}^{T-1}$ satisfying
+\[
+a_t \sim \pi_t(\cdot \mid \mathcal{H}_t),
+\qquad
+\mathrm{supp}(\pi_t) \subseteq \mathcal{A}_t .
+\]
+Thus the policy may use the current task, wallet state, available quotes, and past paid outcomes, but not unchosen outcomes, future quotes, or future shocks.
 
 \paragraph{Payment-aware objective.}
 The round feedback provides two signals: service delivery and realized payment cost. We first summarize service delivery as utility,
@@ -44,12 +55,12 @@ The failure penalty captures retry overhead, broken call chains, and downstream 
 \lamn = \frac{\lambda_t}{1+\lambda_t}, \qquad
 \rt = (1-\lamn)\ut - \lamn\ctilde .
 \end{equation}
-Here $c_{\max}$ is a fixed cost normalizer and $\lambda_t \geq 0$ is the wallet-pressure multiplier defined below. The bounded weight $\lamn \in [0,1]$ keeps utility and cost comparable across wallet states while preserving the sign of failures. A policy $\pi$ aims to maximize the expected cumulative payment-aware reward
+Here $\mathrm{clip}(z,0,1)=\min\{1,\max\{0,z\}\}$, $c_{\max}>0$ is a fixed cost normalizer chosen before evaluation, and $\lambda_t>0$ is the wallet-pressure multiplier defined below. The bounded weight $\lamn \in (0,1)$ keeps utility and cost comparable across wallet states while preserving the sign of failures. For $0\leq\nu\leq1$, $\ut\in[-1,1]$; since $\ctilde\in[0,1]$, the payment-aware reward satisfies $\rt\in[-1,1]$. Under environment $\mathcal{E}$, a policy $\pi$ aims to maximize
 \begin{equation}
 \label{eq:objective}
-J(\pi) = \mathbb{E}_{\pi}\!\left[\sum_{t=0}^{\tau-1} \rt \right],
+J_{\mathcal{E}}(\pi) = \mathbb{E}^{\pi}_{\mathcal{E}}\!\left[\sum_{t=0}^{\tau-1} \rt \right],
 \end{equation}
-subject to the affordability constraint in Eq.~\eqref{eq:affordable-set}. In PA-DCT, beliefs are updated from the two observed channels $(\ut,c_t)$ rather than from the scalar $\rt$: $\ut$ tracks provider quality, $c_t$ tracks realized payment cost, and $\rt$ defines the decision/evaluation objective.
+where the expectation is over policy randomization and selected-provider outcomes. We write $\Reg_{\mathcal{E}}(\pi;\bar\pi)=J_{\mathcal{E}}(\bar\pi)-J_{\mathcal{E}}(\pi)$ for regret against a comparator $\bar\pi$. In experiments, $\bar\pi$ is the full-information True Oracle of \S\ref{sec:eval-comparators}; because it observes unchosen outcomes, it is an empirical upper bound rather than an admissible online policy. In PA-DCT, beliefs are updated from the two observed channels $(\ut,c_t)$ rather than from the scalar $\rt$: $\ut$ tracks provider quality, $c_t$ tracks realized payment cost, and $\rt$ defines the decision/evaluation objective.
 
 \paragraph{Budget pressure.}
 It remains to define the wallet-pressure multiplier $\lambda_t$ used in Eq.~\eqref{eq:reward}. This multiplier is a deterministic function of cumulative spend. For $t>0$, define the realized burn rate as the fraction of the wallet spent per elapsed round,
@@ -57,24 +68,24 @@ It remains to define the wallet-pressure multiplier $\lambda_t$ used in Eq.~\eqr
 \label{eq:burn-rate}
 \mathrm{actual\_burn\_rate}_t = \frac{(B-B_t)/B}{t},
 \qquad
-\mathrm{target\_rate} = \frac{1}{T}.
+\mathrm{target\_rate} = \frac{1}{T}
+\qquad (t>0).
 \end{equation}
 The normalized burn deviation is
 \begin{equation}
 \label{eq:lambda}
-\bex_t =
+\bdev_t =
 \frac{\mathrm{actual\_burn\_rate}_t-\mathrm{target\_rate}}
 {\mathrm{target\_rate}},
 \qquad
 \lambda_t =
 \begin{cases}
 1, & t=0,\\
-\exp(\alpha \bex_t), & t>0,
+\exp(\alpha \bdev_t), & t>0,
 \end{cases}
 \end{equation}
 with sharpness parameter $\alpha \geq 0$. Thus $\lamn=0.5$ when the buyer is exactly on the linear burn plan, decreases when the buyer is under-spending, and increases toward cost-dominated decisions when the wallet is being spent too quickly.
 
 \paragraph{Non-stationarity and learning class.}
-An environment is a sequence of tasks, quotes, and provider outcome laws,
-$\mathcal{E}=\{(\mathbf{x}_t,\mathbf{p}_t,\mathcal{D}_{1,t},\ldots,\mathcal{D}_{K,t})\}_{t=0}^{T-1}$. We allow both $\mathcal{D}_{a,t}(\cdot \mid \mathbf{x})$ and $p_{a,t}$ to vary with $t$, so quality, reliability, and effective price may drift. Change points are not announced to the policy. Tasks arrive from an exogenous workload stream, and providers are non-strategic posted-price endpoints: they expose quotes and deliver services rather than bidding strategically for allocation. Reverse auctions, multi-agent coordination, dispute resolution, and latency-aware routing are outside this formulation.
-Within this scope, the only controlled action is the provider choice $a_t$; the immediate feedback is the selected call's $(\ut,c_t)$, and the only persistent state affected by the action is deterministic wallet accounting. There is no delayed reward, within-round planning horizon, or latent transition model to learn. We therefore model agent-native payment decision-making as a contextual bandit with budget state and non-stationary feedback. The empirical True Oracle used in \S\ref{sec:eval-comparators} is a full-information upper bound that observes round-$t$ outcomes for all affordable arms; it is not an admissible online policy.
+We allow both $\mathcal{D}_{a,t}(\cdot \mid \mathbf{x})$ and $p_{a,t}$ to vary with $t$, so quality, reliability, and effective price may drift. Change points are not announced to the policy. Tasks arrive from an exogenous workload stream, and providers are non-strategic posted-price endpoints: they expose quotes and deliver services rather than bidding strategically for allocation. Reverse auctions, multi-agent coordination, dispute resolution, and latency-aware routing are outside this formulation.
+Within this scope, the only controlled action is the provider choice $a_t$; the immediate feedback is the selected call's $(\ut,c_t)$. Apart from wallet accounting and the policy's internal belief state, actions do not induce latent environment transitions. The policy must adapt to drift, but it does not control or model a Markovian transition process over latent states. We therefore model agent-native payment decision-making as a contextual bandit with budget state and non-stationary feedback.

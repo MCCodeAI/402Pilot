@@ -6,7 +6,7 @@ This appendix gives full proofs of the four results stated in \S\ref{sec:method-
 \subsection{Notation and assumptions (recap)}
 \label{app:proof-setup}
 
-We use the notation of \S\ref{sec:problem} and \S\ref{sec:method}: $K$ arms, $K_b$ context buckets, round $t \in \{0,\ldots,T-1\}$, context $\mathbf{x}_t$ and bucket $k_t = k(\mathbf{x}_t)$, observed quality $q_t \in [0,1]$, failure flag $f_t \in \{0,1\}$, and realized cost $c_t \geq 0$. The utility is $\ut = q_t - \nu f_t$ with $\nu = 0.5$, the normalized cost is $\ctilde = \mathrm{clip}(c_t/c_{\max},0,1) \in [0,1]$, and the wallet-pressure weight is $\lamn = \lambda_t/(1+\lambda_t) \in [0,1]$. The payment-aware reward is $\rt = (1-\lamn)\,\ut - \lamn\,\ctilde$.
+We use the notation of \S\ref{sec:problem} and \S\ref{sec:method}: $K$ arms, $K_b$ context buckets, round $t \in \{0,\ldots,T-1\}$, context $\mathbf{x}_t$ and bucket $k_t = k(\mathbf{x}_t)$, observed quality $q_t \in [0,1]$, failure flag $f_t \in \{0,1\}$, and realized cost $c_t \geq 0$. The utility is $\ut = q_t - \nu f_t$ with $\nu = 0.5$, the normalized cost is $\ctilde = \mathrm{clip}(c_t/c_{\max},0,1) \in [0,1]$, and the wallet-pressure weight is $\lamn = \lambda_t/(1+\lambda_t) \in (0,1)$. The payment-aware reward is $\rt = (1-\lamn)\,\ut - \lamn\,\ctilde$.
 
 For each cell $(a,k)$ the Q-posterior is Normal-Normal with prior $\mathcal{N}(\mu_{0,q},\sigma^2_{0,q})$ and likelihood variance $\sigma^2_q$; the C-posterior has prior $\mathcal{N}(\bar c_a,\sigma^2_{0,c})$ and likelihood variance $\sigma^2_c$. Discounted sufficient statistics $(n^{a,k}_t, S^{a,k}_t)$ for the Q-posterior, and $(n^{a,k}_t, {S_c}^{a,k}_t)$ for the C-posterior, follow the discount sweep $n_t \leftarrow \gamma\, n_{t-1}$, $S_t \leftarrow \gamma\, S_{t-1}$ at the start of each round, plus $+1$ to $n$ and $+\ut$ (resp.\ $+c_t$) to $S$ (resp.\ $S_c$) for the chosen cell.
 
@@ -33,7 +33,7 @@ For every round $t$, the payment-aware reward satisfies $\rt \in [-1,+1]$.
 \end{proposition}
 
 \begin{proof}
-By definition $q_t \in [0,1]$ and $f_t \in \{0,1\}$, hence with $\nu = 0.5$ we have $\ut = q_t - 0.5 f_t \in [-0.5, 1] \subset [-1, 1]$. Independently, $\ctilde = \mathrm{clip}(c_t/c_{\max},0,1) \in [0,1]$. The weight $\lamn = \lambda_t/(1+\lambda_t)$ satisfies $\lamn \in [0,1]$ for any $\lambda_t \geq 0$.
+By definition $q_t \in [0,1]$ and $f_t \in \{0,1\}$, hence with $\nu = 0.5$ we have $\ut = q_t - 0.5 f_t \in [-0.5, 1] \subset [-1, 1]$. Independently, $\ctilde = \mathrm{clip}(c_t/c_{\max},0,1) \in [0,1]$. The weight $\lamn = \lambda_t/(1+\lambda_t)$ satisfies $\lamn \in (0,1)$ because $\lambda_t>0$.
 
 Fix any round $t$ and write $w = \lamn \in [0,1]$. The reward is $\rt = (1-w)\,\ut - w\,\ctilde$. Applying the triangle inequality:
 \[
@@ -44,7 +44,7 @@ Therefore $\rt \in [-1, 1]$.
 
 \begin{remark}
 \label{rem:tighter-bound}
-The proof intentionally uses only $\lambda_t \geq 0$. In our budget-pressure schedule, $\bex_t$ is a normalized burn-rate deviation and can be negative when the buyer is spending below plan, so no one-sided lower bound such as $\lamn \geq 0.5$ is assumed. The $[-1,1]$ bound is the property used by the regret analysis.
+The proof intentionally uses only $\lambda_t>0$. In our budget-pressure schedule, $\bdev_t$ is a normalized burn-rate deviation and can be negative when the buyer is spending below plan, so no one-sided lower bound such as $\lamn \geq 0.5$ is assumed. The $[-1,1]$ bound is the property used by the regret analysis.
 \end{remark}
 
 \subsection{Proposition~\ref{prop:consistency}: posterior consistency, stationary regime}

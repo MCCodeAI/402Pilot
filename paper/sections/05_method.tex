@@ -66,7 +66,7 @@ The chosen arm is $a_t = \arg\max_{a \in \mathcal{A}_t} \pi_a$. Algorithm~\ref{a
 \For{$t = 0, 1, \ldots, T-1$}
   \State \emph{(D)} discount every Q- and C-cell by $\gamma$
   \State observe $\mathbf{x}_t$, $B_t$;\quad $k_t \leftarrow k(\mathbf{x}_t)$
-  \State \emph{(P)} $\lambda_t \leftarrow \exp(\alpha \cdot \bex_t)$;\quad $\lamn \leftarrow \lambda_t / (1 + \lambda_t)$
+  \State \emph{(P)} read $\lambda_t$ from the wallet;\quad $\lamn \leftarrow \lambda_t / (1 + \lambda_t)$
   \State $\mathcal{A}_t \leftarrow \{a : B_t \geq \mathrm{effective\_price}(a, t)\}$
   \If{$\mathcal{A}_t = \emptyset$} halt (bankruptcy) \EndIf
   \For{$a \in \mathcal{A}_t$}
