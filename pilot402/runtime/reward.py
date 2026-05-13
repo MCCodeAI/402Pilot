@@ -49,11 +49,11 @@ Three deliberate design choices (paper §X "Reward design"):
    intrinsic value (utility) × budget weighting (λ_norm).
 
 3. **Sigmoid normalization of cost penalty.** Earlier drafts subtracted
-   ``λ_t·c̃_t`` directly with λ_t = exp(α·burn_excess) ∈ [0, ∞). This was
-   numerically asymmetric (q ∈ [0,1] vs cost penalty ∈ [0, ∞)) and
-   produced cumulative rewards as extreme as −32,000 for Always-Premium
-   over 5,000 rounds — visually grotesque and theoretically inconvenient
-   (standard bandit regret bounds require bounded reward).
+   ``λ_t·c̃_t`` directly with λ_t = exp(α·burn_dev) ∈ (0, ∞). This was
+   numerically asymmetric (utility ∈ [-1,1] vs cost penalty unbounded
+   above) and produced cumulative rewards as extreme as −32,000 for
+   Always-Premium over 5,000 rounds — visually grotesque and theoretically
+   inconvenient (standard bandit regret bounds require bounded reward).
 
    The convex-combination form
        PA_reward = (1−λ_norm)·utility − λ_norm·c̃
@@ -143,8 +143,8 @@ class RewardCalculator:
         utility = q - self.nu * f
 
         # Sigmoid-normalize λ to (0, 1) for a bounded convex combination.
-        # λ/(1+λ) = sigmoid(log λ); the wallet returns λ = exp(α·burn_excess),
-        # so this is sigmoid(α·burn_excess) without recomputing burn_excess
+        # λ/(1+λ) = sigmoid(log λ); the wallet returns λ = exp(α·burn_dev),
+        # so this is sigmoid(α·burn_dev) without recomputing burn_dev
         # in this module.
         lambda_norm = lambda_t / (1.0 + lambda_t)
 

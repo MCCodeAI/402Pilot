@@ -6,7 +6,7 @@ ablatable:
 1. **Payment-aware (P)**:
    At decision time, the cost penalty `λ_norm·c̃_a` is subtracted from the
    utility-maximization. λ_norm = λ_t/(1+λ_t) is read from the wallet on
-   each call, where λ_t = exp(α·burn_excess) reflects current budget pressure.
+   each call, where λ_t = exp(α·burn_dev) reflects current budget pressure.
 
    **Critical: c̃_a is sampled from a Bayesian cost posterior, not from a
    static spec dict.** PA-DCT maintains separate posteriors over quality

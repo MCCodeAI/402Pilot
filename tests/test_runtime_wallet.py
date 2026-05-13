@@ -58,7 +58,7 @@ def test_lambda_at_target_burn_rate_equals_lambda_0() -> None:
     # To exactly match: spent/total = 0.01 * rounds, so for rounds=10, spent=10, i.e. burn $1/round.
     for _ in range(10):
         w.record_spend(1.0)  # $1 per round, 10 rounds → spent $10 of $100 budget
-    # actual_rate = (10/100)/10 = 0.01 = target_burn_rate → burn_excess=0 → λ=λ_0
+    # actual_rate = (10/100)/10 = 0.01 = target_burn_rate → burn_dev=0 → λ=λ_0
     assert w.get_lambda() == pytest.approx(1.0, rel=1e-9)
 
 
@@ -67,8 +67,8 @@ def test_lambda_rises_when_overspending() -> None:
     w = Wallet(total_usdc=100.0, lambda_0=1.0, alpha=2.0, target_burn_rate=0.01)
     for _ in range(10):
         w.record_spend(2.0)  # $2 per round, double the target
-    # actual_rate = (20/100)/10 = 0.02; target = 0.01; burn_excess = 1.0
-    # λ = λ_0 * exp(α * burn_excess) = 1.0 * exp(2.0) ≈ 7.389
+    # actual_rate = (20/100)/10 = 0.02; target = 0.01; burn_dev = 1.0
+    # λ = λ_0 * exp(α * burn_dev) = 1.0 * exp(2.0) ≈ 7.389
     assert w.get_lambda() == pytest.approx(math.exp(2.0), rel=1e-9)
 
 
@@ -77,7 +77,7 @@ def test_lambda_falls_when_underspending() -> None:
     w = Wallet(total_usdc=100.0, lambda_0=1.0, alpha=2.0, target_burn_rate=0.01)
     for _ in range(10):
         w.record_spend(0.5)  # $0.50 per round, half the target
-    # actual_rate = (5/100)/10 = 0.005; burn_excess = -0.5; λ = exp(-1) ≈ 0.368
+    # actual_rate = (5/100)/10 = 0.005; burn_dev = -0.5; λ = exp(-1) ≈ 0.368
     assert w.get_lambda() == pytest.approx(math.exp(-1.0), rel=1e-9)
 
 

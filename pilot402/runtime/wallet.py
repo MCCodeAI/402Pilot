@@ -7,8 +7,12 @@ arm-selection reward.
 
 λ-dynamics (system_design §2.2, PLAN §3.5):
 
-    λ_t = λ_0 · exp(α · burn_excess_t)
-    burn_excess_t = (actual_burn_rate_t − target_burn_rate) / target_burn_rate
+    λ_t = λ_0 · exp(α · burn_dev_t)
+    burn_dev_t = (actual_burn_rate_t − target_burn_rate) / target_burn_rate
+
+``burn_dev_t`` is **signed**: negative when under-spending, zero when
+on the linear burn plan, positive when over-spending. This matches the
+paper's symbol $b_{\text{dev}, t}$ (§Problem Formulation).
 
 where:
 
@@ -21,7 +25,7 @@ Concretely, for ``main.yaml`` defaults (total_budget = $50, target_burn_rate
 (= 1/10000 of total per round, the rate at which the budget would last
 exactly the full run). Always-Mid spends $0.002 / round (≈ 40% of target,
 **raw λ_t ≈ 0.6**). Always-Premium spends $0.01 / round (2× target →
-burn_excess = +1.0 → **raw λ_t ≈ 7.4**).
+burn_dev = +1.0 → **raw λ_t ≈ 7.4**).
 
 This module returns the **raw** λ_t. The downstream reward calculator
 sigmoid-normalizes it into ``λ_norm = λ_t / (1+λ_t) ∈ (0, 1)`` for use as
@@ -90,16 +94,17 @@ class Wallet:
         """Current cost-penalty multiplier.
 
         Returns ``lambda_0`` until at least one round has elapsed. After
-        that, scales by ``exp(alpha * burn_excess)`` where burn_excess
-        is normalized deviation from the target burn rate.
+        that, scales by ``exp(alpha * burn_dev)`` where ``burn_dev`` is
+        the signed normalized deviation from the target burn rate
+        (negative = under-spending, positive = over-spending).
         """
 
         if self._rounds == 0:
             return self.lambda_0
         actual_rate = (self._spent / self.total_usdc) / self._rounds
-        burn_excess = (actual_rate - self.target_burn_rate) / self.target_burn_rate
+        burn_dev = (actual_rate - self.target_burn_rate) / self.target_burn_rate
         # Cap exponent to avoid float overflow on pathological streaks.
-        capped = max(min(self.alpha * burn_excess, 50.0), -50.0)
+        capped = max(min(self.alpha * burn_dev, 50.0), -50.0)
         return self.lambda_0 * math.exp(capped)
 
     def affordable(self, cost_usdc: float) -> bool:
