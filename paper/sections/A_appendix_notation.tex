@@ -32,6 +32,8 @@ $K_b$            & Number of context buckets & $K_b = 4$ (default); $K_b = 1$ un
 Symbol & Meaning & Domain / value \\
 \midrule
 $q_t$       & Quality score for chosen arm & $[0,1]$ (evaluator-grounded) \\
+$p_{a,t}$   & Effective charge if arm $a$ is called & defines $\mathcal{A}_t$; full vector unobserved \\
+$\mathcal{A}_t$ & Affordable provider set & $\{a:p_{a,t}\le B_t\}$, exposed to policy \\
 $c_t$       & Raw cost charged this round (USDC) & $\geq 0$ (e.g.\ \$0.0005, \$0.002, \$0.01) \\
 $\ctilde$   & Normalized cost & $\mathrm{clip}(c_t/c_{\max},0,1)$, $c_{\max} = \$0.01$ \\
 $f_t$       & Failure flag (timeout / parse-failure) & $\{0,1\}$ \\
@@ -40,8 +42,8 @@ $B_t$       & Remaining wallet budget at start of round $t$ & $B_0 = B$, $B_{t+1
 \bottomrule
 \end{tabular}
 
-Bandit feedback: only $(q_t,c_t,f_t)$ for $a = a_t$ is observed; outcomes for
-arms not chosen are unseen.
+Bandit feedback: only $(q_t,c_t,f_t)$ for $a = a_t$ is observed; outcomes and
+costs for arms not chosen are unseen.
 
 \subsection{Reward and utility}
 \label{app:notation-reward}
@@ -125,8 +127,7 @@ ${S_c}^{a_t,k_t}_t\mathrel{+}=c_t$. Discounting applies regardless of pulls
 \subsection{Decision rule}
 \label{app:notation-decision}
 
-For each affordable arm $a \in \mathcal{A}_t$ (i.e.\ $B_t \geq
-\mathrm{effective\_price}(a,t)$):
+For each affordable arm $a \in \mathcal{A}_t$:
 \[
 \hatu{a}{k_t} \sim \mathcal{N}(\thetaq{a}{k_t},\Sigmaq{a}{k_t}),\quad
 \hatc{a}{k_t} \sim \mathcal{N}(\thetac{a}{k_t},\Sigmac{a}{k_t}),
