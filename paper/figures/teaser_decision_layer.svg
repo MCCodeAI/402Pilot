@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="820" viewBox="0 0 1800 820" role="img" aria-labelledby="title desc">
+  <title id="title">Teaser comparison for agent micropayments with and without a decision layer</title>
+  <desc id="desc">Two-panel paper figure. The left panel shows an agent directly paying many services. The right panel shows the same agent routed through 402Pilot, which selects only a few valuable paid calls and preserves budget.</desc>
+  <defs>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c94f4f"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#16845a"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f6fc6"/>
+    </marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b98a5"/>
+    </marker>
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#16324a" flood-opacity="0.08"/>
+    </filter>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #0b3551; }
+      .panel { fill: #ffffff; stroke: #cfdbe5; stroke-width: 2; }
+      .panel-title { font-size: 30px; font-weight: 700; }
+      .panel-letter { font-size: 26px; font-weight: 700; fill: #597084; }
+      .label { font-size: 22px; font-weight: 700; }
+      .small { font-size: 18px; font-weight: 600; fill: #31546c; }
+      .tiny { font-size: 15px; font-weight: 700; fill: #31546c; }
+      .box { fill: #f8fbfe; stroke: #2b75bb; stroke-width: 2.2; rx: 10; filter: url(#soft); }
+      .service { fill: #ffffff; stroke: #7da3bb; stroke-width: 1.8; rx: 8; }
+      .layer { fill: #f3f9ff; stroke: #1475cf; stroke-width: 3; rx: 13; filter: url(#soft); }
+      .wallet { fill: #fffaf2; stroke: #e3a143; stroke-width: 2; rx: 10; }
+      .outcome-bad { fill: #fff7f7; stroke: #d46666; stroke-width: 2; rx: 10; }
+      .outcome-good { fill: #f3fbf6; stroke: #2d9368; stroke-width: 2; rx: 10; }
+      .red-line { fill: none; stroke: #c94f4f; stroke-width: 3; marker-end: url(#arrow-red); }
+      .green-line { fill: none; stroke: #16845a; stroke-width: 3.4; marker-end: url(#arrow-green); }
+      .blue-line { fill: none; stroke: #1f6fc6; stroke-width: 3.2; marker-end: url(#arrow-blue); }
+      .gray-line { fill: none; stroke: #8b98a5; stroke-width: 2.4; marker-end: url(#arrow-gray); stroke-dasharray: 8 8; }
+      .thin-red { fill: none; stroke: #d68055; stroke-width: 2.2; opacity: 0.85; marker-end: url(#arrow-red); }
+      .coin { fill: #ffe7a1; stroke: #d6902f; stroke-width: 1.5; }
+      .coin-text { font-size: 14px; font-weight: 800; fill: #915b0e; }
+      .muted { opacity: 0.36; }
+      .metric-label { font-size: 16px; font-weight: 700; fill: #31546c; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="820" fill="#ffffff"/>
+  <text x="900" y="38" text-anchor="middle" class="small">Same agent, same paid services, different payment behavior</text>
+
+  <line x1="900" y1="74" x2="900" y2="760" stroke="#d7e0e8" stroke-width="2"/>
+
+  <rect class="panel" x="55" y="70" width="790" height="690" rx="14"/>
+  <rect class="panel" x="955" y="70" width="790" height="690" rx="14"/>
+
+  <text x="90" y="120" class="panel-letter">A</text>
+  <text x="130" y="120" class="panel-title">No decision layer</text>
+  <text x="990" y="120" class="panel-letter">B</text>
+  <text x="1030" y="120" class="panel-title">With 402Pilot</text>
+
+  <!-- Left panel: agent and services -->
+  <rect class="box" x="105" y="205" width="130" height="76"/>
+  <circle cx="137" cy="243" r="14" fill="#e9f3fc" stroke="#2b75bb" stroke-width="2"/>
+  <path d="M127 243 H147 M137 233 V253" stroke="#2b75bb" stroke-width="2"/>
+  <text x="186" y="251" text-anchor="middle" class="label">Agent</text>
+
+  <text x="655" y="173" text-anchor="middle" class="small">Paid services</text>
+  <g id="services-left">
+    <rect class="service" x="590" y="195" width="130" height="46"/>
+    <text x="655" y="225" text-anchor="middle" class="small">Search</text>
+    <rect class="service" x="590" y="270" width="130" height="46"/>
+    <text x="655" y="300" text-anchor="middle" class="small">Data</text>
+    <rect class="service" x="590" y="345" width="130" height="46"/>
+    <text x="655" y="375" text-anchor="middle" class="small">Tool</text>
+    <rect class="service" x="590" y="420" width="130" height="46"/>
+    <text x="655" y="450" text-anchor="middle" class="small">Model</text>
+    <rect class="service" x="590" y="495" width="130" height="46"/>
+    <text x="655" y="525" text-anchor="middle" class="small">Index</text>
+  </g>
+
+  <path class="red-line" d="M238 228 C340 168, 458 190, 586 215"/>
+  <path class="red-line" d="M238 238 C360 235, 440 260, 586 293"/>
+  <path class="red-line" d="M238 248 C350 300, 430 335, 586 368"/>
+  <path class="red-line" d="M238 258 C345 365, 455 410, 586 443"/>
+  <path class="red-line" d="M238 268 C335 455, 445 497, 586 518"/>
+  <path class="thin-red" d="M604 204 C560 172, 638 152, 685 195"/>
+  <path class="thin-red" d="M603 280 C560 256, 636 236, 687 270"/>
+  <path class="thin-red" d="M604 430 C552 405, 634 385, 690 420"/>
+
+  <!-- left coins -->
+  <g>
+    <circle class="coin" cx="334" cy="201" r="12"/><text class="coin-text" x="334" y="206" text-anchor="middle">$</text>
+    <circle class="coin" cx="416" cy="200" r="12"/><text class="coin-text" x="416" y="205" text-anchor="middle">$</text>
+    <circle class="coin" cx="492" cy="206" r="12"/><text class="coin-text" x="492" y="211" text-anchor="middle">$</text>
+    <circle class="coin" cx="338" cy="253" r="12"/><text class="coin-text" x="338" y="258" text-anchor="middle">$</text>
+    <circle class="coin" cx="424" cy="273" r="12"/><text class="coin-text" x="424" y="278" text-anchor="middle">$</text>
+    <circle class="coin" cx="500" cy="290" r="12"/><text class="coin-text" x="500" y="295" text-anchor="middle">$</text>
+    <circle class="coin" cx="335" cy="310" r="12"/><text class="coin-text" x="335" y="315" text-anchor="middle">$</text>
+    <circle class="coin" cx="426" cy="350" r="12"/><text class="coin-text" x="426" y="355" text-anchor="middle">$</text>
+    <circle class="coin" cx="512" cy="367" r="12"/><text class="coin-text" x="512" y="372" text-anchor="middle">$</text>
+    <circle class="coin" cx="336" cy="379" r="12"/><text class="coin-text" x="336" y="384" text-anchor="middle">$</text>
+    <circle class="coin" cx="428" cy="428" r="12"/><text class="coin-text" x="428" y="433" text-anchor="middle">$</text>
+    <circle class="coin" cx="515" cy="444" r="12"/><text class="coin-text" x="515" y="449" text-anchor="middle">$</text>
+    <circle class="coin" cx="337" cy="465" r="12"/><text class="coin-text" x="337" y="470" text-anchor="middle">$</text>
+    <circle class="coin" cx="434" cy="500" r="12"/><text class="coin-text" x="434" y="505" text-anchor="middle">$</text>
+    <circle class="coin" cx="525" cy="518" r="12"/><text class="coin-text" x="525" y="523" text-anchor="middle">$</text>
+  </g>
+
+  <rect class="wallet" x="105" y="570" width="175" height="98"/>
+  <text x="193" y="603" text-anchor="middle" class="small">Budget</text>
+  <rect x="128" y="625" width="130" height="18" rx="9" fill="#f0e7d7" stroke="#d0a45f"/>
+  <rect x="128" y="625" width="25" height="18" rx="9" fill="#d95f5f"/>
+  <text x="193" y="662" text-anchor="middle" class="tiny">nearly spent</text>
+
+  <rect class="outcome-bad" x="585" y="570" width="175" height="98"/>
+  <text x="673" y="603" text-anchor="middle" class="small">Outcome</text>
+  <polyline points="614,640 638,622 660,651 684,618 708,646 733,626" fill="none" stroke="#c94f4f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="742" cy="625" r="11" fill="#fff" stroke="#c94f4f" stroke-width="2"/>
+  <path d="M736 619 L748 631 M748 619 L736 631" stroke="#c94f4f" stroke-width="2.4" stroke-linecap="round"/>
+
+  <text x="106" y="707" class="small">Reactive</text>
+  <g transform="translate(223 692)">
+    <text x="0" y="16" class="metric-label">cost</text>
+    <rect x="54" y="4" width="178" height="15" rx="7" fill="#f3dfdf"/>
+    <rect x="54" y="4" width="166" height="15" rx="7" fill="#d95f5f"/>
+    <text x="260" y="16" class="metric-label">value</text>
+    <rect x="315" y="4" width="178" height="15" rx="7" fill="#e4e9ed"/>
+    <rect x="315" y="4" width="82" height="15" rx="7" fill="#8b98a5"/>
+  </g>
+
+  <!-- Right panel: same services with decision layer -->
+  <rect class="box" x="1005" y="205" width="130" height="76"/>
+  <circle cx="1037" cy="243" r="14" fill="#e9f3fc" stroke="#2b75bb" stroke-width="2"/>
+  <path d="M1027 243 H1047 M1037 233 V253" stroke="#2b75bb" stroke-width="2"/>
+  <text x="1086" y="251" text-anchor="middle" class="label">Agent</text>
+
+  <rect class="layer" x="1225" y="262" width="190" height="142"/>
+  <text x="1320" y="314" text-anchor="middle" class="label">402Pilot</text>
+  <path d="M1262 345 H1378" stroke="#1f6fc6" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="1284" cy="368" r="10" fill="#ffe7a1" stroke="#d6902f" stroke-width="1.5"/>
+  <text class="coin-text" x="1284" y="373" text-anchor="middle">$</text>
+  <path d="M1318 360 L1332 374 L1360 343" fill="none" stroke="#16845a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text x="1555" y="173" text-anchor="middle" class="small">Paid services</text>
+  <g id="services-right">
+    <rect class="service" x="1490" y="195" width="130" height="46"/>
+    <text x="1555" y="225" text-anchor="middle" class="small">Search</text>
+    <rect class="service" x="1490" y="270" width="130" height="46"/>
+    <text x="1555" y="300" text-anchor="middle" class="small">Data</text>
+    <rect class="service muted" x="1490" y="345" width="130" height="46"/>
+    <text x="1555" y="375" text-anchor="middle" class="small muted">Tool</text>
+    <rect class="service" x="1490" y="420" width="130" height="46"/>
+    <text x="1555" y="450" text-anchor="middle" class="small">Model</text>
+    <rect class="service muted" x="1490" y="495" width="130" height="46"/>
+    <text x="1555" y="525" text-anchor="middle" class="small muted">Index</text>
+  </g>
+
+  <path class="blue-line" d="M1138 243 C1178 244, 1195 278, 1222 320"/>
+  <path class="blue-line" d="M1138 258 C1180 282, 1196 322, 1222 352"/>
+
+  <path class="green-line" d="M1418 300 C1445 252, 1458 225, 1486 218"/>
+  <path class="green-line" d="M1418 335 C1445 320, 1465 302, 1486 293"/>
+  <path class="green-line" d="M1418 378 C1447 416, 1466 439, 1486 443"/>
+  <path class="gray-line" d="M1418 352 C1452 352, 1464 361, 1486 368"/>
+  <path class="gray-line" d="M1418 396 C1456 466, 1466 508, 1486 518"/>
+
+  <g>
+    <circle class="coin" cx="1450" cy="252" r="12"/><text class="coin-text" x="1450" y="257" text-anchor="middle">$</text>
+    <circle class="coin" cx="1454" cy="312" r="12"/><text class="coin-text" x="1454" y="317" text-anchor="middle">$</text>
+    <circle class="coin" cx="1454" cy="423" r="12"/><text class="coin-text" x="1454" y="428" text-anchor="middle">$</text>
+  </g>
+  <g opacity="0.72">
+    <circle cx="1455" cy="366" r="11" fill="#fff" stroke="#8b98a5" stroke-width="2"/>
+    <path d="M1449 360 L1461 372 M1461 360 L1449 372" stroke="#8b98a5" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="1455" cy="500" r="11" fill="#fff" stroke="#8b98a5" stroke-width="2"/>
+    <path d="M1449 494 L1461 506 M1461 494 L1449 506" stroke="#8b98a5" stroke-width="2.4" stroke-linecap="round"/>
+  </g>
+
+  <rect class="wallet" x="1005" y="570" width="175" height="98"/>
+  <text x="1093" y="603" text-anchor="middle" class="small">Budget</text>
+  <rect x="1028" y="625" width="130" height="18" rx="9" fill="#f0e7d7" stroke="#d0a45f"/>
+  <rect x="1028" y="625" width="91" height="18" rx="9" fill="#2d9368"/>
+  <text x="1093" y="662" text-anchor="middle" class="tiny">preserved</text>
+
+  <rect class="outcome-good" x="1485" y="570" width="175" height="98"/>
+  <text x="1573" y="603" text-anchor="middle" class="small">Outcome</text>
+  <polyline points="1514,648 1538,637 1562,628 1587,616 1610,604" fill="none" stroke="#16845a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="1625" cy="610" r="12" fill="#f3fbf6" stroke="#16845a" stroke-width="2"/>
+  <path d="M1618 610 L1623 616 L1633 604" fill="none" stroke="#16845a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text x="1006" y="707" class="small">Selective</text>
+  <g transform="translate(1123 692)">
+    <text x="0" y="16" class="metric-label">cost</text>
+    <rect x="54" y="4" width="178" height="15" rx="7" fill="#f3dfdf"/>
+    <rect x="54" y="4" width="72" height="15" rx="7" fill="#d95f5f"/>
+    <text x="260" y="16" class="metric-label">value</text>
+    <rect x="315" y="4" width="178" height="15" rx="7" fill="#deefe7"/>
+    <rect x="315" y="4" width="152" height="15" rx="7" fill="#16845a"/>
+  </g>
+</svg>
