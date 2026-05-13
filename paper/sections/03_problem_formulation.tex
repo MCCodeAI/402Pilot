@@ -4,7 +4,7 @@
 We formalize agent-native payment decision-making as a budgeted, non-stationary contextual bandit over protocol-quoted payable endpoints. The core loop is quote--pay--observe: a buyer sees a task and payment quotes, pays exactly one affordable provider before seeing service quality, and updates from only that paid call.
 
 \paragraph{Round protocol.}
-Consider a single autonomous buyer with initial wallet budget $B$ and $K$ payable service providers over rounds $t \in \{0,\ldots,T-1\}$. At the start of round $t$, the buyer observes a task context $\mathbf{x}_t \in \mathcal{X}$ and the wallet state $B_t$. A programmable payment interface exposes enough price information to determine which providers are affordable before payment; let $p_{a,t}$ denote the pre-payment quote for provider $a$, and define
+Consider a single autonomous buyer with initial wallet budget $B$ and $K$ payable service providers over rounds $t \in \{0,\ldots,T-1\}$. At the start of round $t$, the buyer observes a task context $\mathbf{x}_t \in \mathcal{X}$ and the wallet state $B_t$. A programmable payment interface exposes enough price information to determine which providers are affordable before payment; let $p_{a,t}$ denote the pre-payment quote for provider $a$, write $\mathbf{p}_t=(p_{1,t},\ldots,p_{K,t})$, and define
 \begin{equation}
 \label{eq:affordable-set}
 \mathcal{A}_t = \{a \in \{1,\ldots,K\}: p_{a,t} \leq B_t\}.
@@ -19,6 +19,17 @@ where $q_t \in [0,1]$ is a task-level quality score, $c_t \in \mathbb{R}_{\geq 0
 B_{t+1} = B_t - c_t, \qquad B_0 = B,
 \end{equation}
 and $\tau \leq T$ denotes the first round at which the horizon is reached or no provider is affordable.
+
+\paragraph{Admissible policies.}
+Let $\mathcal{H}_t$ denote the information available immediately before selecting $a_t$:
+\[
+\mathcal{H}_t =
+\sigma\!\left(
+\{\mathbf{x}_s,\mathbf{p}_s,\mathcal{A}_s,a_s,q_s,c_s,f_s,B_s\}_{s<t},
+\mathbf{x}_t,\mathbf{p}_t,\mathcal{A}_t,B_t
+\right).
+\]
+An admissible policy is a non-anticipating sequence $\pi=\{\pi_t\}_{t=0}^{T-1}$ where each $\pi_t$ maps $\mathcal{H}_t$ to a distribution over $\mathcal{A}_t$. Thus the policy may use the current task, wallet state, available quotes, and past paid outcomes, but not unchosen outcomes, future quotes, or future shocks.
 
 \paragraph{Payment-aware objective.}
 The round feedback provides two signals: service delivery and realized payment cost. We first summarize service delivery as utility,
@@ -64,5 +75,6 @@ The normalized burn deviation is
 with sharpness parameter $\alpha \geq 0$. Thus $\lamn=0.5$ when the buyer is exactly on the linear burn plan, decreases when the buyer is under-spending, and increases toward cost-dominated decisions when the wallet is being spent too quickly.
 
 \paragraph{Non-stationarity and learning class.}
-Provider distributions $\mathcal{D}_{a,t}(\cdot \mid \mathbf{x})$ may change over time in utility, reliability, or realized cost. Change points are not announced to the policy. Tasks arrive from an exogenous workload stream, and providers are non-strategic posted-price endpoints: they expose quotes and deliver services rather than bidding strategically for allocation. Reverse auctions, multi-agent coordination, dispute resolution, and latency-aware routing are outside this formulation.
-Within this scope, the only controlled action is the provider choice $a_t$; the immediate feedback is the selected call's $(\ut,c_t)$, and the only persistent state affected by the action is deterministic wallet accounting. There is no delayed reward, within-round planning horizon, or latent transition model to learn. We therefore model agent-native payment decision-making as a contextual bandit with budget state and non-stationary feedback, rather than as a full reinforcement-learning problem.
+An environment is a sequence of tasks, quotes, and provider outcome laws,
+$\mathcal{E}=\{(\mathbf{x}_t,\mathbf{p}_t,\mathcal{D}_{1,t},\ldots,\mathcal{D}_{K,t})\}_{t=0}^{T-1}$. We allow both $\mathcal{D}_{a,t}(\cdot \mid \mathbf{x})$ and $p_{a,t}$ to vary with $t$, so quality, reliability, and effective price may drift. Change points are not announced to the policy. Tasks arrive from an exogenous workload stream, and providers are non-strategic posted-price endpoints: they expose quotes and deliver services rather than bidding strategically for allocation. Reverse auctions, multi-agent coordination, dispute resolution, and latency-aware routing are outside this formulation.
+Within this scope, the only controlled action is the provider choice $a_t$; the immediate feedback is the selected call's $(\ut,c_t)$, and the only persistent state affected by the action is deterministic wallet accounting. There is no delayed reward, within-round planning horizon, or latent transition model to learn. We therefore model agent-native payment decision-making as a contextual bandit with budget state and non-stationary feedback. The empirical True Oracle used in \S\ref{sec:eval-comparators} is a full-information upper bound that observes round-$t$ outcomes for all affordable arms; it is not an admissible online policy.
