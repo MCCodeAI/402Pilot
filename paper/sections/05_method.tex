@@ -12,13 +12,13 @@ For each arm $a \in \{1,\ldots,K\}$ and bucket $k \in \{1,\ldots,K_b\}$ (where $
 \item \textbf{C-posterior}, tracking the per-arm raw cost $c_t$. Same Normal-Normal form, with prior $\mathcal{N}(\bar c_a, \sigma^2_{0,c})$ where $\bar c_a$ is the spec base price for arm $a$, and likelihood variance $\sigma^2_c$.
 \end{itemize}
 
-Each cell carries discounted sufficient statistics: a shared effective sample count $n^{a,k}_t \in \mathbb{R}_{\geq 0}$, a weighted sum of utilities $S^{a,k}_t \in \mathbb{R}$ for the Q-posterior, and a weighted sum of realized costs $S_c^{a,k}_t \in \mathbb{R}$ for the C-posterior. Posterior parameters follow the closed-form Normal--Normal expressions, e.g.\ for Q:
+Each cell carries discounted sufficient statistics: a shared effective sample count $n^{a,k}_t \in \mathbb{R}_{\geq 0}$, a weighted sum of utilities $S^{a,k}_t \in \mathbb{R}$ for the Q-posterior, and a weighted sum of realized costs ${S_c}^{a,k}_t \in \mathbb{R}$ for the C-posterior. Posterior parameters follow the closed-form Normal--Normal expressions, e.g.\ for Q:
 \begin{equation}
 \label{eq:posterior-q}
 \Sigmaq{a}{k} = \left(\frac{1}{\sigma^2_{0,q}} + \frac{n^{a,k}_t}{\sigma^2_q}\right)^{-1}, \qquad
 \thetaq{a}{k} = \Sigmaq{a}{k} \left(\frac{\mu_{0,q}}{\sigma^2_{0,q}} + \frac{S^{a,k}_t}{\sigma^2_q}\right).
 \end{equation}
-The C-posterior uses the analogous form with $(\thetac{a}{k}, \Sigmac{a}{k})$, $\bar c_a$ in place of $\mu_{0,q}$, $\sigma^2_c$ in place of $\sigma^2_q$, and $S_c^{a,k}_t$ in place of $S^{a,k}_t$.
+The C-posterior uses the analogous form with $(\thetac{a}{k}, \Sigmac{a}{k})$, $\bar c_a$ in place of $\mu_{0,q}$, $\sigma^2_c$ in place of $\sigma^2_q$, and ${S_c}^{a,k}_t$ in place of $S^{a,k}_t$.
 
 \paragraph{Why a learned cost posterior.}
 In stationary settings with known realized prices, a fixed scalar $\bar c_a$ would suffice. The agent-native setting drops both halves of that assumption: prices $p_{a,t}$ can change mid-run (S3 in our benchmark), and at decision time the policy sees only the feasibility set $\mathcal{A}_t$, not the price vector $\mathbf{p}_t$. The spec base price $\bar c_a$ enters PA-DCT only as the C-posterior's prior center; affordability is decided by the wallet/payment interface against latent effective prices $p_{a,t}$ (Eq.~\eqref{eq:affordable-set}), and the policy learns those prices only from the realized charge $c_t$ on selected calls. Treating cost as a Gaussian posterior over $c_t$ lets the policy detect price shocks the same way the Q-posterior detects quality shocks---through the discounted effective sample count $n^{a,k}_t$. The dedicated $-C_{\mathrm{post}}$ ablation in \S\ref{sec:eval-ablations} pins cost to $\bar c_a$ and confirms this channel empirically under the S3 price shock.
@@ -30,13 +30,13 @@ We apply a multiplicative discount $\gamma \in (0, 1]$ to every cell's sufficien
 \begin{equation}
 n^{a,k}_t = \gamma \cdot n^{a,k}_{t-1}, \qquad
 S^{a,k}_t = \gamma \cdot S^{a,k}_{t-1}, \qquad
-S_c^{a,k}_t = \gamma \cdot S_c^{a,k}_{t-1}.
+{S_c}^{a,k}_t = \gamma \cdot {S_c}^{a,k}_{t-1}.
 \end{equation}
 After the round's chosen arm produces an observation, only its bucket increments:
 \begin{equation}
 n^{a_t, k_t}_t \mathrel{+}= 1, \quad
 S^{a_t, k_t}_t \mathrel{+}= \ut\ \,(\text{Q})\ , \quad
-S_c^{a_t, k_t}_t \mathrel{+}= c_t\ \,(\text{C}).
+{S_c}^{a_t, k_t}_t \mathrel{+}= c_t\ \,(\text{C}).
 \end{equation}
 Discounting applies regardless of whether a cell was pulled this round---non-stationarity is wall-clock, not pull-conditional. We use $\gamma = 0.999$ for both posteriors (effective half-life $\approx 693$ rounds), chosen to react cleanly within the shock windows we evaluate (S2 covers $2{,}500$ rounds, S3 has $9{,}000$ post-shock rounds) without forgetting the stationary baseline too quickly. The role of the discount in the agent-native payment decision-making setting is isolated empirically by the $-D$ ablation in \S\ref{sec:eval-ablations}, and analytically by the recovery-horizon corollary (Cor.~\ref{cor:recovery}).
 
