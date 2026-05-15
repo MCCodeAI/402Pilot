@@ -38,7 +38,7 @@ n^{a_t, k_t}_t \mathrel{+}= 1, \quad
 S^{a_t, k_t}_t \mathrel{+}= \ut\ \,(\text{Q})\ , \quad
 {S_c}^{a_t, k_t}_t \mathrel{+}= c_t\ \,(\text{C}).
 \end{equation}
-Discounting applies regardless of whether a cell was pulled this round---non-stationarity is wall-clock, not pull-conditional. We use $\gamma = 0.999$ for both posteriors (effective half-life $\approx 693$ rounds), chosen to remain responsive within shock windows of a few thousand rounds without forgetting the stationary baseline too quickly. The discount's analytical role is characterized by the recovery-horizon corollary (Cor.~\ref{cor:recovery}).
+Discounting applies regardless of whether a cell was pulled this round---non-stationarity is wall-clock, not pull-conditional. We use $\gamma = 0.999$ for both posteriors (effective half-life $\approx 693$ rounds), chosen to remain responsive within shock windows of a few thousand rounds without forgetting the stationary baseline too quickly. The role of $\gamma$ in controlling post-shock adaptation speed is analyzed in Cor.~\ref{cor:recovery}.
 
 \subsection{Decision rule}
 \label{sec:method-decision}
