@@ -5,7 +5,7 @@
 \item {\bf Claims}
     \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
     \item[] Answer: \answerYes{}
-    \item[] Justification: The abstract and \S\ref{sec:intro} state five contributions (setting characterization, the PA-DCT algorithm, the 402Pilot decision layer, the 402Pilot-Bench benchmark, and the empirical findings); each is realized in the body (\S\ref{sec:related-work}--\S\ref{sec:eval}) and the appendix, with the empirical claim ($13/14$ non-stationary cells significant at $p<10^{-3}$) backed by Table~\ref{tab:main} and the significance analysis discussed in \S\ref{sec:eval-main}.
+    \item[] Justification: The abstract and \S\ref{sec:intro} state five contributions (setting characterization, the PA-DCT algorithm, the 402Pilot decision layer, the 402Pilot-Bench benchmark, and the empirical findings); each is realized in the body (\S\ref{sec:related-work}--\S\ref{sec:eval}) and the appendix. The empirical claims are backed by Table~\ref{tab:main}: PA-DCT pays a measured exploration cost in S1, outperforms $4/5$ non-oracle baselines in S2 and $5/5$ in S3 on cum-PA, and exploits the S3 price promotion on cum-PA, ROI, and mean quality.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the abstract and introduction do not include the claims made in the paper.
@@ -95,7 +95,7 @@
 \item {\bf Experiment statistical significance}
     \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?
     \item[] Answer: \answerYes{}
-    \item[] Justification: All headline numbers are reported as mean$\pm$std over $30$ seeds (Table~\ref{tab:main}, Table~\ref{tab:ablations}). Significance markers in Table~\ref{tab:main} come from paired-bootstrap two-sided tests on cum-PA ($10{,}000$ bootstrap resamples, paired by seed); thresholds are stated in the caption.
+    \item[] Justification: Table~\ref{tab:main} reports means over $30$ seeds with paired-bootstrap two-sided significance markers on cum-PA ($10{,}000$ bootstrap resamples, paired by seed); thresholds are stated in the caption. Table~\ref{tab:ablations} reports cum-PA as mean$\pm$std over $30$ seeds and reports the remaining metrics as means.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -112,7 +112,7 @@
 \item {\bf Experiments compute resources}
     \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?
     \item[] Answer: \answerYes{}
-    \item[] Justification: All bandit experiments are replays over a frozen pre-generated dataset and require no GPU at run time; \S\ref{sec:layer} (``Implementation footprint'') states that the full main sweep ($5$ baselines $\times$ $3$ scenarios $\times$ $30$ seeds $\times$ $10{,}000$ rounds) finishes within a few CPU-hours on a single laptop. The one-time pre-generation of the $20{,}575$ responses uses provider APIs and is documented in the supplemental artifact.
+    \item[] Justification: All bandit experiments are replays over a frozen pre-generated dataset and require no GPU at run time. \S\ref{sec:eval-setup} specifies the sweep size ($5$ baselines plus PA-DCT and Oracle, $3$ scenarios, $30$ seeds, $10{,}000$ rounds), and \S\ref{sec:method-complexity} gives the per-round policy-computation bound. The one-time pre-generation of the $20{,}575$ responses uses provider APIs and is documented in the supplemental artifact.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.

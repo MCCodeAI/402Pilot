@@ -4,7 +4,7 @@
 - **task_q** = mean quality (proxy for task_success_rate)
 - **ROI** = Σ q / Σ $ (raw quality per dollar)
 - **CumRegret** = Oracle cum_PA − policy cum_PA
-- **AdaptT** = rounds after shock for trailing-200 ROI to recover within 5% of pre-event level (S2/S3 only)
+- **AdaptT** = trailing-200 ROI shock-response time (S2: >=95% of pre-outage ROI; S3: >=110% of pre-promotion ROI)
 
 ## S1 (stationary)
 

@@ -161,7 +161,7 @@ Under `−P` ablation, force `λ_norm = 0`: rank by `\hat u^{a,k}` only.
 | `\text{ROI}` | `\mathrm{ROI}` | `Σ_t q_t / Σ_t c_t` |
 | `\text{cum\_PA}` | `R_T` | `Σ_t r_t` (cumulative payment-aware reward) |
 | `\text{Regret}_T` | `\mathrm{Regret}_T` | `R_T^{\mathrm{Oracle}} - R_T^{\pi}` (cumulative regret vs. True Oracle) |
-| `\text{AdaptT}` | `\tau_{\mathrm{adapt}}` | Rounds for trailing-200 ROI to recover within 5% of pre-event level (S2 / S3 only) |
+| `\text{AdaptT}` | `\tau_{\mathrm{adapt}}` | Trailing-200 ROI shock-response time: S2 reaches ≥95% of pre-outage ROI; S3 reaches ≥110% of pre-promotion ROI |
 
 ---
 

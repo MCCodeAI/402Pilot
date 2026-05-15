@@ -6,8 +6,9 @@ Metrics (from experiment_design.md):
      haven't formally defined per-type thresholds yet.
   2. ROI = Σ q / Σ $ — raw quality per dollar (policy-agnostic, no λ shaping).
   3. Cumulative regret = Oracle cum_PA − policy cum_PA — gap to Oracle.
-  4. Adaptation time = rounds for ROI to recover to within 5% of pre-event
-     level after a shock (S2/S3 only; NA for S1).
+  4. Adaptation time = trailing-200 ROI shock-response time:
+     S2 reaches >= 95% of pre-outage ROI; S3 reaches >= 110% of
+     pre-promotion ROI (NA for S1).
 
 Loads per-cell JSONL logs from:
   - results/scenario_sweep/{S1,S2}/<policy>/seed_NN.jsonl  (full method + baselines)
@@ -49,7 +50,8 @@ SCENARIO_LABELS = {
 SHOCK_ROUND = {"S2": 3000, "S3": 1000}
 # Pre-event window for baseline ROI (rounds before shock)
 PRE_EVENT_WINDOW = {"S2": (1000, 3000), "S3": (0, 1000)}
-# Recovery threshold: 5% of pre-event ROI
+# S2 recovery threshold: 5% below pre-event ROI. S3 uses a fixed
+# opportunity-capture threshold of 10% above pre-event ROI.
 RECOVERY_THRESHOLD_PCT = 0.05
 
 
@@ -137,12 +139,11 @@ def compute_adaptation_time(
     seed_records: list[dict],
     scenario: str,
 ) -> float | None:
-    """Adaptation time: rounds after shock for windowed ROI to recover within
-    RECOVERY_THRESHOLD_PCT of pre-event level.
+    """Adaptation time: rounds after shock for windowed ROI response.
 
     For S2 (drop): recover means ROI returns UP to >= (1 - 5%) × pre_event_ROI
     For S3 (jump up — premium becomes cheaper): recover means ROI rises
-                                                to >= (1 + 5%) × pre_event_ROI
+                                                to >= 110% × pre_event_ROI
                                                 (reaching the new opportunity)
     Returns None for S1 (no shock).
     """
@@ -268,8 +269,8 @@ def render_markdown(rows: list[dict]) -> str:
     lines.append("- **ROI** = Σ q / Σ $ (raw quality per dollar)")
     lines.append("- **CumRegret** = Oracle cum_PA − policy cum_PA")
     lines.append(
-        "- **AdaptT** = rounds after shock for trailing-200 ROI to "
-        "recover within 5% of pre-event level (S2/S3 only)"
+        "- **AdaptT** = trailing-200 ROI shock-response time "
+        "(S2: >=95% of pre-outage ROI; S3: >=110% of pre-promotion ROI)"
     )
     lines.append("")
 
