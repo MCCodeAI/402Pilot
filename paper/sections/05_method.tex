@@ -86,11 +86,13 @@ The chosen arm is $a_t = \arg\max_{a \in \mathcal{A}_t} s_a$, with ties broken b
 
 We fix the following constants across every experiment in the paper:
 \begin{itemize}
-\item Q-posterior: $\mu_{0,q} = 0.5$, $\sigma^2_{0,q} = 1.0$, $\sigma^2_q = 0.09$ (a broad mid-range prior with moderate utility-observation noise).
-\item C-posterior: prior mean $\bar c_a$, $\sigma^2_{0,c} = 10^{-4}$, $\sigma^2_c = 10^{-6}$ (tight, because realized cost is nearly deterministic given the provider and scenario).
-\item Discount: $\gamma = 0.999$ for both Q- and C-posteriors.
-\item Reward and budget constants: $\nu = 0.5$, $\alpha = 2$, $c_{\max} = \$0.01$.
-\item Bucket count: $K_b = 4$ (one per task type, see \S\ref{sec:eval-setup}).
+\item Q-posterior: $\mu_{0,q} = 0.5$ is a neutral midpoint prior for utility, $\sigma^2_{0,q} = 1.0$ keeps cold-start uncertainty broad, and $\sigma^2_q = 0.09$ treats observed utility as moderately noisy.
+\item C-posterior: the prior mean is $\bar c_a$ so each arm starts from its listed price; $\sigma^2_{0,c} = 10^{-4}$ leaves room for the spec to be wrong, while $\sigma^2_c = 10^{-6}$ reflects that realized charges are nearly deterministic once the current price is known.
+\item Discount: $\gamma = 0.999$ for both Q- and C-posteriors, giving effective horizon $1/(1-\gamma)\approx 10^3$ rounds and half-life $\approx 693$ rounds.
+\item Failure penalty: $\nu = 0.5$ adds a structural non-delivery penalty beyond the quality score, so flaky same-price providers remain distinguishable.
+\item Budget-pressure sharpness: $\alpha = 2$ makes wallet pressure increase smoothly under sustained overspend without immediately collapsing selection to the cheapest arm.
+\item Cost normalizer: $c_{\max} = \$0.01$, the highest listed provider price, puts realized costs on the $[0,1]$ scale used in Eq.~\eqref{eq:reward}.
+\item Bucket count: $K_b = 4$, one bucket per task type / evaluation bucket (see \S\ref{sec:eval-setup}).
 \end{itemize}
 None of these are tuned per scenario or per seed.
 
