@@ -21,7 +21,7 @@ Each cell carries discounted sufficient statistics: a shared effective sample co
 The C-posterior uses the analogous form with $(\thetac{a}{k}, \Sigmac{a}{k})$, $\bar c_a$ in place of $\mu_{0,q}$, $\sigma^2_c$ in place of $\sigma^2_q$, and ${S_c}^{a,k}_t$ in place of $S^{a,k}_t$.
 
 \paragraph{Why a learned cost posterior.}
-In stationary settings with known realized prices, a fixed scalar $\bar c_a$ would suffice. The agent-native setting drops both halves of that assumption: prices $p_{a,t}$ can change mid-run (e.g., promotions or demand-driven repricing), and at decision time the policy sees only the feasibility set $\mathcal{A}_t$, not the price vector $\mathbf{p}_t$. The spec base price $\bar c_a$ enters PA-DCT only as the C-posterior's prior center; affordability is decided by the wallet/payment interface against latent effective prices $p_{a,t}$ (Eq.~\eqref{eq:affordable-set}), and the policy learns those prices only from the realized charge $c_t$ on selected calls. Treating cost as a Gaussian posterior over $c_t$ lets the policy detect price shocks the same way the Q-posterior detects quality shocks---through the discounted effective sample count $n^{a,k}_t$.
+If realized prices were fixed and observed before selection, PA-DCT could use the spec price $\bar c_a$ directly. Our decision-layer contract deliberately does not assume this: effective prices $p_{a,t}$ may drift over time, and the policy observes only the feasible set $\mathcal{A}_t$ before payment, not the full price vector $\mathbf{p}_t$. The spec price $\bar c_a$ therefore serves as the C-posterior prior mean, while selected calls reveal realized charges $c_t=p_{a_t,t}$. Learning a posterior over $c_t$ lets PA-DCT react to price shocks through the same discounted evidence mechanism used by the Q-posterior for quality and reliability shocks.
 
 \subsection{Discounted sufficient statistics}
 \label{sec:method-discount}
@@ -74,8 +74,8 @@ The chosen arm is $a_t = \arg\max_{a \in \mathcal{A}_t} s_a$ (we write $s_a$ for
     \State $\tilde{\hat c}^{a,k_t} \leftarrow \mathrm{clip}(\hatc{a}{k_t}/c_{\max}, 0, 1)$;\quad $s_a \leftarrow (1-\lamn)\,\hatu{a}{k_t} - \lamn\,\tilde{\hat c}^{a,k_t}$
   \EndFor
   \State $a_t \leftarrow \arg\max_{a \in \mathcal{A}_t} s_a$
-  \State Pay via the protocol; selected call reveals $c_t = p_{a_t,t}$ and outcome $(q_t, f_t)$;\quad $\ut \leftarrow q_t - \nu f_t$
-  \State $n^{a_t,k_t} \mathrel{+}= 1$;\quad $S^{a_t,k_t} \mathrel{+}= \ut$;\quad ${S_c}^{a_t,k_t} \mathrel{+}= c_t$
+  \State Pay via the protocol; observe $(q_t, c_t, f_t)$;\quad $\ut \leftarrow q_t - \nu f_t$
+  \State Update chosen cell: $n^{a_t,k_t} \mathrel{+}= 1$;\quad $S^{a_t,k_t} \mathrel{+}= \ut$;\quad ${S_c}^{a_t,k_t} \mathrel{+}= c_t$
   \State wallet.\texttt{record\_spend}$(c_t)$
 \EndFor
 \end{algorithmic}
