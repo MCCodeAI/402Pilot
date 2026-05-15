@@ -43,7 +43,7 @@ Discounting applies regardless of whether a cell was pulled this round---non-sta
 \subsection{Decision rule}
 \label{sec:method-decision}
 
-At each round, the wallet exposes $\lambda_t$ and the affordable set $\mathcal{A}_t$. The policy reads $\lamn$ from the wallet, samples both posteriors per affordable arm, and ranks them:
+At round $t$, after observing $\mathbf{x}_t$ and setting $k_t=k(\mathbf{x}_t)$, the wallet/payment interface provides the budget-pressure multiplier $\lambda_t$ and the affordable set $\mathcal{A}_t$. PA-DCT sets $\lamn=\lambda_t/(1+\lambda_t)$ and scores each affordable arm using independent Thompson samples from the Q- and C-posteriors for the current bucket:
 \begin{equation}
 \label{eq:padct-sample}
 \hatu{a}{k_t} \sim \mathcal{N}\!\big(\thetaq{a}{k_t},\, \Sigmaq{a}{k_t}\big), \qquad
@@ -54,7 +54,7 @@ At each round, the wallet exposes $\lambda_t$ and the affordable set $\mathcal{A
 \tilde{\hat c}^{a,k_t} = \mathrm{clip}\!\big(\hatc{a}{k_t}/c_{\max},\, 0,\, 1\big), \qquad
 s_a = (1 - \lamn)\,\hatu{a}{k_t} - \lamn\,\tilde{\hat c}^{a,k_t}.
 \end{equation}
-The chosen arm is $a_t = \arg\max_{a \in \mathcal{A}_t} s_a$ (we write $s_a$ for the per-arm decision score to avoid clashing with the policy symbol $\pi$). Algorithm~\ref{alg:padct} states the per-round procedure end-to-end.
+The chosen arm is $a_t = \arg\max_{a \in \mathcal{A}_t} s_a$, with ties broken by any fixed rule. We write $s_a$ for the per-arm decision score to avoid clashing with the policy symbol $\pi$. Algorithm~\ref{alg:padct} states the per-round procedure end-to-end.
 
 \begin{algorithm}[t]
 \caption{PA-DCT: Payment-Aware Discounted Contextual Thompson sampling.}
