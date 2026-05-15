@@ -86,10 +86,10 @@ The chosen arm is $a_t = \arg\max_{a \in \mathcal{A}_t} s_a$, with ties broken b
 
 We fix the following constants across every experiment in the paper:
 \begin{itemize}
-\item Quality posterior: $\mu_{0,q} = 0.5$, $\sigma^2_{0,q} = 1.0$, $\sigma^2_q = 0.09$ (allowing substantial heterogeneity in observed quality).
-\item Cost posterior: $\sigma^2_{0,c} = 10^{-4}$, $\sigma^2_c = 10^{-6}$ (tight, because realized cost is nearly deterministic given the provider and scenario).
-\item Discounts: $\gamma_q = \gamma_c = 0.999$.
-\item Reward weights and bandit constants: $\nu = 0.5$, $\alpha = 2$, $c_{\max} = \$0.01$.
+\item Q-posterior: $\mu_{0,q} = 0.5$, $\sigma^2_{0,q} = 1.0$, $\sigma^2_q = 0.09$ (a broad mid-range prior with moderate utility-observation noise).
+\item C-posterior: prior mean $\bar c_a$, $\sigma^2_{0,c} = 10^{-4}$, $\sigma^2_c = 10^{-6}$ (tight, because realized cost is nearly deterministic given the provider and scenario).
+\item Discount: $\gamma = 0.999$ for both Q- and C-posteriors.
+\item Reward and budget constants: $\nu = 0.5$, $\alpha = 2$, $c_{\max} = \$0.01$.
 \item Bucket count: $K_b = 4$ (one per task type, see \S\ref{sec:eval-setup}).
 \end{itemize}
 None of these are tuned per scenario or per seed.

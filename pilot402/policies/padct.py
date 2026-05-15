@@ -70,13 +70,13 @@ the cost-normalization choice). (system_design §2.6.)
 
 The full PA-DCT has all flags True (default).
 
-## Default γ = 0.995
+## Default γ = 0.999
 
-Half-life ≈ ln(2)/(1−γ) = 139 rounds. Chosen so:
+Half-life ≈ ln(2)/(1−γ) = 693 rounds. Chosen so:
 - Long enough to accumulate stable estimates within a 10,000-round run
 - Short enough to detect and react to mid-run shocks (S2 outage at
-  rounds 3000-5500, S3 price shock at round 1000+) within a few hundred
-  rounds — well before the shock window ends.
+  rounds 3000-5500, S3 price shock at round 1000+) within the shock
+  windows.
 """
 
 from __future__ import annotations
