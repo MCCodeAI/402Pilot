@@ -4,11 +4,11 @@
 \subsection{402Pilot-Bench setup}
 \label{sec:eval-setup}
 
-\paragraph{Pre-generated dataset.}
-We construct \emph{402Pilot-Bench}, a replay-based benchmark in which all LLM responses are pre-generated and frozen. The dataset comprises $823$ tasks across three domains---coding (HumanEval; pass@1), multi-hop QA (HotpotQA; max EM/F1 against gold), and web search (TriviaQA closed-form, plus a custom open-ended subset; LLM-as-judge with a structured rubric). The web-search domain is split into two evaluation buckets because closed-form and open-ended sub-tasks use different evaluators (deterministic max EM/F1 vs.\ cached LLM-as-judge), yielding the four-bucket context partition (T1/T2/T3a/T3b) that PA-DCT uses for contextual bucketing ($K_b = 4$). For each (task, provider) pair we pre-generate $V = 5$ response versions, yielding $823 \times 5 \times 5 = 20{,}575$ total responses scored once at pre-generation time and replayed deterministically across all bandit experiments. Pre-generation decouples bandit evaluation from inference noise and enables exact reproduction of any seed; non-stationarity is introduced by scenario-level transformations of realized failures and effective prices, while the underlying response pool stays fixed for controlled comparison.
+\paragraph{Benchmark.}
+We construct \emph{402Pilot-Bench}, a frozen-replay benchmark with $823$ tasks across coding (HumanEval pass@1), multi-hop QA (HotpotQA max EM/F1), and web search. Web search is split into closed-form T3a (deterministic max EM/F1) and open-ended T3b (cached LLM-as-judge), giving the four evaluation buckets T1/T2/T3a/T3b used by PA-DCT ($K_b=4$). For each (task, provider) pair we pre-generate $V=5$ response versions, yielding $823\times5\times5=20{,}575$ scored responses. The response pool is fixed for reproducibility; non-stationarity enters only through scenario-level transformations of realized failures and effective prices.
 
 \paragraph{Providers.}
-Five heterogeneous provider pipelines, deliberately calibrated to expose the same-tier-different-quality phenomenon central to the regime rather than to model a representative market distribution. Table~\ref{tab:providers} summarizes the configuration; the key design point is that P-mid, P-adv, and P-flaky share both base price (\$0.002/call) and base model, so no static rule can distinguish them---only reward feedback can.
+We use five heterogeneous provider pipelines, deliberately calibrated to expose the same-tier-different-quality phenomenon central to the regime rather than to model a representative market distribution. Table~\ref{tab:providers} summarizes the configuration; the key design point is that P-mid, P-adv, and P-flaky share both base price (\$0.002/call) and base model, so no static rule can distinguish them---only reward feedback can.
 
 \begin{table}[t]
 \centering
@@ -28,42 +28,15 @@ P-flaky    & GPT-5.4-mini  & 40\% timeout injection         & $0.002$  & unrelia
 \end{tabularx}
 \end{table}
 
-\paragraph{Task domains and evaluation buckets.}
-Tasks come from three domains (coding, multi-hop QA, web search) but are split into four evaluation buckets because the web-search domain uses two different evaluators (deterministic max EM/F1 for closed-form vs.\ LLM-as-judge for open-ended). The four buckets are: T1 coding (HumanEval pass@1, deterministic), T2 multi-hop QA (HotpotQA max EM/F1, deterministic given gold), T3a web-search closed-form (TriviaQA-web, deterministic max EM/F1), T3b web-search open-ended (custom, LLM-as-judge against a fixed rubric, cached at pre-generation). PA-DCT's contextual bucketing operates at the granularity of these four buckets ($K_b = 4$).
-
-\paragraph{Scenarios.}
-Three calibrated market scenarios:
-\begin{itemize}
-\item \emph{S1 --- Stationary.} No mid-run changes; provider behaviour is drawn iid throughout the run.
-\item \emph{S2 --- Mid outage.} \texttt{MidOutageScenario(outage\_start=3000, outage\_end=5500, outage\_failure\_rate=0.30)}. Within the $2{,}500$-round outage window, P-mid fails $30\%$ of calls; outside the window, P-mid behaves nominally.
-\item \emph{S3 --- Premium promotion.} \texttt{PremiumDropScenario(shock\_round=1000, price\_multiplier=0.2)}. At round $1{,}000$ the effective price of P-premium drops from \$0.01 to \$0.002 (matching the mid tier). The agent has $9{,}000$ post-shock rounds to detect the change and migrate spend.
-\end{itemize}
-
-\paragraph{Scale.}
-Each (policy, scenario) cell runs $N = 30$ seeds for $T = 10{,}000$ rounds with budget $B = \$50$. At the listed premium price, this budget supports $5{,}000$ premium calls, so S1/S2 expose wallet pressure directly; S3 tests whether a policy can use the lower realized post-shock price rather than continuing to treat P-premium as unaffordable. Within each scenario, policies are evaluated on identical seed paths and the same frozen response set, so paired differences are driven by policy behaviour under the same replay stream.
+\paragraph{Scenarios and scale.}
+We evaluate three calibrated market regimes: S1 stationary operation, S2 a P-mid outage from rounds $3{,}000$--$5{,}500$ with $30\%$ forced failures, and S3 a P-premium promotion at round $1{,}000$ that drops its effective price from \$0.01 to \$0.002. Each (policy, scenario) cell uses $30$ seeds, $T=10{,}000$ rounds, and budget $B=\$50$. At the listed premium price, this budget supports $5{,}000$ premium calls, so S1/S2 expose wallet pressure directly; S3 tests whether a policy can use the lower realized post-shock price rather than continuing to treat P-premium as unaffordable. Within each scenario, policies share the same seed paths and frozen response stream.
 
 \subsection{Comparators and metrics}
 \label{sec:eval-comparators}
 
-\paragraph{Comparators.}
-We compare PA-DCT against five non-oracle baselines and one offline oracle reference, all evaluated on identical seeds:
-\begin{itemize}
-\item \textbf{Random.} Uniform draw from the affordable set each round.
-\item \textbf{Always-P-cheap / Always-P-mid / Always-P-premium.} Three fixed-arm policies covering the price tiers; Always-P-premium is the strongest non-adaptive baseline on quality alone.
-\item \textbf{BudgetRule.} A threshold heuristic over remaining wallet fraction---prefer P-premium while the wallet is ample, downgrade to P-mid or P-cheap as the wallet thins. Instantiates a FrugalGPT-style fixed escalation rule~\citep{chen2023frugalgpt}.
-\item \textbf{PA-DCT.} Ours.
-\item \textbf{True Oracle (upper bound).} A free-running policy that, each round, peeks at every affordable arm's actual outcome at the round's realized response version and picks the one with the highest payment-aware reward at the wallet's current $\lambda_t$. The Oracle owns its own wallet and so its own $\lambda$ trajectory; it is a replay upper-bound reference, not an admissible online policy, because it observes counterfactual outcomes that online policies cannot observe.
-\end{itemize}
+We compare PA-DCT with five non-oracle baselines: Random, three fixed-arm policies (Always-P-cheap, Always-P-mid, Always-P-premium), and BudgetRule, a FrugalGPT-style threshold rule over remaining wallet fraction~\citep{chen2023frugalgpt}. We also report a replay True Oracle: it peeks at every affordable arm's realized outcome before choosing, owns its own wallet trajectory, and is therefore an upper-bound reference rather than an admissible online policy.
 
-\paragraph{Metrics.}
-Five metrics, locked in advance:
-\begin{itemize}
-\item \emph{Cumulative payment-aware reward (cum-PA).} $R^\pi_T = \sum_t r_t$, the primary objective the policy optimizes; all paired-bootstrap significance tests are computed on cum-PA.
-\item \emph{Mean quality ($\bar q$).} Mean per-round quality $\bar q = (1/T)\sum_t q_t$, a proxy for task-level success at the granularity of the per-task evaluator.
-\item \emph{ROI.} $\sum_t q_t / \sum_t c_t$, the quality yield per dollar (a high-ROI policy can spend very little, so it must be read alongside $\bar q$).
-\item \emph{Cumulative regret.} $R^{\mathrm{Oracle}}_T - R^{\pi}_T$, the gap to True Oracle on cum-PA.
-\item \emph{Adaptation time (AdaptT).} A trailing-$200$-round ROI timing metric for shock scenarios. In S2, it is the rounds after outage onset until ROI returns to at least $95\%$ of the pre-outage level. In S3, where the shock is an opportunity rather than a degradation, it is the rounds until ROI reaches at least $110\%$ of the pre-promotion level; the minimum measurable value is $200$ rounds because of the trailing window. It is undefined in S1.
-\end{itemize}
+We compute five locked metrics. The primary metric is cumulative payment-aware reward, $R^\pi_T=\sum_t r_t$ (cum-PA); paired-bootstrap significance tests are computed on this quantity. We also report mean quality $\bar q=(1/T)\sum_t q_t$, ROI $=\sum_t q_t/\sum_t c_t$, cumulative regret to the True Oracle, and AdaptT. AdaptT is a trailing-$200$ ROI response time: in S2 it measures recovery to at least $95\%$ of pre-outage ROI, while in S3 it measures capture of the promotion opportunity by reaching at least $110\%$ of pre-promotion ROI. It is undefined in S1.
 
 \subsection{Main results}
 \label{sec:eval-main}
@@ -104,23 +77,11 @@ True Oracle (UB)  & $6837$ & $561$ & $0.901$ & $0$ & $6809$ & $551$ & $0.901$ & 
 \label{fig:learning-curves}
 \end{figure}
 
-% Figure: trailing-200 ROI around the S2 outage window for full PA-DCT vs the
-% $-D$ ablation (the data is reported numerically in Table~\ref{tab:ablations}).
-% Adding a dedicated panel is deferred to the camera-ready version; in the
-% submission the numerical AdaptT contrast (1467 vs 2249, a 35\% gap) and the
-% per-component analysis below already isolate the discount's contribution.
+S1 is a sanity check on the price of adaptation. PA-DCT is not the stationary best-arm rule: Always-P-mid achieves the highest non-oracle cum-PA ($5831$), while PA-DCT trails by $\approx\!319$ because it continues to explore and maintain shock-ready posteriors. This is the expected cost of using a policy designed for drifting markets in a market with no drift.
 
-\paragraph{Headline.}
-Table~\ref{tab:main} should be read as an adaptation trade-off, not as a claim that PA-DCT is the stationary best arm. S1 is a cost-of-adaptation sanity check: the reliable fixed mid-tier arm is strongest on cum-PA ($5831$), and PA-DCT trails it by $\approx\!319$ because it still explores and maintains shock-readiness in a market with no drift. In the two non-stationary scenarios, PA-DCT outperforms $4/5$ non-oracle baselines in S2 and $5/5$ in S3 on cum-PA; the remaining S2 comparison against Always-P-cheap is a statistically non-significant tie ($5147$ vs $5164$), while PA-DCT delivers much higher mean quality ($0.761$ vs $0.610$). In S3, the learned cost posterior lets PA-DCT capture the premium price promotion, beating Always-P-mid on cum-PA ($5911$ vs $5831$), ROI ($429$ vs $410$), and mean quality ($0.831$ vs $0.819$), while shifting most post-shock spend to P-premium in Fig.~\ref{fig:learning-curves}.
+The two shock scenarios are where the adaptation mechanism matters. In S2, PA-DCT outperforms $4/5$ non-oracle baselines on cum-PA and the remaining comparison is a statistically non-significant tie against Always-P-cheap ($5147$ vs $5164$). That tie is economically different from equivalence: Always-P-cheap avoids the outage by never buying the mid-tier arm, but its mean quality remains $0.610$; PA-DCT reaches $0.761$ while also beating Always-P-mid, which is directly exposed to the $30\%$ outage. In S3, PA-DCT outperforms all five non-oracle baselines on cum-PA and improves over Always-P-mid on all reported axes: cum-PA ($5911$ vs $5831$), ROI ($429$ vs $410$), and mean quality ($0.831$ vs $0.819$). Fig.~\ref{fig:learning-curves} shows the corresponding behavior: the policy moves away from P-mid during the outage and shifts most post-shock spend to P-premium after its price drops.
 
-\paragraph{Per-baseline narrative.}
-\textbf{vs Random and Always-P-cheap.} PA-DCT dominates Random on cum-PA and mean quality in all scenarios. Against Always-P-cheap, the trade-off is sharper: the cheap arm posts the highest ROI ($\approx\!1{,}221$) by spending very little, but at $\bar q = 0.610$ it leaves quality on the table. PA-DCT wins on cum-PA in S1/S3 and statistically ties in S2, where the cheap arm sidesteps the P-mid outage by never using P-mid; PA-DCT's value in that tied cell is quality, not raw reward.
-\textbf{vs Always-P-mid.} Always-P-mid is the stationary fixed-arm benchmark. PA-DCT loses to it in S1, which exposes the exploration cost of a shock-ready policy. Under the S2 outage, Always-P-mid is directly penalized by the $30\%$ failure rate, whereas PA-DCT migrates spend away from P-mid and wins on cum-PA. Under the S3 promotion, PA-DCT uses realized cost feedback to exploit the newly cheap premium arm and improves over Always-P-mid on all three reported economic axes.
-\textbf{vs Always-P-premium.} Always-P-premium has the highest fixed-arm mean quality, but in S1/S2 it exhausts the \$50 wallet near round $5{,}000$ and accumulates large negative payment-aware reward under high wallet pressure. In S3 it no longer bankrupts after the price cut, but the first $1{,}000$ expensive premium calls still leave it far behind PA-DCT on cum-PA and ROI.
-\textbf{vs BudgetRule.} BudgetRule's static escalation triggers at fixed wallet thresholds and cannot detect the S3 price promotion. PA-DCT migrates to P-premium at the first measurable AdaptT window after the round-$1{,}000$ shock and accumulates substantially more cum-PA over the remaining $9{,}000$ rounds.
-
-\paragraph{Adversarial-provider detection.}
-The same-price provider design exposes evaluator-bounded adversarial detection. PA-DCT suppresses P-flaky quickly because timeout feedback is explicit. P-adv is harder: deterministic buckets such as T1/T2 make its low utility visible earlier, while T3b open-ended judging occasionally accepts fluent-but-wrong answers, slowing avoidance. During the S2 outage, some residual P-adv selection also reflects the policy's search for alternatives to degraded P-mid; we revisit this evaluator limit in \S\ref{sec:discuss}.
+The same-price decoys stress the limits of feedback quality. P-flaky is quickly suppressed because timeout feedback is explicit. P-adv is harder: deterministic buckets such as T1/T2 expose its low utility earlier, while the open-ended T3b judge sometimes accepts fluent-but-wrong answers, slowing avoidance. This is an evaluator boundary rather than a separate policy mechanism, and we return to it in \S\ref{sec:discuss}.
 
 \subsection{Ablations: which classical components transfer}
 \label{sec:eval-ablations}
@@ -150,20 +111,8 @@ $-C_{\mathrm{post}}$ & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n
 }
 \end{table}
 
-\paragraph{$-P$ (no payment-aware): uniformly costly.}
-Removing the budget-pressure weighting forces selection by raw utility, causing the policy to favour high-quality but expensive arms and exhaust the wallet early. Cumulative reward collapses below zero in S1/S2 ($-1{,}710 \pm 588$ and $-1{,}966 \pm 507$) and remains far below full PA-DCT in S3 ($4{,}528 \pm 369$ vs $5{,}911 \pm 51$), where the round-$1{,}000$ price drop partially bails the policy out post-shock. \emph{Conclusion}: payment-awareness is necessary in absolute terms; no other ingredient compensates for ignoring wallet pressure.
+The ablation table is intentionally multi-metric. Payment-awareness is the only component whose removal is immediately catastrophic on cum-PA: $-P$ falls below zero in S1/S2 and remains far below full PA-DCT in S3. Discounting, by contrast, is mainly visible on response speed rather than total reward: full PA-DCT recovers from the S2 outage in $1{,}467$ rounds versus $2{,}249$ for $\gamma=1$, a $35\%$ acceleration. Context is more conditional. A single global bucket adapts faster under the uniform S2 outage, but full PA-DCT captures the heterogeneous S3 promotion faster ($200$ vs $398$ rounds), which is the setting contextual buckets are meant to serve.
 
-\paragraph{$-D$ (no discount, $\gamma=1$): visible on adaptation time.}
-With $\gamma = 1$, cumulative reward is not the axis that justifies discounting: $-D$ is slightly higher in S1/S3 and close in S2. Under shocks, however, discounting changes the response speed. In S2, full PA-DCT recovers in $1{,}467$ rounds versus $2{,}249$ for $-D$, a $35\%$ acceleration. In S3 the gap is smaller ($200$ vs $279$ rounds) because the $9{,}000$-round post-shock window is long enough for either variant to converge on the new opportunity. \emph{Conclusion}: discount earns its place specifically on AdaptT; cumulative reward alone would miss this role.
+Thompson sampling contributes primarily by stabilizing discovery. Greedy posterior means are close on S1/S2 cum-PA but have $5$--$9\times$ larger seed-to-seed variance and miss the S3 price shock in $6/30$ seeds. The cost-posterior diagnostic isolates the price channel: when costs are pinned to the spec scalar, P-premium share stays below $4\%$ after the S3 promotion, mean quality remains at the S1 level ($0.797$), and AdaptT is undefined. The $230$ cum-PA gap to full PA-DCT is therefore the price-shock-specific value of treating realized cost as feedback rather than static metadata.
 
-\paragraph{$-C$ (no contextual, $K_b = 1$): scenario-dependent.}
-Contextual bucketing is not uniformly beneficial in this benchmark. A single global bucket is faster in S2 ($1{,}176$ vs full $1{,}467$ rounds) because the outage hits all task types uniformly and per-bucket fragmentation slows evidence accumulation. It also attains higher cum-PA means in these finite replay runs. In S3, however, full PA-DCT captures the promotion faster ($200$ vs $398$ rounds) because task-type heterogeneity makes the premium arm especially valuable in hard buckets. \emph{Conclusion}: contextual bucketing is a structural choice for heterogeneous task-provider value, not a free win on every aggregate metric.
-
-\paragraph{$-TS$ (no Thompson sampling, greedy posterior mean): variance and opportunity detection.}
-Greedy variants are close to full PA-DCT on S1/S2 cum-PA means but have much higher seed-to-seed standard deviation (full $\approx 50$--$80$; $-TS$ $244$--$481$). In S3 the mean gap is also material ($5{,}663$ vs $5{,}911$), and the greedy variant fails to detect the price shock in $6$ of $30$ seeds (AdaptT $2{,}232$ vs full $200$ among runs that do adapt). \emph{Conclusion}: Thompson sampling makes shock detection routine rather than initialization-dependent; mean cum-PA alone hides the risk.
-
-\paragraph{$-C_{\mathrm{post}}$ (no learned cost posterior, $c$ pinned to $\bar c_a$): isolates the price-shock signal.}
-With cost held to the spec scalar, the policy is structurally blind to price drift: the C-posterior never updates, so a price drop cannot show up in the sampled $\hatc{a}{k}$ that feeds the decision rule. We measure this on S3, where P-premium's effective price drops to the mid tier at round $1{,}000$ and the cost-posterior pathway has something to track: $-C_{\mathrm{post}}$ keeps treating P-premium as ten-times-more-expensive than mid for the entire post-shock $9{,}000$-round window, P-premium share never crosses $4\%$ (vs $\approx\!60\%$ for full PA-DCT), $\bar q$ stays at the S1 level $0.797$, and AdaptT is undefined ($\infty$) because the trailing-$200$ ROI never reaches the promotion-capture threshold. The cum-PA gap of $-230$ ($p<10^{-4}$, paired bootstrap, $30$ seeds) is the price-shock-specific value of the dual posterior. We did not run the S1/S2 cells of this ablation: realized prices match $\bar c_a$ throughout in those scenarios, so we expect (but did not measure) coincidence with full PA-DCT---the table's $-C_{\mathrm{post}}$ row marks those cells \texttt{n.r.} rather than inferring values. \emph{Conclusion}: removing the learned cost posterior collapses S3 to the no-shock baseline. The four classical components $(P,D,C,TS)$ together cannot recover this; the cost posterior is the structural commitment that makes price shocks first-class observations rather than configuration metadata.
-
-\paragraph{Why five metrics, not one.}
-No single classical bandit metric reveals all of these contributions. Cumulative reward alone misses $-D$'s adaptation-speed role and can make $-C$ look uniformly preferable in this finite benchmark. ROI alone over-rewards $-TS$ (greedy locks onto cheap arms with high $q/\$$ ratio while missing better-quality opportunities). AdaptT without cumulative reward would miss $-P$'s collapse in S1/S2. Mean quality $\bar q$ exposes $-C_{\mathrm{post}}$'s failure to migrate to P-premium under the S3 promo (where it stays at the S1 quality level, $0.797$) even though its cum-PA gap is moderate. Regret to the Oracle isolates the cost of $-P$ in the stationary regime where AdaptT is undefined. The five metrics together expose each component on the axis where it matters; this is the multi-metric evaluation framework we recommend for future work in this regime.
+Taken together, these results explain why a single metric is insufficient. Cum-PA exposes the cost of removing payment-awareness, AdaptT exposes discounting and contextual shock response, seed variance exposes the exploration role of TS, and mean quality exposes the failure to exploit the cheaper premium arm when the cost posterior is disabled.
