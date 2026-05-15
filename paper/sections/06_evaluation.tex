@@ -40,13 +40,13 @@ We compute five locked metrics. The primary metric is cumulative payment-aware r
 \subsection{Main Results}
 \label{sec:eval-main}
 
-Table~\ref{tab:main} reports a scenario-relevant subset of the five locked metrics across S1/S2/S3, as means over $30$ seeds. Each scenario shows cum-PA, ROI, and $\bar q$; S2/S3 additionally report AdaptT because shock response is the focal behavior. We omit Regret columns because they are directly implied by the True Oracle cum-PA row. Paired-bootstrap tests on cum-PA give $p<10^{-3}$ for every baseline--PA-DCT comparison except the S2 comparison with Always-P-cheap, which is not significant.
+Table~\ref{tab:main} reports a scenario-relevant subset of the five locked metrics across S1/S2/S3, as means over $30$ seeds. Each scenario shows cum-PA, ROI, and $\bar q$; S2/S3 additionally report AdaptT because shock response is the focal behavior. Paired-bootstrap tests on cum-PA give $p<10^{-3}$ for every baseline--PA-DCT comparison except the S2 comparison with Always-P-cheap, which is not significant. In brief, S1 exposes the cost of maintaining adaptivity, while S2/S3 show the value of that adaptivity under reliability and price shocks.
 
 \begin{table}[t]
 \centering
 \small
 \setlength{\tabcolsep}{3.5pt}
-\caption{Main results on 402Pilot-Bench, averaged over $30$ seeds. S2/S3 report AdaptT for shock response; Regret is omitted because it is implied by the True Oracle cum-PA row.}
+\caption{Main results on 402Pilot-Bench, averaged over $30$ seeds. Bold marks the best non-oracle value in each metric column; lower is better for AdaptT.}
 \label{tab:main}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{l|ccc|cccc|cccc}
@@ -55,12 +55,12 @@ Table~\ref{tab:main} reports a scenario-relevant subset of the five locked metri
 Policy & cum-PA & ROI & $\bar q$ & cum-PA & ROI & $\bar q$ & AdaptT & cum-PA & ROI & $\bar q$ & AdaptT \\
 \midrule
 Random            & $3191$ & $209$  & $0.688$ & $3060$ & $205$  & $0.676$ & $-$ & $4382$ & $370$  & $0.688$ & $-$ \\
-Always-P-cheap    & $5165$ & $1221$ & $0.610$ & $5164$ & $1221$ & $0.610$ & $-$ & $5165$ & $1221$ & $0.610$ & $-$ \\
-Always-P-mid      & $5831$ & $410$  & $0.819$ & $5068$ & $379$  & $0.757$ & $-$ & $5831$ & $410$  & $0.819$ & $-$ \\
-Always-P-premium  & $-3887$& $87$   & $0.866$ & $-3888$& $87$   & $0.866$ & $-$ & $3113$ & $309$  & $0.866$ & $-$ \\
+Always-P-cheap    & $5165$ & $\mathbf{1221}$ & $0.610$ & $\mathbf{5164}$ & $\mathbf{1221}$ & $0.610$ & $-$ & $5165$ & $\mathbf{1221}$ & $0.610$ & $-$ \\
+Always-P-mid      & $\mathbf{5831}$ & $410$  & $0.819$ & $5068$ & $379$  & $0.757$ & $-$ & $5831$ & $410$  & $0.819$ & $-$ \\
+Always-P-premium  & $-3887$& $87$   & $\mathbf{0.866}$ & $-3888$& $87$   & $\mathbf{0.866}$ & $-$ & $3113$ & $309$  & $\mathbf{0.866}$ & $-$ \\
 BudgetRule        & $-82$  & $208$  & $0.831$ & $-408$ & $193$  & $0.769$ & $-$ & $3065$ & $307$  & $0.859$ & $-$ \\
 \midrule
-PA-DCT (ours)     & $5512$ & $378$ & $0.797$ & $5147$ & $357$ & $0.761$ & $1467$ & $5911$ & $429$ & $0.831$ & $200$ \\
+PA-DCT (ours)     & $5512$ & $378$ & $0.797$ & $5147$ & $357$ & $0.761$ & $\mathbf{1467}$ & $\mathbf{5911}$ & $429$ & $0.831$ & $\mathbf{200}$ \\
 True Oracle (UB)  & $6837$ & $561$ & $0.901$ & $6809$ & $551$ & $0.901$ & $-$ & $7117$ & $722$ & $0.906$ & $-$ \\
 \bottomrule
 \end{tabular}%
@@ -72,7 +72,7 @@ True Oracle (UB)  & $6837$ & $561$ & $0.901$ & $6809$ & $551$ & $0.901$ & $-$ & 
 \includegraphics[width=0.32\textwidth]{figures/S1.png}\hfill
 \includegraphics[width=0.32\textwidth]{figures/S2.png}\hfill
 \includegraphics[width=0.32\textwidth]{figures/S3.png}
-\caption{PA-DCT provider-allocation share over rounds. Shaded regions mark the S2 outage and S3 promotion windows.}
+\caption{PA-DCT provider-allocation share over rounds. Shaded regions mark shock windows: the policy remains mid-dominated in S1, moves away from P-mid during S2, and shifts toward P-premium in S3.}
 \label{fig:learning-curves}
 \end{figure}
 
