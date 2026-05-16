@@ -8,33 +8,33 @@
 
 ## S1 (stationary)
 
-| Ablation | cum_PA | q_bar_T | ROI (q/$) | PA-gap | AdaptT |
-|---|---|---|---|---|---|
-| Full PA-DCT | 5512±54 | 0.797 | 378 | 1325 | n/a |
-| −P (no payment-aware) | -1710±588 | 0.555 | 111 | 8547 | n/a |
-| −D (no discount, γ=1) | 5745±95 | 0.810 | 412 | 1092 | n/a |
-| −C (no contextual) | 5679±41 | 0.812 | 390 | 1159 | n/a |
-| −TS (greedy) | 5540±458 | 0.740 | 535 | 1297 | n/a |
+| Ablation | PA-gap | q_bar_T | ROI (q/$) | AdaptT |
+|---|---|---|---|---|
+| Full PA-DCT | 1325 | 0.797 | 378 | n/a |
+| −P (no payment-aware) | 8547 | 0.555 | 111 | n/a |
+| −D (no discount, γ=1) | 1092 | 0.810 | 412 | n/a |
+| −C (no contextual) | 1159 | 0.812 | 390 | n/a |
+| −TS (greedy) | 1297 | 0.740 | 535 | n/a |
 
 ## S2 (outage 3000-5500)
 
-| Ablation | cum_PA | q_bar_T | ROI (q/$) | PA-gap | AdaptT |
-|---|---|---|---|---|---|
-| Full PA-DCT | 5147±80 | 0.761 | 357 | 1662 | 1467 (30/30) |
-| −P (no payment-aware) | -1966±507 | 0.517 | 103 | 8775 | 1611 (14/30) |
-| −D (no discount, γ=1) | 5113±125 | 0.745 | 399 | 1696 | 2249 (30/30) |
-| −C (no contextual) | 5225±66 | 0.761 | 368 | 1584 | 1176 (30/30) |
-| −TS (greedy) | 5063±481 | 0.687 | 537 | 1746 | 1125 (30/30) |
+| Ablation | PA-gap | q_bar_T | ROI (q/$) | AdaptT |
+|---|---|---|---|---|
+| Full PA-DCT | 1662 | 0.761 | 357 | 1467 (30/30) |
+| −P (no payment-aware) | 8775 | 0.517 | 103 | 1611 (14/30) |
+| −D (no discount, γ=1) | 1696 | 0.745 | 399 | 2249 (30/30) |
+| −C (no contextual) | 1584 | 0.761 | 368 | 1176 (30/30) |
+| −TS (greedy) | 1746 | 0.687 | 537 | 1125 (30/30) |
 
 ## S3 (promo at round 1000)
 
-| Ablation | cum_PA | q_bar_T | ROI (q/$) | PA-gap | AdaptT |
-|---|---|---|---|---|---|
-| Full PA-DCT | 5911±51 | 0.831 | 429 | 1206 | 200 (30/30) |
-| −P (no payment-aware) | 4528±369 | 0.840 | 351 | 2589 | 200 (30/30) |
-| −D (no discount, γ=1) | 5974±93 | 0.838 | 426 | 1143 | 279 (30/30) |
-| −C (no contextual) | 6024±35 | 0.848 | 425 | 1092 | 398 (29/30) |
-| −TS (greedy) | 5663±244 | 0.742 | 552 | 1453 | 2232 (24/30) |
+| Ablation | PA-gap | q_bar_T | ROI (q/$) | AdaptT |
+|---|---|---|---|---|
+| Full PA-DCT | 1206 | 0.831 | 429 | 200 (30/30) |
+| −P (no payment-aware) | 2589 | 0.840 | 351 | 200 (30/30) |
+| −D (no discount, γ=1) | 1143 | 0.838 | 426 | 279 (30/30) |
+| −C (no contextual) | 1092 | 0.848 | 425 | 398 (29/30) |
+| −TS (greedy) | 1453 | 0.742 | 552 | 2232 (24/30) |
 
 ## Cross-scenario adaptation_time comparison (D and C)
 

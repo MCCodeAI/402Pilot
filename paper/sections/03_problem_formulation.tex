@@ -66,7 +66,7 @@ where the expectation is over policy randomization and selected-provider outcome
 \label{eq:pa-regret}
 \paReg_{\mathcal{E}}(\pi;\bar\pi) \;:=\; J_{\mathcal{E}}(\bar\pi) - J_{\mathcal{E}}(\pi).
 \end{equation}
-The scalar $\rt$ aggregates quality, failure, and cost through wallet pressure $\lamn$; because $\lamn$ depends on each policy's own spending trajectory, $J_{\mathcal{E}}(\pi)$ is not policy-invariant and should not be read as a stand-alone leaderboard score across policies (\S\ref{sec:eval-setup} reports it alongside raw service-quality and spending metrics). Full-information comparators that observe unchosen outcomes lie outside $\Pi_{\mathrm{adm}}$ and serve only as empirical upper bounds; we report the empirical PA-regret of each policy against the True Oracle defined in \S\ref{sec:eval-setup}.
+The scalar $\rt$ aggregates quality, failure, and cost through wallet pressure $\lamn$; because $\lamn$ depends on each policy's own spending trajectory, $J_{\mathcal{E}}(\pi)$ is not policy-invariant and should not be read as a stand-alone leaderboard score across policies. Full-information comparators that observe unchosen outcomes lie outside $\Pi_{\mathrm{adm}}$ and serve only as empirical upper bounds; \S\ref{sec:eval-setup} therefore reports the empirical PA-regret of each policy against the True Oracle alongside raw service-quality and spending metrics.
 
 \paragraph{Budget pressure.}
 The wallet-pressure multiplier $\lambda_t$ in Eq.~\eqref{eq:reward} is a deterministic function of cumulative spend. For $t>0$, define the realized burn rate as the fraction of the wallet spent per elapsed round,

@@ -3,7 +3,7 @@
 Reads existing summary.jsonl files (no re-running of experiments) and
 computes, for each scenario × baseline pair:
 
-    - mean Δ(q_bar_T, cum_PA, ROI)  := PA-DCT − baseline, paired by seed
+    - mean Δ(q_bar_T, PA_gap_advantage, ROI), paired by seed
     - paired bootstrap 95% CI on each Δ
     - paired t-statistic + two-sided p-value (Welch's t for paranoia)
     - effect size: Cohen's d_z (paired)
@@ -16,7 +16,7 @@ Comparisons (15 pairs total):
     × {S1, S2, S3 v2}
 
 Why paired bootstrap, not a paired t-test:
-    Across 30 seeds the cum_PA distribution can be skewed under
+    Across 30 seeds the PA objective distribution can be skewed under
     bankrupting policies (AlwaysPremium hits a budget wall and the PA
     stops accumulating mid-run). The paired difference still has finite
     variance, but its sampling distribution is not Gaussian. Bootstrap
@@ -192,7 +192,7 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             for metric_label, metric_fn in [
                 ("q_bar_T", per_seed_q_bar_T),
-                ("cum_PA",  lambda r: r["cum_pa_reward"]),
+                ("PA_gap_advantage", lambda r: r["cum_pa_reward"]),
                 ("ROI",     per_seed_roi),
             ]:
                 diffs = _diff_paired(padct, base, metric_fn)
@@ -226,7 +226,9 @@ def main(argv: list[str] | None = None) -> int:
     md.append("")
     md.append("**Convention.** Δ = PA-DCT − baseline, paired by seed.")
     md.append("Positive Δ on q_bar_T (full-horizon mean quality, unserved rounds → 0), "
-              "cum_PA, or ROI means PA-DCT wins.")
+              "PA_gap_advantage, or ROI means PA-DCT wins.")
+    md.append("For PA_gap_advantage, positive Δ means PA-DCT has a lower PA-gap; "
+              "the True Oracle term cancels in paired differences.")
     md.append("CI is 95% bootstrap; p-value is two-sided paired-z (n=30, normal ≈ t_29).")
     md.append("`d_z` is Cohen's standardised paired effect size.")
     md.append("")
@@ -256,9 +258,9 @@ def main(argv: list[str] | None = None) -> int:
     # Quick "Table 1 markers" cheat sheet — paper main table only needs this.
     md.append("---")
     md.append("")
-    md.append("## Compact Table 1 markers (cum_PA only)")
+    md.append("## Compact Table 1 markers (PA-gap only)")
     md.append("")
-    md.append("Use these to annotate the cum_PA mean of PA-DCT in the paper's main table.")
+    md.append("Use these to annotate PA-gap comparisons in the paper's main table.")
     md.append("")
     md.append("| Scenario | vs Random | vs AlwaysCheap | vs AlwaysMid | vs AlwaysPremium | vs BudgetRule |")
     md.append("|---|---|---|---|---|---|")
@@ -267,10 +269,9 @@ def main(argv: list[str] | None = None) -> int:
         for bk in ("Random", "AlwaysCheap", "AlwaysMid", "AlwaysPremium", "BudgetRule"):
             r = next((r for r in rows
                       if r["scenario"] == scen and r["baseline"] == bk
-                      and r["metric"] == "cum_PA"), None)
+                      and r["metric"] == "PA_gap_advantage"), None)
             cells.append(r["stars"] if r else "—")
         md.append(f"| {scen} | " + " | ".join(cells) + " |")
-    md.append("")
 
     OUT.write_text("\n".join(md) + "\n")
     print(f"[ok] wrote {OUT}")

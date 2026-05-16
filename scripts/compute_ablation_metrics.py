@@ -308,8 +308,8 @@ def render_markdown(rows: list[dict]) -> str:
         lines.append(f"## {SCENARIO_LABELS[scen]}")
         lines.append("")
         # Header
-        header = f"| Ablation | cum_PA | q_bar_T | ROI (q/$) | PA-gap | AdaptT |"
-        sep = "|---|---|---|---|---|---|"
+        header = f"| Ablation | PA-gap | q_bar_T | ROI (q/$) | AdaptT |"
+        sep = "|---|---|---|---|---|"
         lines.append(header)
         lines.append(sep)
         for abl in abl_order:
@@ -317,7 +317,6 @@ def render_markdown(rows: list[dict]) -> str:
             if row is None or row["n_seeds"] == 0:
                 lines.append(f"| {ABLATION_LABELS[abl]} | -- | -- | -- | -- | -- |")
                 continue
-            cum_pa = f"{row['cum_pa_mean']:.0f}±{row['cum_pa_std']:.0f}"
             q_bar_T = f"{row['q_bar_T']:.3f}"
             roi = f"{row['roi']:.0f}"
             pa_gap = (
@@ -335,7 +334,7 @@ def render_markdown(rows: list[dict]) -> str:
                         f"({row['adapt_time_count']}/{row['adapt_time_total']})"
                     )
             lines.append(
-                f"| {ABLATION_LABELS[abl]} | {cum_pa} | {q_bar_T} | {roi} | {pa_gap} | {adapt} |"
+                f"| {ABLATION_LABELS[abl]} | {pa_gap} | {q_bar_T} | {roi} | {adapt} |"
             )
         lines.append("")
 
