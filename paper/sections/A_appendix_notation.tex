@@ -162,9 +162,11 @@ S3 & \texttt{PremiumDropScenario} & \texttt{shock\_round=1000}, \texttt{price\_m
 Symbol & Definition & Notes \\
 \midrule
 $\bar q_T$       & $(1/T)\sum_{t<\tau} q_t$ & full-horizon mean quality; unserved rounds after wallet exhaustion contribute $q_t = 0$, so bankrupting policies are correctly penalized \\
+$\mathrm{budget\ use}$ & $100\sum_{t<\tau} c_t/B$ & percentage of the initial wallet spent; reported instead of raw dollars in the main table \\
 $\mathrm{ROI}$   & $\sum_{t<\tau} q_t / \sum_{t<\tau} c_t$ & quality yield per dollar \\
 $R^\pi_T$        & $\sum_{t<\tau} r_t$ & cumulative payment-aware reward (cum-PA); scalar objective optimized by PA-DCT, not policy-invariant because $\lamn$ depends on each policy's spending trajectory \\
-$\paReg_T$       & $R^{\mathrm{Oracle}}_T - R^\pi_T$ & empirical PA-regret (a.k.a.\ PA-gap) to the True Oracle, Eq.~\eqref{eq:pa-regret} \\
+$\paReg_T$       & $R^{\mathrm{Oracle}}_T - R^\pi_T$ & cumulative empirical PA-regret to the True Oracle, Eq.~\eqref{eq:pa-regret} \\
+$\paReg_T/T$     & $(R^{\mathrm{Oracle}}_T - R^\pi_T)/T$ & per-round empirical PA-regret (reported as PA-gap/$T$ in tables) \\
 $\AdaptT$        & trailing-200 ROI shock-response time & S2: reach $\geq 95\%$ of pre-outage ROI; S3: reach $\geq 110\%$ of pre-promotion ROI \\
 \bottomrule
 \end{tabularx}

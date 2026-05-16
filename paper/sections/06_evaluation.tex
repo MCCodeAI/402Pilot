@@ -35,47 +35,47 @@ We evaluate three calibrated market regimes: S1 stationary operation, S2 a P-mid
 We compare PA-DCT with five non-oracle baselines: Random, three fixed-arm policies (Always-P-cheap, Always-P-mid, Always-P-premium), and BudgetRule, a fixed wallet-threshold rule inspired by cost-aware cascade heuristics~\citep{chen2023frugalgpt}: it chooses P-premium above $50\%$ remaining budget, P-mid above $20\%$, and P-cheap below that. We also report a replay True Oracle: it peeks at every affordable arm's realized outcome before choosing, owns its own wallet trajectory, and is therefore an upper-bound reference rather than an admissible online policy. All policies use the same locked settings across scenarios and seeds.
 
 \paragraph{Metrics.}
-We report five locked metrics as a multi-metric leaderboard rather than a single primary score, following the quality--cost trade-off convention of cost-aware LLM routing benchmarks~\citep{chen2023frugalgpt}. \emph{Full-horizon mean quality} $\bar q_T = (1/T)\sum_{t<\tau} q_t$ measures service quality; unserved rounds after wallet exhaustion ($t \geq \tau$) contribute $q_t=0$, so $\bar q_T$ correctly penalizes premature bankruptcy. \emph{Total spend} $\sum_{t<\tau} c_t$ verifies budget feasibility and \emph{ROI} $=\sum_{t<\tau} q_t/\sum_{t<\tau} c_t$ measures economic efficiency. ROI is therefore an efficiency diagnostic rather than a service-quality objective: very low-cost policies can score high ROI by under-spending, so ROI must be interpreted jointly with $\bar q_T$ and spend. PA-DCT optimizes cumulative payment-aware reward $R^\pi_T=\sum_{t<\tau} r_t$, but because its wallet-pressure weight $\lamn$ depends on each policy's own spending trajectory, we report the induced \emph{PA-gap} $R^{\mathrm{TO}}_T-R^\pi_T$ to the replay True Oracle rather than using raw cum-PA as a stand-alone leaderboard column. \emph{AdaptT} is a trailing-$200$ ROI response time: in S2 it measures recovery to at least $95\%$ of pre-outage ROI, while in S3 it measures capture of the promotion opportunity by reaching at least $110\%$ of pre-promotion ROI. The S3 threshold is fixed before evaluation. AdaptT is undefined in S1; for policies that bankrupt before the shock window completes, AdaptT is reported as \texttt{runout}. Paired-bootstrap significance tests are computed on each claimed metric separately: quality claims on $\bar q_T$, scalar-objective claims on PA-gap, efficiency claims on ROI.
+We report five locked metrics as a multi-metric leaderboard rather than a single primary score, following the quality--cost trade-off convention of cost-aware LLM routing benchmarks~\citep{chen2023frugalgpt}. \emph{Full-horizon mean quality} $\bar q_T = (1/T)\sum_{t<\tau} q_t$ measures service quality; unserved rounds after wallet exhaustion ($t \geq \tau$) contribute $q_t=0$, so $\bar q_T$ correctly penalizes premature bankruptcy. \emph{Budget use} $100\sum_{t<\tau} c_t/B$ verifies budget feasibility and \emph{ROI} $=\sum_{t<\tau} q_t/\sum_{t<\tau} c_t$ measures economic efficiency. ROI is therefore an efficiency diagnostic rather than a service-quality objective: very low-cost policies can score high ROI by under-spending, so ROI must be interpreted jointly with $\bar q_T$ and budget use. PA-DCT optimizes cumulative payment-aware reward $R^\pi_T=\sum_{t<\tau} r_t$, but because its wallet-pressure weight $\lamn$ depends on each policy's own spending trajectory, we report the induced per-round \emph{PA-gap} $(R^{\mathrm{TO}}_T-R^\pi_T)/T$ to the replay True Oracle rather than using raw cum-PA as a stand-alone leaderboard column. \emph{AdaptT} is a trailing-$200$ ROI response time: in S2 it measures recovery to at least $95\%$ of pre-outage ROI, while in S3 it measures capture of the promotion opportunity by reaching at least $110\%$ of pre-promotion ROI. The S3 threshold is fixed before evaluation. AdaptT is undefined in S1; for policies that bankrupt before the shock window completes, AdaptT is reported as \texttt{runout}. Paired-bootstrap significance tests are computed on each claimed metric separately: quality claims on $\bar q_T$, scalar-objective claims on PA-gap/$T$, efficiency claims on ROI.
 
 \subsection{Main Results}
 \label{sec:eval-main}
 
-Table~\ref{tab:main} reports the locked metrics across S1/S2/S3, as means over $30$ seeds. Each scenario shows $\bar q_T$, total spend, ROI, and PA-gap; the comparisons should be read across axes rather than as a single-column ranking. Across the fifteen pairwise PA-DCT vs.\ baseline tests on $\bar q_T$ (paired bootstrap, two-sided), fourteen reach $p<10^{-3}$ and one reaches $p=1.67\times 10^{-3}$ (S2, vs.\ Always-P-mid); on PA-gap fourteen reach $p<10^{-3}$ and one is a non-significant tie ($p=0.17$, S2 vs.\ Always-P-cheap). Note that significant differences include comparisons where PA-DCT loses on $\bar q_T$ (BudgetRule in S1/S2, Always-P-premium and BudgetRule in S3); the significance tests verify the direction of each cell, not that PA-DCT dominates every axis. Different non-oracle policies top different axes: Always-P-cheap on ROI and S2 PA-gap, Always-P-mid on S1 PA-gap, Always-P-premium on S3 $\bar q_T$ after the price shock, BudgetRule on S1/S2 $\bar q_T$, and PA-DCT on S3 PA-gap. S1 exposes the cost of maintaining adaptivity, while S2/S3 show its value under reliability and price shocks.
+Table~\ref{tab:main} reports the locked metrics across S1/S2/S3, as means over $30$ seeds. Each scenario shows $\bar q_T$, budget use, ROI, and PA-gap/$T$; the comparisons should be read across axes rather than as a single-column ranking. Across the fifteen pairwise PA-DCT vs.\ baseline tests on $\bar q_T$ (paired bootstrap, two-sided), fourteen reach $p<10^{-3}$ and one reaches $p=1.67\times 10^{-3}$ (S2, vs.\ Always-P-mid); on PA-gap/$T$ fourteen reach $p<10^{-3}$ and one is a non-significant tie ($p=0.17$, S2 vs.\ Always-P-cheap). Note that significant differences include comparisons where PA-DCT loses on $\bar q_T$ (BudgetRule in S1/S2, Always-P-premium and BudgetRule in S3); the significance tests verify the direction of each cell, not that PA-DCT dominates every axis. Different non-oracle policies top different axes: Always-P-cheap on ROI and S2 PA-gap/$T$, Always-P-mid on S1 PA-gap/$T$, Always-P-premium on S3 $\bar q_T$ after the price shock, BudgetRule on S1/S2 $\bar q_T$, and PA-DCT on S3 PA-gap/$T$. S1 exposes the cost of maintaining adaptivity, while S2/S3 show its value under reliability and price shocks.
 
 \begin{table}[t]
 \centering
 \small
 \setlength{\tabcolsep}{3.5pt}
-\caption{Main results on 402Pilot-Bench, averaged over $30$ seeds. The table is a multi-axis trade-off, not a single leaderboard: columns report $\bar q_T$ (full-horizon mean quality, unserved rounds $\to 0$), total spend (\$), ROI ($\sum q/\sum c$), and PA-gap to the replay True Oracle (lower is better). Bold marks the best non-oracle value in each rank-comparable column; spend is not bolded because direction-of-preference is ambiguous. Shock-response time (AdaptT) is reported in Table~\ref{tab:ablations}.}
+\caption{Main results on 402Pilot-Bench, averaged over $30$ seeds. The table is a multi-axis trade-off, not a single leaderboard: columns report $\bar q_T$, budget used (\%), ROI, and PA-gap/$T$ to the replay True Oracle (lower is better). Bold marks the best non-oracle value in each rank-comparable column; budget use is not bolded because direction-of-preference is ambiguous. Shock-response time (AdaptT) is reported in Table~\ref{tab:ablations}.}
 \label{tab:main}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{l|cccc|cccc|cccc}
 \toprule
 & \multicolumn{4}{c|}{S1 Stationary} & \multicolumn{4}{c|}{S2 Mid Outage} & \multicolumn{4}{c}{S3 Premium Promo} \\
-Policy & $\bar q_T$ & spend & ROI & PA-gap & $\bar q_T$ & spend & ROI & PA-gap & $\bar q_T$ & spend & ROI & PA-gap \\
+Policy & $\bar q_T$ & budget \% & ROI & PA-gap/$T$ & $\bar q_T$ & budget \% & ROI & PA-gap/$T$ & $\bar q_T$ & budget \% & ROI & PA-gap/$T$ \\
 \midrule
-Random            & $0.688$ & $33$ & $209$ & $3646$
-                  & $0.676$ & $33$ & $205$ & $3749$
-                  & $0.688$ & $19$ & $370$ & $2735$ \\
-Always-P-cheap    & $0.610$ & $\phantom{0}5$ & $\mathbf{1221}$ & $1672$
-                  & $0.610$ & $\phantom{0}5$ & $\mathbf{1221}$ & $\mathbf{1645}$
-                  & $0.610$ & $\phantom{0}5$ & $\mathbf{1221}$ & $1952$ \\
-Always-P-mid      & $0.819$ & $20$ & $410$ & $\mathbf{1006}$
-                  & $0.757$ & $20$ & $379$ & $1741$
-                  & $0.819$ & $20$ & $410$ & $1286$ \\
-Always-P-premium  & $0.433$ & $50$ & $\phantom{0}87$ & $10724$
-                  & $0.433$ & $50$ & $\phantom{0}87$ & $10697$
-                  & $\mathbf{0.866}$ & $28$ & $309$ & $4004$ \\
-BudgetRule        & $\mathbf{0.831}$ & $40$ & $208$ & $6919$
-                  & $\mathbf{0.769}$ & $40$ & $193$ & $7217$
-                  & $0.859$ & $28$ & $307$ & $4052$ \\
+Random            & $0.688$ & $66$ & $209$ & $0.365$
+                  & $0.676$ & $66$ & $205$ & $0.375$
+                  & $0.688$ & $38$ & $370$ & $0.274$ \\
+Always-P-cheap    & $0.610$ & $10$ & $\mathbf{1221}$ & $0.167$
+                  & $0.610$ & $10$ & $\mathbf{1221}$ & $\mathbf{0.165}$
+                  & $0.610$ & $10$ & $\mathbf{1221}$ & $0.195$ \\
+Always-P-mid      & $0.819$ & $40$ & $410$ & $\mathbf{0.101}$
+                  & $0.757$ & $40$ & $379$ & $0.174$
+                  & $0.819$ & $40$ & $410$ & $0.129$ \\
+Always-P-premium  & $0.433$ & $100$ & $\phantom{0}87$ & $1.072$
+                  & $0.433$ & $100$ & $\phantom{0}87$ & $1.070$
+                  & $\mathbf{0.866}$ & $56$ & $309$ & $0.400$ \\
+BudgetRule        & $\mathbf{0.831}$ & $80$ & $208$ & $0.692$
+                  & $\mathbf{0.769}$ & $80$ & $193$ & $0.722$
+                  & $0.859$ & $56$ & $307$ & $0.405$ \\
 \midrule
-\textbf{PA-DCT (ours)} & $0.797$ & $21$ & $378$ & $1325$
-                  & $0.761$ & $21$ & $357$ & $1662$
-                  & $0.831$ & $19$ & $429$ & $\mathbf{1206}$ \\
-True Oracle (UB)  & $0.901$ & $16$ & $561$ & $0$
-                  & $0.901$ & $16$ & $551$ & $0$
-                  & $0.906$ & $13$ & $722$ & $0$ \\
+\textbf{PA-DCT (ours)} & $0.797$ & $42$ & $378$ & $0.133$
+                  & $0.761$ & $42$ & $357$ & $0.166$
+                  & $0.831$ & $38$ & $429$ & $\mathbf{0.121}$ \\
+True Oracle (UB)  & $0.901$ & $32$ & $561$ & $0.000$
+                  & $0.901$ & $32$ & $551$ & $0.000$
+                  & $0.906$ & $26$ & $722$ & $0.000$ \\
 \bottomrule
 \end{tabular}%
 }
@@ -90,46 +90,46 @@ True Oracle (UB)  & $0.901$ & $16$ & $561$ & $0$
 \label{fig:learning-curves}
 \end{figure}
 
-Table~\ref{tab:main} should be read as an adaptation trade-off across multiple axes rather than a claim that PA-DCT dominates a single metric in every scenario. No single non-oracle policy is best on every column: BudgetRule maximizes $\bar q_T$ in S1/S2 at the cost of a large PA-gap, Always-P-cheap maximizes ROI uniformly at the cost of the lowest $\bar q_T$, Always-P-mid minimizes PA-gap in S1, and Always-P-premium maximizes $\bar q_T$ in S3 once the price shock makes its tier affordable.
+Table~\ref{tab:main} should be read as an adaptation trade-off across multiple axes rather than a claim that PA-DCT dominates a single metric in every scenario. No single non-oracle policy is best on every column: BudgetRule maximizes $\bar q_T$ in S1/S2 at the cost of a large PA-gap/$T$, Always-P-cheap maximizes ROI uniformly at the cost of the lowest $\bar q_T$, Always-P-mid minimizes PA-gap/$T$ in S1, and Always-P-premium maximizes $\bar q_T$ in S3 once the price shock makes its tier affordable.
 
-In S1, where no shock occurs, the fixed reliable mid-tier policy achieves the lowest non-oracle PA-gap ($1006$) at $\bar q_T = 0.819$, while PA-DCT lands at PA-gap $1325$ and $\bar q_T = 0.797$, a $\approx\!2.2$ percentage-point quality gap reflecting continued exploration and shock-ready posteriors. The fixed wallet-threshold BudgetRule delivers higher $\bar q_T = 0.831$ but burns \$40 of the \$50 budget to do so, driving PA-gap to $6919$; this is the prototype of a policy that wins on a single axis but is penalized by the scalar objective. PA-DCT's $\$21$ spend tracks Always-P-mid's $\$20$ while keeping the posteriors live for the shocks tested in S2/S3.
+In S1, where no shock occurs, the fixed reliable mid-tier policy achieves the lowest non-oracle PA-gap/$T$ ($0.101$) at $\bar q_T = 0.819$, while PA-DCT lands at PA-gap/$T$ of $0.133$ and $\bar q_T = 0.797$, a $\approx\!2.2$ percentage-point quality gap reflecting continued exploration and shock-ready posteriors. The fixed wallet-threshold BudgetRule delivers higher $\bar q_T = 0.831$ but uses $80\%$ of the budget, driving PA-gap/$T$ to $0.692$; this is the prototype of a policy that wins on a single axis but is penalized by the scalar objective. PA-DCT's $42\%$ budget use tracks Always-P-mid's $40\%$ while keeping the posteriors live for the shocks tested in S2/S3.
 
-The value of that adaptivity appears once the market changes. Under the S2 reliability shock, PA-DCT delivers $\bar q_T = 0.761$ versus $0.610$ for Always-P-cheap and $0.757$ for Always-P-mid---the latter directly exposed to the $30\%$ outage---and the quality advantage over Always-P-cheap is highly significant (paired bootstrap, $\Delta\bar q_T = +0.151$, $p<10^{-4}$). On PA-gap, PA-DCT statistically ties Always-P-cheap ($1662$ vs $1645$, $p=0.17$); this tie reflects the cheap policy's very low wallet pressure ($\lamn$ stays small because Always-P-cheap spends only \$5 of the \$50 budget, so the wallet-pressure penalty on its scalar reward is negligible) rather than comparable service quality, which differs by $15$ percentage points of $\bar q_T$. The middle panel of Fig.~\ref{fig:learning-curves} shows the response as a temporary migration away from P-mid during the outage followed by a return after recovery. PA-DCT's shock-response time (trailing-$200$ ROI recovers to $95\%$ of pre-outage in $1{,}467$ rounds) is reported in Table~\ref{tab:ablations}, where it is compared against PA-DCT variants that share its adaptive structure; fixed-arm baselines have no analogous quantity because they do not adapt.
+The value of that adaptivity appears once the market changes. Under the S2 reliability shock, PA-DCT delivers $\bar q_T = 0.761$ versus $0.610$ for Always-P-cheap and $0.757$ for Always-P-mid---the latter directly exposed to the $30\%$ outage---and the quality advantage over Always-P-cheap is highly significant (paired bootstrap, $\Delta\bar q_T = +0.151$, $p<10^{-4}$). On PA-gap/$T$, PA-DCT statistically ties Always-P-cheap ($0.166$ vs $0.165$, $p=0.17$); this tie reflects the cheap policy's very low wallet pressure ($\lamn$ stays small because Always-P-cheap uses only $10\%$ of the budget, so the wallet-pressure penalty on its scalar reward is negligible) rather than comparable service quality, which differs by $15$ percentage points of $\bar q_T$. The middle panel of Fig.~\ref{fig:learning-curves} shows the response as a temporary migration away from P-mid during the outage followed by a return after recovery. PA-DCT's shock-response time (trailing-$200$ ROI recovers to $95\%$ of pre-outage in $1{,}467$ rounds) is reported in Table~\ref{tab:ablations}, where it is compared against PA-DCT variants that share its adaptive structure; fixed-arm baselines have no analogous quantity because they do not adapt.
 
-S3 tests a different kind of non-stationarity: a price opportunity rather than a reliability failure. Here the learned cost posterior lets PA-DCT treat the premium discount as feedback instead of static metadata. PA-DCT has the lowest non-oracle PA-gap and improves over Always-P-mid on every reported axis: PA-gap ($1206$ vs $1286$), ROI ($429$ vs $410$), and $\bar q_T$ ($0.831$ vs $0.819$). The right panel of Fig.~\ref{fig:learning-curves} shows the resulting migration to P-premium after the price drop. The same-price decoys also clarify the role of feedback quality: P-flaky is kept at low allocation because timeouts provide explicit negative feedback, while P-adv can be harder in open-ended T3b because fluent-but-wrong answers can sometimes pass the judge, an evaluator boundary we return to in \S\ref{sec:discuss}.
+S3 tests a different kind of non-stationarity: a price opportunity rather than a reliability failure. Here the learned cost posterior lets PA-DCT treat the premium discount as feedback instead of static metadata. PA-DCT has the lowest non-oracle PA-gap/$T$ and improves over Always-P-mid on every reported axis: PA-gap/$T$ ($0.121$ vs $0.129$), ROI ($429$ vs $410$), and $\bar q_T$ ($0.831$ vs $0.819$). The right panel of Fig.~\ref{fig:learning-curves} shows the resulting migration to P-premium after the price drop. The same-price decoys also clarify the role of feedback quality: P-flaky is kept at low allocation because timeouts provide explicit negative feedback, while P-adv can be harder in open-ended T3b because fluent-but-wrong answers can sometimes pass the judge, an evaluator boundary we return to in \S\ref{sec:discuss}.
 
-Read together, the four columns of Table~\ref{tab:main} expose a deployment-relevant robustness property that no single column captures. Across the nine rank-comparable cells (three metrics $\{\bar q_T, \mathrm{ROI}, \mathrm{PA\text{-}gap}\}$ across $\{\text{S1},\text{S2},\text{S3}\}$; spend has no direction-of-preference because lower spend correlates with lower quality), PA-DCT is the unique non-oracle policy whose worst rank is $3$ out of $6$. Equivalently, PA-DCT is top-three in all nine rank-comparable cells and top-two in five; the worst ranks are PA-DCT $3/6$, Always-P-mid $4/6$, Random $5/6$, and Always-P-cheap, Always-P-premium, and BudgetRule $6/6$. The last-rank cells also differ by failure mode: Always-P-cheap is last on $\bar q_T$ in S3, Always-P-premium is last throughout S1/S2, and BudgetRule is last on ROI and PA-gap in S3. This suggests that PA-DCT is the least brittle non-oracle policy in this calibrated comparator set: the fixed and rule-based policies can be attractive on one axis, but each has a regime where it ranks poorly on an axis an autonomous agent may care about.
+Read together, the four columns of Table~\ref{tab:main} expose a deployment-relevant robustness property that no single column captures. Across the nine rank-comparable cells (three metrics $\{\bar q_T, \mathrm{ROI}, \mathrm{PA\text{-}gap}/T\}$ across $\{\text{S1},\text{S2},\text{S3}\}$; budget use has no direction-of-preference because lower use correlates with lower quality), PA-DCT is the unique non-oracle policy whose worst rank is $3$ out of $6$. Equivalently, PA-DCT is top-three in all nine rank-comparable cells and top-two in five; the worst ranks are PA-DCT $3/6$, Always-P-mid $4/6$, Random $5/6$, and Always-P-cheap, Always-P-premium, and BudgetRule $6/6$. The last-rank cells also differ by failure mode: Always-P-cheap is last on $\bar q_T$ in S3, Always-P-premium is last throughout S1/S2, and BudgetRule is last on ROI and PA-gap/$T$ in S3. This suggests that PA-DCT is the least brittle non-oracle policy in this calibrated comparator set: the fixed and rule-based policies can be attractive on one axis, but each has a regime where it ranks poorly on an axis an autonomous agent may care about.
 
 \subsection{Ablation Study}
 \label{sec:eval-ablations}
 
-We disable each of PA-DCT's four conceptual components in turn---Payment-aware ranking ($-P$), Discount ($-D$), Contextual bucketing ($-C$), Thompson sampling ($-TS$). Full PA-DCT is a robust shock-adaptive design, not a per-scenario tuning of the smallest PA-gap, so the ablation asks which component is exposed on which metric. We additionally run a diagnostic ablation that isolates the cost-posterior pathway inside payment-awareness ($-C_{\mathrm{post}}$, which pins cost to the spec scalar $\bar c_a$ while leaving wallet-pressure weighting intact). This diagnostic is meaningful only under price drift, so we run it on S3 only. Table~\ref{tab:ablations} reports the ablated variants alongside full PA-DCT.
+We disable each of PA-DCT's four conceptual components in turn---Payment-aware ranking ($-P$), Discount ($-D$), Contextual bucketing ($-C$), Thompson sampling ($-TS$). Full PA-DCT is a robust shock-adaptive design, not a per-scenario tuning of the smallest PA-gap/$T$, so the ablation asks which component is exposed on which metric. We additionally run a diagnostic ablation that isolates the cost-posterior pathway inside payment-awareness ($-C_{\mathrm{post}}$, which pins cost to the spec scalar $\bar c_a$ while leaving wallet-pressure weighting intact). This diagnostic is meaningful only under price drift, so we run it on S3 only. Table~\ref{tab:ablations} reports the ablated variants alongside full PA-DCT.
 
 \begin{table}[t]
 \centering
 \small
 \setlength{\tabcolsep}{3.5pt}
-\caption{Component ablations on 402Pilot-Bench. Values are absolute metrics, not deltas; PA-gap is $J_{\mathcal{E}}(\mathrm{TO}) - J_{\mathcal{E}}(\pi)$, the empirical PA-regret against the True Oracle (Eq.~\ref{eq:pa-regret}). $\bar q_T$ is full-horizon mean quality (Σ$q_t$/T, unserved rounds → 0); ${}^{\dagger}$ marks variants that bankrupt mid-run (the $-P$ ablation in S1/S2). \texttt{n.r.} means not run.}
+\caption{Component ablations on 402Pilot-Bench. Values are metrics, not deltas; PA-gap/$T$ is per-round empirical PA-regret against the True Oracle (Eq.~\ref{eq:pa-regret}). $\bar q_T$ is full-horizon mean quality (Σ$q_t$/T, unserved rounds → 0); ${}^{\dagger}$ marks variants that bankrupt mid-run (the $-P$ ablation in S1/S2). \texttt{n.r.} means not run.}
 \label{tab:ablations}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{l|cccc|cccc|cccc}
 \toprule
 & \multicolumn{4}{c|}{S1 Stationary} & \multicolumn{4}{c|}{S2 Mid Outage} & \multicolumn{4}{c}{S3 Premium Promo} \\
-Variant & PA-gap & ROI & $\bar q_T$ & AdaptT & PA-gap & ROI & $\bar q_T$ & AdaptT & PA-gap & ROI & $\bar q_T$ & AdaptT \\
+Variant & PA-gap/$T$ & ROI & $\bar q_T$ & AdaptT & PA-gap/$T$ & ROI & $\bar q_T$ & AdaptT & PA-gap/$T$ & ROI & $\bar q_T$ & AdaptT \\
 \midrule
-Full PA-DCT      & $1325$ & $378$ & $0.797$ & \texttt{n/a} & $1662$ & $357$ & $0.761$ & $1467$ & $1206$ & $429$ & $0.831$ & $200$  \\
-$-P$             & $8547$ & $111$ & $0.555^{\dagger}$ & \texttt{n/a} & $8775$ & $103$ & $0.517^{\dagger}$ & $1611$ & $2589$ & $351$ & $0.840$ & $200$  \\
-$-D$             & $1092$ & $412$ & $0.810$ & \texttt{n/a} & $1696$ & $399$ & $0.745$ & $2249$ & $1143$ & $426$ & $0.838$ & $279$  \\
-$-C$             & $1159$ & $390$ & $0.812$ & \texttt{n/a} & $1584$ & $368$ & $0.761$ & $1176$ & $1092$ & $425$ & $0.848$ & $398$  \\
-$-TS$            & $1297$ & $535$ & $0.740$ & \texttt{n/a} & $1746$ & $537$ & $0.687$ & $1125$ & $1453$ & $552$ & $0.742$ & $2232$ \\
-$-C_{\mathrm{post}}$ & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & $1436$ & $423$ & $0.797$ & $\infty$ \\
+Full PA-DCT      & $0.133$ & $378$ & $0.797$ & \texttt{n/a} & $0.166$ & $357$ & $0.761$ & $1467$ & $0.121$ & $429$ & $0.831$ & $200$  \\
+$-P$             & $0.855$ & $111$ & $0.555^{\dagger}$ & \texttt{n/a} & $0.878$ & $103$ & $0.517^{\dagger}$ & $1611$ & $0.259$ & $351$ & $0.840$ & $200$  \\
+$-D$             & $0.109$ & $412$ & $0.810$ & \texttt{n/a} & $0.170$ & $399$ & $0.745$ & $2249$ & $0.114$ & $426$ & $0.838$ & $279$  \\
+$-C$             & $0.116$ & $390$ & $0.812$ & \texttt{n/a} & $0.158$ & $368$ & $0.761$ & $1176$ & $0.109$ & $425$ & $0.848$ & $398$  \\
+$-TS$            & $0.130$ & $535$ & $0.740$ & \texttt{n/a} & $0.175$ & $537$ & $0.687$ & $1125$ & $0.145$ & $552$ & $0.742$ & $2232$ \\
+$-C_{\mathrm{post}}$ & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & $0.144$ & $423$ & $0.797$ & $\infty$ \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
-Table~\ref{tab:ablations} is intentionally multi-metric: different components fail on different axes. The most direct failure is removing payment-awareness: without wallet pressure the policy overuses expensive arms, exhausts the budget at round ${\sim}6{,}500$ in S1/S2, and drives both PA-gap and $\bar q_T$ far from the cheap-only baseline because of unserved rounds. Discounting has a different signature: it is not mainly justified by stationary reward, but by response speed, shortening S2 recovery from $2{,}249$ to $1{,}467$ rounds.
+Table~\ref{tab:ablations} is intentionally multi-metric: different components fail on different axes. The most direct failure is removing payment-awareness: without wallet pressure the policy overuses expensive arms, exhausts the budget at round ${\sim}6{,}500$ in S1/S2, and drives both PA-gap/$T$ and $\bar q_T$ far from the cheap-only baseline because of unserved rounds. Discounting has a different signature: it is not mainly justified by stationary reward, but by response speed, shortening S2 recovery from $2{,}249$ to $1{,}467$ rounds.
 
 Contextual bucketing and Thompson sampling matter in less monotone ways. A single global bucket reacts faster to the uniform S2 outage because evidence is pooled, but contextual buckets help exploit the S3 promotion under task-dependent quality differences ($200$ vs $398$ rounds). Greedy posterior means can be close on average in S1/S2, yet they show $5$--$9\times$ larger seed variance and miss the S3 price shock in $6/30$ seeds, which is precisely the kind of opportunity Thompson sampling is meant to keep discoverable.
 
-The cost-posterior diagnostic isolates the price channel. When costs are pinned to the specification scalar, the policy keeps treating P-premium as expensive after the promotion: P-premium share stays below $4\%$, AdaptT is undefined, and PA-gap increases by $230$ relative to full PA-DCT. Taken together, these ablations show that PA-DCT's components are not exposed by a single leaderboard metric: PA-gap exposes wallet pressure, AdaptT exposes shock response, variance exposes exploration stability, and full-horizon quality exposes whether price adaptation translates into better service quality.
+The cost-posterior diagnostic isolates the price channel. When costs are pinned to the specification scalar, the policy keeps treating P-premium as expensive after the promotion: P-premium share stays below $4\%$, AdaptT is undefined, and PA-gap/$T$ increases by $0.023$ relative to full PA-DCT. Taken together, these ablations show that PA-DCT's components are not exposed by a single leaderboard metric: PA-gap/$T$ exposes wallet pressure, AdaptT exposes shock response, variance exposes exploration stability, and full-horizon quality exposes whether price adaptation translates into better service quality.

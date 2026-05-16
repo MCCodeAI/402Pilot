@@ -28,10 +28,10 @@ settings and earns it back via faster recovery under shocks.}
 \begin{tabular}{l|cccc|cccc|cccc}
 \toprule
 & \multicolumn{4}{c|}{S1 Stationary} & \multicolumn{4}{c|}{S2 Mid Outage} & \multicolumn{4}{c}{S3 Premium Promo} \\
-$\gamma$ & PA-gap & ROI & $\bar q_T$ & AdaptT & PA-gap & ROI & $\bar q_T$ & AdaptT & PA-gap & ROI & $\bar q_T$ & AdaptT \\
+$\gamma$ & PA-gap/$T$ & ROI & $\bar q_T$ & AdaptT & PA-gap/$T$ & ROI & $\bar q_T$ & AdaptT & PA-gap/$T$ & ROI & $\bar q_T$ & AdaptT \\
 \midrule
-$0.999$ & $1325$ & $378$ & $0.797$ & \texttt{n/a} & $1662$ & $357$ & $0.761$ & $1467$ & $1206$ & $429$ & $0.831$ & $200$ \\
-$1.000$ & $1092$ & $412$ & $0.810$ & \texttt{n/a} & $1696$ & $399$ & $0.745$ & $2249$ & $1143$ & $426$ & $0.838$ & $279$ \\
+$0.999$ & $0.133$ & $378$ & $0.797$ & \texttt{n/a} & $0.166$ & $357$ & $0.761$ & $1467$ & $0.121$ & $429$ & $0.831$ & $200$ \\
+$1.000$ & $0.109$ & $412$ & $0.810$ & \texttt{n/a} & $0.170$ & $399$ & $0.745$ & $2249$ & $0.114$ & $426$ & $0.838$ & $279$ \\
 \bottomrule
 \end{tabular}%
 }
@@ -50,7 +50,7 @@ substitute: in the data-dominated regime, the bias decays as
 $\Delta\,\gamma^{\tau}$, so smaller $\gamma$ buys faster recovery at fixed
 $\tau$ at the cost of higher steady-state variance --- a tradeoff visible
 in the table above (S2 AdaptT improves $35\%$ at the cost of a larger S1
-PA-gap).
+PA-gap/$T$).
 
 \subsection{Failure penalty $\nu$}
 \label{app:sens-nu}
@@ -84,7 +84,7 @@ when on plan and pushes $\lamn \to 1$ smoothly under sustained
 overshoot. We did not run an $\alpha$ sweep; the $-P$ ablation
 ($\lamn \equiv 0$, equivalent to $\alpha \to 0$) acts as a one-sided
 endpoint that already shows the cost of disabling budget pressure
-(PA-gap increases sharply in S1/S2 and remains far above full PA-DCT in S3).
+(PA-gap/$T$ increases sharply in S1/S2 and remains far above full PA-DCT in S3).
 
 \subsection{Posterior priors and likelihood variances}
 \label{app:sens-priors}
