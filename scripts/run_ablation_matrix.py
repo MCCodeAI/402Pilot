@@ -115,7 +115,7 @@ def _is_complete(log_path: Path, num_rounds: int) -> bool:
     return last.get("budget_remaining_usdc", float("inf")) < min(PROVIDER_PRICES.values())
 
 
-def _row_from_log(seed_idx: int, log_path: Path) -> dict:
+def _row_from_log(seed_idx: int, log_path: Path, num_rounds: int = 10000) -> dict:
     lines = [l for l in log_path.read_text(encoding="utf-8").splitlines() if l.strip()]
     while lines:
         try:
@@ -139,7 +139,11 @@ def _row_from_log(seed_idx: int, log_path: Path) -> dict:
     return {
         "seed": seed_idx, "rounds": n, "total_spent": total_spent,
         "failures": n_failures, "cum_pa_reward": cum_pa,
+        # Legacy: served-only mean (Σq / n). Downstream ROI = mean * rounds / spend works.
         "mean_quality": cum_q / n if n else 0.0,
+        # New full-horizon fields, see scripts/run_scenario_sweep.py for schema rationale.
+        "cum_quality": cum_q,
+        "q_bar_T": cum_q / num_rounds if num_rounds else 0.0,
         "arm_counts": arm_counts,
     }
 
@@ -176,7 +180,7 @@ def run_one(cfg, ablation: str, scenario_name: str, seed: int,
             reward_calc=RewardCalculator(nu=cfg.reward.nu),
             recorder=rec, seed=seed, scenario=scenario, progress_every=None,
         )
-    return _row_from_log(seed, log_path)
+    return _row_from_log(seed, log_path, num_rounds=cfg.num_rounds)
 
 
 def main(argv=None) -> int:
@@ -214,7 +218,8 @@ def main(argv=None) -> int:
                             / f"seed_{seed_idx:02d}.jsonl")
                 if _is_complete(log_path, cfg.num_rounds):
                     rows_by_combo[(abl, scen)].append(
-                        _row_from_log(seed_idx, log_path)
+                        _row_from_log(seed_idx, log_path,
+                                      num_rounds=cfg.num_rounds)
                     )
                     completed += 1
 

@@ -138,7 +138,12 @@ def _row_from_log(policy_name: str, seed_idx: int, log_path: Path, num_rounds: i
         "policy": policy_name, "seed": seed_idx, "rounds": n,
         "bankrupt": bankrupt, "total_spent": total_spent,
         "failures": n_failures, "cum_pa_reward": cum_pa, "cum_q": cum_q,
-        "mean_quality": cum_q / n if n else 0.0, "arm_counts": arm_counts,
+        # Legacy: served-only mean (Σq / n). Downstream ROI = mean * rounds / spend works.
+        "mean_quality": cum_q / n if n else 0.0,
+        # New full-horizon fields, see run_scenario_sweep.py for schema rationale.
+        "cum_quality": cum_q,
+        "q_bar_T": cum_q / num_rounds if num_rounds else 0.0,
+        "arm_counts": arm_counts,
     }
 
 

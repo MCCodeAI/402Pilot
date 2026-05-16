@@ -167,7 +167,15 @@ def _row_from_log(policy_name: str, seed_idx: int, log_path: Path,
         "failures": n_failures,
         "cum_pa_reward": cum_pa,
         "cum_utility": cum_util,
+        # Legacy semantics preserved: mean_quality is served-rounds-only mean
+        # (Σ q_t / n). Downstream scripts that compute ROI as
+        # mean_quality * rounds / total_spent continue to work unchanged.
         "mean_quality": (quality_sum / n) if n else 0.0,
+        # New full-horizon fields. Use q_bar_T (= Σ q_t / T, unserved rounds
+        # count as zero) for cross-policy quality comparisons; bankruptcy
+        # mid-run is correctly penalised because the denominator stays at T.
+        "cum_quality": quality_sum,
+        "q_bar_T": (quality_sum / num_rounds) if num_rounds else 0.0,
         "arm_counts": arm_counts,
     }
 

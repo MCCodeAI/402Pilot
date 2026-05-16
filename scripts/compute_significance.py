@@ -3,10 +3,13 @@
 Reads existing summary.jsonl files (no re-running of experiments) and
 computes, for each scenario × baseline pair:
 
-    - mean Δ(cum_PA, ROI, mean_q)  := PA-DCT − baseline, paired by seed
+    - mean Δ(q_bar_T, cum_PA, ROI)  := PA-DCT − baseline, paired by seed
     - paired bootstrap 95% CI on each Δ
     - paired t-statistic + two-sided p-value (Welch's t for paranoia)
     - effect size: Cohen's d_z (paired)
+
+q_bar_T is full-horizon mean quality Σq_t / T (unserved rounds → 0); read
+from the explicit summary field, falling back to cum_quality / T.
 
 Comparisons (15 pairs total):
     PA-DCT vs {Random, AlwaysCheap, AlwaysMid, AlwaysPremium, BudgetRule}
@@ -75,10 +78,36 @@ def load_summary(scenario: str) -> dict[str, dict[int, dict]]:
     return out
 
 
+HORIZON_T = 10000  # locked in experiments/main.yaml
+
+
+def per_seed_cum_quality(row: dict) -> float:
+    """Σ q_t for one seed.
+
+    Reads the explicit "cum_quality" field (preferred). Falls back to
+    mean_quality * rounds for legacy summaries where mean_quality is the
+    served-only conditional mean (Σ q / n × n = Σ q).
+    """
+    if "cum_quality" in row:
+        return float(row["cum_quality"])
+    return float(row["mean_quality"]) * row["rounds"]
+
+
+def per_seed_q_bar_T(row: dict) -> float:
+    """Full-horizon mean quality q̄_T = Σ q_t / T (unserved rounds → 0).
+
+    Reads explicit q_bar_T field if present; otherwise computes from
+    cum_quality / T. Both paths are equivalent for non-bankrupt policies.
+    """
+    if "q_bar_T" in row:
+        return float(row["q_bar_T"])
+    return per_seed_cum_quality(row) / HORIZON_T
+
+
 def per_seed_roi(row: dict) -> float:
     if row["total_spent"] <= 0:
         return 0.0
-    return row["mean_quality"] * row["rounds"] / row["total_spent"]
+    return per_seed_cum_quality(row) / row["total_spent"]
 
 
 def _diff_paired(a: dict[int, dict], b: dict[int, dict],
@@ -162,9 +191,9 @@ def main(argv: list[str] | None = None) -> int:
             if n < 2:
                 continue
             for metric_label, metric_fn in [
-                ("cum_PA", lambda r: r["cum_pa_reward"]),
-                ("ROI",    per_seed_roi),
-                ("mean_q", lambda r: r["mean_quality"]),
+                ("q_bar_T", per_seed_q_bar_T),
+                ("cum_PA",  lambda r: r["cum_pa_reward"]),
+                ("ROI",     per_seed_roi),
             ]:
                 diffs = _diff_paired(padct, base, metric_fn)
                 mean = float(diffs.mean())
@@ -195,12 +224,13 @@ def main(argv: list[str] | None = None) -> int:
               f"(N seeds = 30, bootstrap = {args.n_bootstrap}, "
               f"two-sided paired test).")
     md.append("")
-    md.append("**Convention.** Δ = PA-DCT − baseline, paired by seed. ")
-    md.append("Positive Δ on cum_PA / ROI / mean_q means PA-DCT wins. ")
-    md.append("CI is 95% bootstrap; p-value is two-sided paired-z (n=30, normal ≈ t_29). ")
+    md.append("**Convention.** Δ = PA-DCT − baseline, paired by seed.")
+    md.append("Positive Δ on q_bar_T (full-horizon mean quality, unserved rounds → 0), "
+              "cum_PA, or ROI means PA-DCT wins.")
+    md.append("CI is 95% bootstrap; p-value is two-sided paired-z (n=30, normal ≈ t_29).")
     md.append("`d_z` is Cohen's standardised paired effect size.")
     md.append("")
-    md.append("**Significance markers** (for paper Table 1): ")
+    md.append("**Significance markers** (for paper Table 1):")
     md.append("`****` p<10⁻⁴ &nbsp; `***` p<10⁻³ &nbsp; `**` p<0.01 &nbsp; "
               "`*` p<0.05 &nbsp; `ns` not significant.")
     md.append("")

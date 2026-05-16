@@ -96,12 +96,12 @@ Tightness when $\mathcal{T}^{a,k}_t = \{0,1,\ldots,t\}$ is immediate.
 
 \begin{theorem}[Regret reduction to contextual Gaussian Thompson sampling]
 \label{thm:stationary-regret}
-Under (A1), (A2$^\prime$), (A3$^\prime$), and $\gamma = 1$, define the \emph{policy-state pseudo-regret} of PA-DCT against the wallet-coupled oracle as
+Under (A1), (A2$^\prime$), (A3$^\prime$), and $\gamma = 1$, define the \emph{policy-state PA-regret} of PA-DCT against the wallet-coupled oracle as
 \begin{equation}
 \label{eq:policy-state-regret}
 \Reg_T \;:=\; \sum_{t=0}^{T-1} \Big[(1-\lamn)\,\mu_u^{a^\star_t, k_t} - \lamn\,\mu_c^{a^\star_t, k_t}/c_{\max}\Big] - \Big[(1-\lamn)\,\mu_u^{a_t, k_t} - \lamn\,\mu_c^{a_t, k_t}/c_{\max}\Big],
 \end{equation}
-where $a^\star_t \in \arg\max_{a \in \mathcal{A}_t}$ of the bracketed quantity at the policy's wallet pressure $\lamn$, and $a_t$ is PA-DCT's chosen arm. Then PA-DCT reduces, conditional on the bucket-visit sequence, to per-cell K-armed Gaussian Thompson sampling with a one-dimensional time-varying linear-context payoff. Under (A2$^\prime$) the per-cell Bayesian regret obeys the standard bound
+where $a^\star_t \in \arg\max_{a \in \mathcal{A}_t}$ of the bracketed quantity at the policy's wallet pressure $\lamn$, and $a_t$ is PA-DCT's chosen arm. Then PA-DCT reduces, conditional on the bucket-visit sequence, to per-cell K-armed Gaussian Thompson sampling with a one-dimensional time-varying linear-context payoff. Under (A2$^\prime$) the per-cell Bayesian PA-regret obeys the standard bound
 \begin{equation}
 \label{eq:cell-regret}
 \mathbb{E}\!\left[\Reg^{\mathrm{cell}\,k}_{T_k}\right] \;\leq\; C_0(\sigma_q^2, \sigma_c^2, \sigma^2_{0,q}, \sigma^2_{0,c}, c_{\max})\cdot \sqrt{K\, T_k\, \log T_k},
@@ -156,7 +156,7 @@ using $c_{\max} - \thetac{a}{k} \geq \delta_c/2$. Symmetric bound for $\hatc{a}{
 Since $\Sigmac{a}{k} \to 0$ at rate $1/n^{a,k}_t$ in the data-dominated regime, $\mathbb{P}[\mathcal{C}_a]$ decays super-polynomially in the per-cell pull count. Summing over $T$ rounds, the expected number of clip events is $O(\log T)$ in worst case, contributing an $O(\log T)$ additive term to the regret. This is dominated by the $\sqrt{T \log T}$ regret bound established in Steps 4--5.
 
 \paragraph{Step 4: per-cell Gaussian-prior contextual TS regret.}
-Conditioning on the bucket-visit subsequence of length $T_k$, PA-DCT in cell $k$ runs K-armed Gaussian-prior contextual Thompson sampling over $T_k$ rounds, with: bounded reward $|R^{a,k}_w| \leq 1$ (Prop.~\ref{prop:reward-bounded}); 2-D feature $\phi_t$ observed before each sample; per-arm Gaussian prior on $\theta^{a,k}$. Theorem~1 of \citet{russo2014learning}, instantiated for this setting (see also \citealt{lattimore2020bandit}, Ch.~36, Thm.~36.2 for the explicit K-armed Gaussian variant), gives the per-cell Bayesian regret bound
+Conditioning on the bucket-visit subsequence of length $T_k$, PA-DCT in cell $k$ runs K-armed Gaussian-prior contextual Thompson sampling over $T_k$ rounds, with: bounded reward $|R^{a,k}_w| \leq 1$ (Prop.~\ref{prop:reward-bounded}); 2-D feature $\phi_t$ observed before each sample; per-arm Gaussian prior on $\theta^{a,k}$. Theorem~1 of \citet{russo2014learning}, instantiated for this setting (see also \citealt{lattimore2020bandit}, Ch.~36, Thm.~36.2 for the explicit K-armed Gaussian variant), gives the per-cell Bayesian PA-regret bound
 \[
 \mathbb{E}\!\left[\Reg_{T_k}^{\mathrm{cell}\,k}\right] \;\leq\; C_1\cdot \sqrt{K\,T_k\log T_k},
 \]

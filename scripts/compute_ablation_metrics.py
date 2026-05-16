@@ -1,11 +1,12 @@
 """Compute the 4 official metrics across all ablation cells.
 
-Metrics (from experiment_design.md):
-  1. task_success_rate — fraction of rounds where quality exceeds per-type
-     threshold. We approximate as mean_quality (continuous proxy) since we
-     haven't formally defined per-type thresholds yet.
+Metrics:
+  1. q_bar_T = full-horizon mean quality Σq_t / T. Unserved rounds after
+     wallet exhaustion contribute q_t = 0, so policies that bankrupt
+     mid-run (e.g. the -P ablation in S1/S2) are correctly penalised.
   2. ROI = Σ q / Σ $ — raw quality per dollar (policy-agnostic, no λ shaping).
-  3. Cumulative regret = Oracle cum_PA − policy cum_PA — gap to Oracle.
+  3. PA-gap = Oracle cum_PA − policy cum_PA — empirical PA-regret to the
+     True Oracle.
   4. Adaptation time = trailing-200 ROI shock-response time:
      S2 reaches >= 95% of pre-outage ROI; S3 reaches >= 110% of
      pre-promotion ROI (NA for S1).
@@ -114,16 +115,27 @@ def load_all_seeds(log_dir: Path) -> list[list[dict]]:
 # Metric computations
 # ---------------------------------------------------------------------------
 
-def compute_per_seed_metrics(seed_records: list[dict]) -> dict[str, float]:
+HORIZON_T = 10000  # locked in experiments/main.yaml; full-horizon denominator
+
+
+def compute_per_seed_metrics(seed_records: list[dict],
+                             horizon_T: int = HORIZON_T) -> dict[str, float]:
     """Compute metrics for one seed's full run.
 
-    Returns: dict with keys cum_pa, cum_q, total_spent, mean_q, roi, n_rounds.
+    Legacy semantics preserved: mean_q is served-rounds-only conditional mean
+    (Σ q / n). New q_bar_T is full-horizon mean (Σ q / T), correctly
+    penalising mid-run bankruptcy because unserved rounds contribute q_t=0
+    in the denominator T.
+
+    Returns: dict with keys cum_pa, cum_q, total_spent, mean_q, q_bar_T,
+             roi, n_rounds.
     """
     n = len(seed_records)
     cum_pa = sum(r.get("payment_aware_reward", 0.0) for r in seed_records)
     cum_q = sum(r.get("quality", 0.0) for r in seed_records)
     total_spent = sum(r.get("charged_cost_usdc", 0.0) for r in seed_records)
-    mean_q = cum_q / n if n else 0.0
+    mean_q = cum_q / n if n else 0.0                      # legacy: served-only
+    q_bar_T = cum_q / horizon_T if horizon_T else 0.0     # new: full-horizon
     roi = cum_q / total_spent if total_spent > 0 else 0.0
     return {
         "n_rounds": n,
@@ -131,6 +143,7 @@ def compute_per_seed_metrics(seed_records: list[dict]) -> dict[str, float]:
         "cum_q": cum_q,
         "total_spent": total_spent,
         "mean_q": mean_q,
+        "q_bar_T": q_bar_T,
         "roi": roi,
     }
 
@@ -195,9 +208,13 @@ def compute_adaptation_time(
 
 
 def aggregate_seeds(per_seed: list[dict]) -> dict[str, tuple[float, float]]:
-    """Return mean ± std for each metric across seeds."""
+    """Return mean ± std for each metric across seeds.
+
+    Both legacy mean_q (served-only) and full-horizon q_bar_T are aggregated
+    so consumers can inspect both; downstream rendering uses q_bar_T.
+    """
     out = {}
-    keys = ("cum_pa", "mean_q", "total_spent", "roi")
+    keys = ("cum_pa", "mean_q", "q_bar_T", "total_spent", "roi")
     for k in keys:
         vals = [s[k] for s in per_seed]
         out[k] = (
@@ -229,7 +246,7 @@ def analyze_cell(ablation: str, scenario: str) -> dict:
     )
     adapt_count = len(adapt_times_finite)
 
-    # Cumulative regret (vs Oracle)
+    # PA-gap to True Oracle (empirical PA-regret on the cum-PA objective).
     oracle_dir = get_oracle_dir(scenario)
     oracle_seeds = load_all_seeds(oracle_dir)
     if oracle_seeds:
@@ -239,7 +256,7 @@ def analyze_cell(ablation: str, scenario: str) -> dict:
         oracle_pa_mean = statistics.mean(oracle_pas)
     else:
         oracle_pa_mean = None
-    cum_regret = (
+    pa_gap = (
         oracle_pa_mean - agg["cum_pa"][0] if oracle_pa_mean is not None else None
     )
 
@@ -249,10 +266,13 @@ def analyze_cell(ablation: str, scenario: str) -> dict:
         "n_seeds": len(seeds),
         "cum_pa_mean": agg["cum_pa"][0],
         "cum_pa_std": agg["cum_pa"][1],
+        # q_bar_T is the primary quality metric (full-horizon; unserved rounds → 0).
+        # mean_q (legacy served-only) retained for diagnostic use only.
+        "q_bar_T": agg["q_bar_T"][0],
         "mean_q": agg["mean_q"][0],
         "roi": agg["roi"][0],
         "total_spent": agg["total_spent"][0],
-        "cum_regret": cum_regret,
+        "pa_gap": pa_gap,
         "adapt_time_mean": adapt_mean,
         "adapt_time_count": adapt_count,
         "adapt_time_total": len(seeds),
@@ -265,9 +285,12 @@ def render_markdown(rows: list[dict]) -> str:
     lines.append("# Ablation Matrix: 4 metrics × 4 ablations × 3 scenarios")
     lines.append("")
     lines.append("**Metrics:**")
-    lines.append("- **task_q** = mean quality (proxy for task_success_rate)")
+    lines.append("- **q_bar_T** = full-horizon mean quality Σq_t / T "
+                 "(unserved rounds after wallet exhaustion count as q_t = 0, "
+                 "so policies that bankrupt mid-run are correctly penalised)")
     lines.append("- **ROI** = Σ q / Σ $ (raw quality per dollar)")
-    lines.append("- **CumRegret** = Oracle cum_PA − policy cum_PA")
+    lines.append("- **PA-gap** = Oracle cum_PA − policy cum_PA "
+                 "(empirical PA-regret to the True Oracle)")
     lines.append(
         "- **AdaptT** = trailing-200 ROI shock-response time "
         "(S2: >=95% of pre-outage ROI; S3: >=110% of pre-promotion ROI)"
@@ -285,7 +308,7 @@ def render_markdown(rows: list[dict]) -> str:
         lines.append(f"## {SCENARIO_LABELS[scen]}")
         lines.append("")
         # Header
-        header = f"| Ablation | cum_PA | task_q | ROI (q/$) | CumRegret | AdaptT |"
+        header = f"| Ablation | cum_PA | q_bar_T | ROI (q/$) | PA-gap | AdaptT |"
         sep = "|---|---|---|---|---|---|"
         lines.append(header)
         lines.append(sep)
@@ -295,10 +318,10 @@ def render_markdown(rows: list[dict]) -> str:
                 lines.append(f"| {ABLATION_LABELS[abl]} | -- | -- | -- | -- | -- |")
                 continue
             cum_pa = f"{row['cum_pa_mean']:.0f}±{row['cum_pa_std']:.0f}"
-            mean_q = f"{row['mean_q']:.3f}"
+            q_bar_T = f"{row['q_bar_T']:.3f}"
             roi = f"{row['roi']:.0f}"
-            regret = (
-                f"{row['cum_regret']:.0f}" if row["cum_regret"] is not None else "--"
+            pa_gap = (
+                f"{row['pa_gap']:.0f}" if row["pa_gap"] is not None else "--"
             )
             adapt = ""
             if scen == "S1":
@@ -312,7 +335,7 @@ def render_markdown(rows: list[dict]) -> str:
                         f"({row['adapt_time_count']}/{row['adapt_time_total']})"
                     )
             lines.append(
-                f"| {ABLATION_LABELS[abl]} | {cum_pa} | {mean_q} | {roi} | {regret} | {adapt} |"
+                f"| {ABLATION_LABELS[abl]} | {cum_pa} | {q_bar_T} | {roi} | {pa_gap} | {adapt} |"
             )
         lines.append("")
 
@@ -349,6 +372,17 @@ def main() -> int:
     else:
         cache = {}
 
+    # Invalidate any cached rows missing the current schema fields
+    # (q_bar_T / pa_gap were added when mean_q/cum_regret were retired).
+    stale = [k for k, v in cache.items()
+             if isinstance(v, dict) and v.get("n_seeds", 0) > 0
+             and ("q_bar_T" not in v or "pa_gap" not in v)]
+    for k in stale:
+        del cache[k]
+    if stale:
+        print(f"  [cache] invalidated {len(stale)} stale entries (schema changed)",
+              flush=True)
+
     rows = []
     for abl in ABLATION_LABELS:
         for scen in SCENARIOS:
@@ -365,12 +399,12 @@ def main() -> int:
             if row["n_seeds"] == 0:
                 print(f"    NO DATA")
                 continue
-            regret_str = f"regret={row['cum_regret']:6.0f}" if row["cum_regret"] is not None else "(no oracle)"
+            pa_gap_str = f"PA-gap={row['pa_gap']:6.0f}" if row["pa_gap"] is not None else "(no oracle)"
             adapt_str = f"adaptT={row['adapt_time_mean']:.0f}" if row.get("adapt_time_mean") else "(n/a)"
             print(
                 f"    n={row['n_seeds']:>2} | cum_PA={row['cum_pa_mean']:7.0f} ± {row['cum_pa_std']:5.0f}"
-                f" | q={row['mean_q']:.3f} | ROI={row['roi']:5.0f}"
-                f" | {regret_str} | {adapt_str}"
+                f" | q_T={row['q_bar_T']:.3f} | ROI={row['roi']:5.0f}"
+                f" | {pa_gap_str} | {adapt_str}"
             )
 
     md = render_markdown(rows)
