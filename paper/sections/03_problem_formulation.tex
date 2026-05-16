@@ -4,7 +4,7 @@
 We model the setting as repeated provider selection by a single autonomous buyer with a finite wallet. The point is to make the payment loop explicit: the buyer must choose before paying, observes only the chosen service, and learns under changing quality and price.
 
 \paragraph{Round protocol.}
-There are $K$ payable providers and a horizon $T$. The buyer starts with wallet budget $B_0=B$. At round $t\in\{0,\ldots,T-1\}$, a task context $\mathbf{x}_t\in\mathcal{X}$ arrives. Each provider $a$ has an effective charge $p_{a,t}>0$ for that round, and the wallet/payment interface returns the affordable set
+There are $K$ payable providers and a time horizon $T$. The buyer starts with wallet budget $B_0=B$. At round $t\in\{0,\ldots,T-1\}$, a task context $\mathbf{x}_t\in\mathcal{X}$ arrives. Each provider $a$ has an effective charge $p_{a,t}>0$ for that round, and the wallet/payment interface returns the affordable set
 \begin{equation}
 \label{eq:affordable-set}
 \mathcal{A}_t=\{a\in\{1,\ldots,K\}:p_{a,t}\le B_t\}.
@@ -20,7 +20,7 @@ B_{t+1}=B_t-c_t .
 \end{equation}
 Let $\tau$ be the first round with no affordable provider, or $T$ if the horizon is reached.
 
-The policy does not observe counterfactual outcomes for unchosen providers. It also need not receive the full numeric price vector $\mathbf{p}_t=(p_{1,t},\ldots,p_{K,t})$ before selection; the decision-layer contract only assumes access to $\mathcal{A}_t$, while selected calls reveal their realized charge. The environment is therefore
+The policy does not observe outcomes for unchosen providers. It also need not receive all numeric prices before selection; the decision-layer contract only assumes access to $\mathcal{A}_t$, while selected calls reveal their realized charge. Writing $\mathbf{p}_t=(p_{1,t},\ldots,p_{K,t})$, the environment is therefore
 \[
 \begin{aligned}
 \mathcal{E}=\{(&\mathbf{x}_t,\mathbf{p}_t,
@@ -30,7 +30,7 @@ The policy does not observe counterfactual outcomes for unchosen providers. It a
 where $(q_t,f_t)\sim\mathcal{D}_{a_t,t}(\cdot\mid\mathbf{x}_t)$ only for the chosen provider.
 
 \paragraph{Admissible policies.}
-An admissible policy is non-anticipating and must choose only from the affordable set. Writing $\mathcal{H}_t$ for the history available before choosing at round $t$,
+An admissible policy uses only current and past information and must choose only from the affordable set. Writing $\mathcal{H}_t$ for the history available before choosing at round $t$,
 \[
 a_t\sim\pi_t(\cdot\mid\mathcal{H}_t),\qquad
 \mathrm{supp}(\pi_t)\subseteq\mathcal{A}_t .
@@ -43,14 +43,14 @@ Service delivery is summarized as utility
 \label{eq:utility}
 \ut=q_t-\nu f_t ,
 \end{equation}
-where $\nu\ge0$ penalizes non-delivery beyond its effect on $q_t$. We combine utility with normalized realized cost:
+where $\nu\ge0$ penalizes non-delivery beyond its effect on $q_t$. We combine utility with normalized realized cost and the wallet-pressure multiplier $\lambda_t$ defined below:
 \begin{equation}
 \label{eq:reward}
-\begin{aligned}
-\ctilde&=\mathrm{clip}(c_t/c_{\max},0,1),\\
-\lamn&=\frac{\lambda_t}{1+\lambda_t},\\
-\rt&=(1-\lamn)\ut-\lamn\ctilde .
-\end{aligned}
+\begin{array}{@{}l@{\;}c@{\;}l@{}}
+\ctilde & = & \mathrm{clip}(c_t/c_{\max},0,1),\\
+\lamn   & = & \dfrac{\lambda_t}{1+\lambda_t},\\
+\rt     & = & (1-\lamn)\ut-\lamn\ctilde .
+\end{array}
 \end{equation}
 For $0\le\nu\le1$, this gives $\rt\in[-1,1]$. Under environment $\mathcal{E}$, a policy aims to maximize
 \begin{equation}
@@ -76,4 +76,4 @@ The wallet-pressure multiplier is a deterministic function of cumulative spend. 
 \end{equation}
 with $\lambda_t=\lambda_0$ at $t=0$. We use $\lambda_0=1$ in all experiments, so $\lamn=0.5$ when spending is exactly on the linear plan; it decreases under under-spending and increases when the wallet burns too quickly.
 
-Both provider outcome laws $\mathcal{D}_{a,t}$ and effective charges $p_{a,t}$ may vary over time, and change points are not announced. Tasks arrive exogenously and providers are posted-price endpoints rather than strategic bidders. Actions change the wallet and the policy's beliefs, but not the underlying task stream or provider state. The resulting problem is a contextual bandit with budget state and non-stationary feedback, not a full Markov decision process.
+Both provider outcome laws $\mathcal{D}_{a,t}$ and effective charges $p_{a,t}$ may vary over time, and change points are not announced. Tasks arrive exogenously and providers are posted-price endpoints rather than strategic bidders. Actions change the wallet and the policy's beliefs, but not the underlying task stream or provider state. The resulting problem is a contextual bandit with budget state and non-stationary feedback, not a full Markov decision process or reinforcement-learning problem with controlled state transitions.
