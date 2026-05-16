@@ -7,7 +7,7 @@ This appendix collects what we know about robustness to each, separates
 calibration-derived values from convention-derived values, and is honest
 about which sweeps were run and which were not.
 
-\subsection{Discount factor $\gamma$}
+\subsection{\texorpdfstring{Discount factor $\gamma$}{Discount factor gamma}}
 \label{app:sens-gamma}
 
 The only $\gamma$-sensitivity datapoint we have is the two-point comparison
@@ -15,7 +15,7 @@ between full PA-DCT ($\gamma = 0.999$) and the $-D$ ablation ($\gamma = 1$),
 across all three scenarios (Table~\ref{tab:gamma-sensitivity}, drawn from
 Table~\ref{tab:ablations}).
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \small
 \caption{Two-point sensitivity to the discount factor $\gamma$ from the
@@ -52,7 +52,7 @@ $\tau$ at the cost of higher steady-state variance --- a tradeoff visible
 in the table above (S2 AdaptT improves $35\%$ at the cost of a larger S1
 PA-gap/$T$).
 
-\subsection{Failure penalty $\nu$}
+\subsection{\texorpdfstring{Failure penalty $\nu$}{Failure penalty nu}}
 \label{app:sens-nu}
 
 We use $\nu = 0.5$, chosen to abstract the structural cost of timeouts ---
@@ -67,7 +67,7 @@ the same reason $\alpha = 2$ is fixed (\S\ref{app:sens-alpha}). A natural
 direction for follow-up work is to learn $\nu$ per provider from observed
 downstream stalls rather than treat it as a global constant.
 
-\subsection{Budget-pressure sharpness $\alpha$}
+\subsection{\texorpdfstring{Budget-pressure sharpness $\alpha$}{Budget-pressure sharpness alpha}}
 \label{app:sens-alpha}
 
 The budget-pressure schedule
