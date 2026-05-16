@@ -26,7 +26,7 @@ There are three repos / locations involved:
 |---|---|---|---|
 | **Main repo** | `~/Documents/GitHub/402Pilot/` | Code + paper + scripts. Pushes to `origin` (GitHub). | Nested: paper lives at `paper/` |
 | **Sibling clone** | `~/Documents/GitHub/402Pilot-overleaf/` | Mirror of the Overleaf project. Pushes to Overleaf master. | Flat: paper at root |
-| **Overleaf** | `git.overleaf.com/69faa6c9c08812ba6863e6bb` | Where co-authors edit via web editor. | Flat: paper at root |
+| **Overleaf** | `git.overleaf.com/6a082432eb43ebce16b669d0` | Where co-authors edit via web editor. | Flat: paper at root |
 
 The sync script is the bridge between the main repo and the sibling clone.
 GitHub gets the full main repo; Overleaf gets only the paper, flattened.
@@ -38,7 +38,7 @@ main repo" approach unworkable. Both have been verified the hard way.
 
 ### Reason 1: structure mismatch
 
-Overleaf's repo is **flat** — `sections/`, `figures/`, `neurips_2026.tex`,
+Overleaf's repo is **flat** — `sections/`, `figures/`, `main.tex`,
 `references.bib` all live at the repo root. The main 402Pilot repo nests
 those under `paper/`, alongside `pilot402/`, `tests/`, `scripts/`, etc.
 
@@ -72,7 +72,7 @@ error and tell you):
 
 ```
 cd ~/Documents/GitHub
-git clone https://git@git.overleaf.com/69faa6c9c08812ba6863e6bb 402Pilot-overleaf
+git clone https://git@git.overleaf.com/6a082432eb43ebce16b669d0 402Pilot-overleaf
 ```
 
 You'll be prompted for:
@@ -108,26 +108,24 @@ Shows the rsync diff without writing anything. Good before a big sync.
 If a co-author edited in Overleaf and you want those changes locally:
 
 ```
-cd ~/Documents/GitHub/402Pilot-overleaf
-git pull origin master
-
-# now diff sibling vs main to see what's new
-diff -rq ~/Documents/GitHub/402Pilot-overleaf ~/Documents/GitHub/402Pilot/paper \
-  | grep -v '\.git\|\.aux\|\.bbl\|\.log\|\.pdf\|\.DS_Store'
-
-# manually copy the changes you want into main/paper/
-# (or rsync --update the other way, carefully)
+git -C ~/Documents/GitHub/402Pilot-overleaf pull --ff-only origin master
 
 cd ~/Documents/GitHub/402Pilot
+rsync -av --delete --dry-run --exclude='.git' --exclude='.DS_Store' \
+  ~/Documents/GitHub/402Pilot-overleaf/ paper/
+
+rsync -av --delete --exclude='.git' --exclude='.DS_Store' \
+  ~/Documents/GitHub/402Pilot-overleaf/ paper/
+
 # review with `git diff paper/`
 git add paper/ && git commit -m "pull Overleaf edits"
 git push origin main
 ```
 
-This direction is **manual on purpose** — there's no script for it because
-the merge decisions need a human. Don't write a "pull from Overleaf" script
-that blindly rsync's overleaf → local with `--delete`; that would erase
-local code directories.
+This direction overwrites local `paper/` with the current Overleaf project.
+Use the dry run first if you have uncommitted local paper edits. Do **not**
+run `git pull` from Overleaf inside the main repo; only pull inside the
+sibling clone.
 
 ### Commit messages on Overleaf
 
@@ -174,7 +172,7 @@ The sync script warns if this remote is detected.
 
 ### Working tree got switched to Overleaf's flat structure
 
-(e.g. `sections/`, `neurips_2026.tex` appear at main repo root; `paper/`,
+(e.g. `sections/`, `main.tex` appear at main repo root; `paper/`,
 `pilot402/` are gone from working tree.) This means a partial `git pull
 overleaf` checkout completed before failing. Recover with:
 

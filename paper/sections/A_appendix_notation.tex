@@ -9,25 +9,25 @@ values match the YAML configuration shipped with the released artifact.
 \subsection{Time, arms, contexts}
 \label{app:notation-time}
 
-\begin{tabular}{lll}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
 \toprule
 Symbol & Meaning & Domain / value \\
 \midrule
 $t$              & Round index & $t \in \{0,1,\ldots,T-1\}$ \\
 $T$              & Total rounds per run & $T = 10{,}000$ \\
-$a$              & Arm / provider & $a \in \{\text{P-cheap},\text{P-mid},\text{P-premium},\text{P-adv},\text{P-flaky}\}$ \\
+$a$              & Arm / provider & one of P-cheap, P-mid, P-premium, P-adv, P-flaky \\
 $K$              & Number of arms & $K = 5$ \\
 $a_t$            & Arm chosen at round $t$ & $a_t \in \{1,\ldots,K\}$ \\
 $\mathbf{x}_t$   & Context vector at round $t$ & $\mathbf{x}_t \in \mathbb{R}^d$, $d = 7$ (NaiveEncoder) \\
-$k(\mathbf{x}_t)$ & Bucket from context & $k \in \{\text{T1},\text{T2},\text{T3a},\text{T3b}\}$ \\
+$k(\mathbf{x}_t)$ & Bucket from context & T1, T2, T3a, or T3b \\
 $K_b$            & Number of context buckets & $K_b = 4$ (default); $K_b = 1$ under $-C$ ablation \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 
 \subsection{Per-round observations}
 \label{app:notation-obs}
 
-\begin{tabular}{lll}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
 \toprule
 Symbol & Meaning & Domain / value \\
 \midrule
@@ -41,7 +41,7 @@ $f_t$       & Failure flag (timeout / parse-failure) & $\{0,1\}$ \\
 $B$         & Total wallet budget & $B = \$50$ \\
 $B_t$       & Remaining wallet budget at start of round $t$ & $B_0 = B$, $B_{t+1} = B_t - c_t$ \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 
 Bandit feedback: only $(q_t,c_t,f_t)$ for $a = a_t$ is observed; outcomes and
 costs for arms not chosen are unseen.
@@ -49,7 +49,7 @@ costs for arms not chosen are unseen.
 \subsection{Reward and utility}
 \label{app:notation-reward}
 
-\begin{tabular}{lll}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
 \toprule
 Symbol & Definition & Notes \\
 \midrule
@@ -62,7 +62,7 @@ $\lambda_t$ & Raw budget-pressure multiplier & $\lambda_t = \lambda_0\exp(\alpha
 $\lamn$     & Bounded sigmoid weight & $\lamn = \lambda_t/(1+\lambda_t) \in (0,1)$ \\
 $\rt$       & Payment-aware reward & $\rt = (1-\lamn)\,\ut - \lamn\,\ctilde \in [-1,1]$ \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 
 \paragraph{Critical separation.} $\ut$ updates the policy's belief about a
 provider; $\rt$ ranks arms at decision time. The decoupling keeps beliefs
@@ -71,14 +71,14 @@ stable when $\lambda_t$ jumps (\S\ref{sec:layer}).
 \subsection{Discount}
 \label{app:notation-discount}
 
-\begin{tabular}{lll}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
 \toprule
 Symbol & Meaning & Value \\
 \midrule
 $\gamma$   & Quality-posterior discount per round & $\gamma = 0.999$ (effective half-life $\approx 693$ rounds) \\
 $\gamma_c$ & Cost-posterior discount per round & $\gamma_c = 0.999$ (set equal to $\gamma$ in main results) \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 
 When the body refers to ``the discount factor'' without subscript, $\gamma$ is
 intended with $\gamma_c = \gamma$. We distinguish only when ablating one
@@ -96,11 +96,14 @@ $\sigma^2_{0,q} = 1.0$; likelihood variance $\sigma^2_q = 0.09$. Sufficient
 statistics $(n^{a,k}_t, S^{a,k}_t)$ are the discounted effective sample count
 and weighted sum of utilities. Closed forms:
 \[
+\begin{aligned}
 \Sigmaq{a}{k}
-  = \!\left(\tfrac{1}{\sigma^2_{0,q}} + \tfrac{n^{a,k}_t}{\sigma^2_q}\right)^{\!-1},
-\qquad
+  &= \!\left(\tfrac{1}{\sigma^2_{0,q}}
+  + \tfrac{n^{a,k}_t}{\sigma^2_q}\right)^{\!-1},\\
 \thetaq{a}{k}
-  = \Sigmaq{a}{k}\!\left(\tfrac{\mu_{0,q}}{\sigma^2_{0,q}} + \tfrac{S^{a,k}_t}{\sigma^2_q}\right).
+  &= \Sigmaq{a}{k}\!\left(\tfrac{\mu_{0,q}}{\sigma^2_{0,q}}
+  + \tfrac{S^{a,k}_t}{\sigma^2_q}\right).
+\end{aligned}
 \]
 At decision time, $\hatu{a}{k}\sim\mathcal{N}(\thetaq{a}{k},\Sigmaq{a}{k})$.
 
@@ -117,8 +120,10 @@ $\tilde{\hat c}^{a,k} = \mathrm{clip}(\hatc{a}{k}/c_{\max},0,1)$.
 \paragraph{Discounted sufficient statistics update.}
 At the start of every round, every $(a,k)$ cell discounts:
 \[
-n^{a,k}_t \leftarrow \gamma\, n^{a,k}_{t-1},\qquad
-S^{a,k}_t \leftarrow \gamma\, S^{a,k}_{t-1},
+\begin{aligned}
+n^{a,k}_t &\leftarrow \gamma\, n^{a,k}_{t-1},\\
+S^{a,k}_t &\leftarrow \gamma\, S^{a,k}_{t-1},
+\end{aligned}
 \]
 with the analogous sweep on the cost statistics. Then the chosen arm's bucket
 increments: $n^{a_t,k_t}_t\mathrel{+}=1$, $S^{a_t,k_t}_t\mathrel{+}=\ut$,
@@ -130,12 +135,21 @@ ${S_c}^{a_t,k_t}_t\mathrel{+}=c_t$. Discounting applies regardless of pulls
 
 For each affordable arm $a \in \mathcal{A}_t$:
 \[
-\hatu{a}{k_t} \sim \mathcal{N}(\thetaq{a}{k_t},\Sigmaq{a}{k_t}),\quad
-\hatc{a}{k_t} \sim \mathcal{N}(\thetac{a}{k_t},\Sigmac{a}{k_t}),
+\begin{aligned}
+\hatu{a}{k_t}
+&\sim \mathcal{N}(\thetaq{a}{k_t},\Sigmaq{a}{k_t}),\\
+\hatc{a}{k_t}
+&\sim \mathcal{N}(\thetac{a}{k_t},\Sigmac{a}{k_t}),
+\end{aligned}
 \]
 \[
-\tilde{\hat c}^{a,k_t} = \mathrm{clip}(\hatc{a}{k_t}/c_{\max},0,1),\quad
-\pi_a = (1-\lamn)\,\hatu{a}{k_t} - \lamn\,\tilde{\hat c}^{a,k_t}.
+\begin{aligned}
+\tilde{\hat c}^{a,k_t}
+&= \mathrm{clip}(\hatc{a}{k_t}/c_{\max},0,1),\\
+\pi_a
+&= (1-\lamn)\,\hatu{a}{k_t}
+  - \lamn\,\tilde{\hat c}^{a,k_t}.
+\end{aligned}
 \]
 The chosen arm is $a_t = \arg\max_{a\in\mathcal{A}_t}\pi_a$. Under $-TS$
 replace $\sim$ with $=$ (use posterior means). Under $-P$ force $\lamn = 0$
@@ -144,37 +158,37 @@ in $\pi_a$.
 \subsection{Scenarios}
 \label{app:notation-scenarios}
 
-\begin{tabularx}{\textwidth}{@{}ll>{\raggedright\arraybackslash}X@{}}
+\begin{tabularx}{\columnwidth}{@{}ll>{\raggedright\arraybackslash}X@{}}
 \toprule
 Tag & Class & Parameters \\
 \midrule
 S1 & \texttt{StationaryScenario} & --- (identity transform) \\
-S2 & \texttt{MidOutageScenario}  & \texttt{outage\_start=3000}, \texttt{outage\_end=5500}, \texttt{outage\_failure\_rate=0.30} \\
-S3 & \texttt{PremiumDropScenario} & \texttt{shock\_round=1000}, \texttt{price\_multiplier=0.2} \\
+S2 & \texttt{MidOutageScenario}  & start $=3000$; end $=5500$; failure rate $=0.30$ \\
+S3 & \texttt{PremiumDropScenario} & shock round $=1000$; price multiplier $=0.2$ \\
 \bottomrule
 \end{tabularx}
 
 \subsection{Metrics}
 \label{app:notation-metrics}
 
-\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
 \toprule
-Symbol & Definition & Notes \\
+Symbol & Definition / notes \\
 \midrule
-$\bar q_T$       & $(1/T)\sum_{t<\tau} q_t$ & full-horizon mean quality; unserved rounds after wallet exhaustion contribute $q_t = 0$, so bankrupting policies are correctly penalized \\
-$\mathrm{budget\ use}$ & $100\sum_{t<\tau} c_t/B$ & percentage of the initial wallet spent; reported instead of raw dollars in the main table \\
-$\mathrm{ROI}$   & $\sum_{t<\tau} q_t / \sum_{t<\tau} c_t$ & quality yield per dollar \\
-$R^\pi_T$        & $\sum_{t<\tau} r_t$ & cumulative payment-aware reward (cum-PA); scalar objective optimized by PA-DCT, not policy-invariant because $\lamn$ depends on each policy's spending trajectory \\
-$\paReg_T$       & $R^{\mathrm{Oracle}}_T - R^\pi_T$ & cumulative empirical PA-regret to the True Oracle, Eq.~\eqref{eq:pa-regret} \\
-$\paReg_T/T$     & $(R^{\mathrm{Oracle}}_T - R^\pi_T)/T$ & per-round empirical PA-regret (reported as PA-gap/$T$ in tables) \\
-$\AdaptT$        & trailing-200 ROI shock-response time & S2: reach $\geq 95\%$ of pre-outage ROI; S3: reach $\geq 110\%$ of pre-promotion ROI \\
+$\bar q_T$       & $(1/T)\sum_{t<\tau} q_t$; full-horizon mean quality, with unserved rounds after wallet exhaustion counted as $q_t = 0$ \\
+$\mathrm{budget\ use}$ & $100\sum_{t<\tau} c_t/B$; percentage of the initial wallet spent \\
+$\mathrm{ROI}$   & $\sum_{t<\tau} q_t / \sum_{t<\tau} c_t$; quality yield per dollar \\
+$R^\pi_T$        & $\sum_{t<\tau} r_t$; cumulative payment-aware reward optimized by PA-DCT \\
+$\paReg_T$       & $R^{\mathrm{Oracle}}_T - R^\pi_T$; empirical PA-regret to the True Oracle, Eq.~\eqref{eq:pa-regret} \\
+$\paReg_T/T$     & $(R^{\mathrm{Oracle}}_T - R^\pi_T)/T$; reported as PA-gap/$T$ \\
+$\AdaptT$        & trailing-200 ROI shock-response time; S2 reaches $\geq 95\%$ of pre-outage ROI, S3 reaches $\geq 110\%$ of pre-promotion ROI \\
 \bottomrule
 \end{tabularx}
 
 \subsection{Ablation labels}
 \label{app:notation-ablations}
 
-\begin{tabular}{lll}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
 \toprule
 Label & Means & Effect on PA-DCT \\
 \midrule
@@ -184,7 +198,7 @@ $-C$            & no contextual bucketing   & $K_b = 1$ (single global bucket) \
 $-TS$           & no Thompson sampling      & rank arms by posterior means $\thetaq{a}{k}, \thetac{a}{k}$ \\
 $-C_{\mathrm{post}}$ & no learned cost posterior & pin $\hatc{a}{k} = \bar c_a$; skip C-posterior discount and update \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 
 The ``full'' configuration enables all five; each ablation flips exactly one
 flag and leaves the others at their default values.

@@ -1,0 +1,2 @@
+{"task_id":"trivia/test_001","task_type":"T3a","prompt":"What is the capital of France?","gold_answer":"Paris","difficulty":0.2,"metadata":{"source":"fixture"}}
+{"task_id":"trivia/test_002","task_type":"T3a","prompt":"What color is a clear daytime sky?","gold_answer":"blue","difficulty":0.1,"metadata":{"source":"fixture"}}

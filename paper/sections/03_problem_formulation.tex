@@ -22,24 +22,28 @@ The stopping time $\tau$ equals $T$ if the run reaches the horizon, and otherwis
 
 The environment is the sequence of tasks, latent effective charges, and provider outcome laws
 \[
-\mathcal{E}=\{(\mathbf{x}_t,\mathbf{p}_t,\mathcal{D}_{1,t},\ldots,\mathcal{D}_{K,t})\}_{t=0}^{T-1}.
+\begin{aligned}
+\mathcal{E}=\{(&\mathbf{x}_t,\mathbf{p}_t,
+\mathcal{D}_{1,t},\ldots,\mathcal{D}_{K,t})\}_{t=0}^{T-1}.
+\end{aligned}
 \]
 The vector $\mathbf{p}_t$ is observed by the policy only through the selected charge $c_t$.
 
 \paragraph{Admissible policies.}
 Let $\mathcal{H}_t$ denote the information available immediately before selecting $a_t$:
 \[
+\begin{aligned}
 \mathcal{H}_t =
-\sigma\!\left(
-\{\mathbf{x}_s,\mathcal{A}_s,a_s,q_s,c_s,f_s\}_{s<t},
-\mathbf{x}_t,\mathcal{A}_t,B_t
-\right).
+\sigma\!\big(&\{\mathbf{x}_s,\mathcal{A}_s,a_s,q_s,c_s,f_s\}_{s<t},\\
+&\mathbf{x}_t,\mathcal{A}_t,B_t\big).
+\end{aligned}
 \]
 An admissible policy is a non-anticipating sequence $\pi=\{\pi_t\}_{t=0}^{T-1}$ satisfying
 \[
-a_t \sim \pi_t(\cdot \mid \mathcal{H}_t),
-\qquad
-\mathrm{supp}(\pi_t) \subseteq \mathcal{A}_t .
+\begin{aligned}
+a_t &\sim \pi_t(\cdot \mid \mathcal{H}_t),\\
+\mathrm{supp}(\pi_t) &\subseteq \mathcal{A}_t .
+\end{aligned}
 \]
 Let $\Pi_{\mathrm{adm}}$ denote the class of such policies.
 
@@ -52,9 +56,11 @@ The round feedback provides two signals: service delivery and realized payment c
 The constant $\nu$ penalizes non-delivery beyond its effect on $q_t$. We then combine utility with normalized realized cost to obtain the payment-aware reward,
 \begin{equation}
 \label{eq:reward}
-\ctilde = \mathrm{clip}(c_t/c_{\max},0,1), \qquad
-\lamn = \frac{\lambda_t}{1+\lambda_t}, \qquad
-\rt = (1-\lamn)\ut - \lamn\ctilde .
+\begin{aligned}
+\ctilde &= \mathrm{clip}(c_t/c_{\max},0,1),\\
+\lamn &= \frac{\lambda_t}{1+\lambda_t},\\
+\rt &= (1-\lamn)\ut - \lamn\ctilde .
+\end{aligned}
 \end{equation}
 Here $c_{\max}>0$ is a fixed cost normalizer chosen before evaluation. The multiplier $\lambda_t>0$ is defined below. For $0\leq\nu\leq1$, $\ut\in[-1,1]$; since $\ctilde\in[0,1]$ and $\lamn\in(0,1)$, the payment-aware reward satisfies $\rt\in[-1,1]$. Under environment $\mathcal{E}$, a policy $\pi$ aims to maximize
 \begin{equation}
@@ -72,23 +78,26 @@ The scalar $\rt$ aggregates quality, failure, and cost through wallet pressure $
 The wallet-pressure multiplier $\lambda_t$ in Eq.~\eqref{eq:reward} is a deterministic function of cumulative spend. For $t>0$, define the realized burn rate as the fraction of the wallet spent per elapsed round,
 \begin{equation}
 \label{eq:burn-rate}
-\mathrm{actual\_burn\_rate}_t = \frac{(B-B_t)/B}{t},
-\qquad
-\mathrm{target\_rate} = \frac{1}{T}
-\qquad (t>0).
+\begin{aligned}
+\mathrm{actual\_burn\_rate}_t
+  &= \frac{(B-B_t)/B}{t},\\
+\mathrm{target\_rate}
+  &= \frac{1}{T}\qquad (t>0).
+\end{aligned}
 \end{equation}
 The normalized burn deviation is
 \begin{equation}
 \label{eq:lambda}
-\bdev_t =
+\begin{aligned}
+\bdev_t &=
 \frac{\mathrm{actual\_burn\_rate}_t-\mathrm{target\_rate}}
-{\mathrm{target\_rate}},
-\qquad
-\lambda_t =
+{\mathrm{target\_rate}},\\
+\lambda_t &=
 \begin{cases}
 \lambda_0, & t=0,\\
-\lambda_0\exp(\alpha \bdev_t), & t>0,
+\lambda_0\exp(\alpha \bdev_t), & t>0.
 \end{cases}
+\end{aligned}
 \end{equation}
 with baseline $\lambda_0=1$ throughout and sharpness parameter $\alpha \geq 0$. Thus $\lamn=0.5$ when the buyer is exactly on the linear burn plan, decreases when the buyer is under-spending, and increases toward cost-dominated decisions when the wallet is being spent too quickly.
 

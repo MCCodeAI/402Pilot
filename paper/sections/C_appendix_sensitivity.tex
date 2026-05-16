@@ -15,7 +15,7 @@ between full PA-DCT ($\gamma = 0.999$) and the $-D$ ablation ($\gamma = 1$),
 across all three scenarios (Table~\ref{tab:gamma-sensitivity}, drawn from
 Table~\ref{tab:ablations}).
 
-\begin{table}[htbp]
+\begin{table*}[t]
 \centering
 \small
 \caption{Two-point sensitivity to the discount factor $\gamma$ from the
@@ -24,7 +24,7 @@ across scenarios is consistent with the analytical view in
 Cor.~\ref{cor:recovery}: $\gamma < 1$ pays a small cost in stationary
 settings and earns it back via faster recovery under shocks.}
 \label{tab:gamma-sensitivity}
-\resizebox{\textwidth}{!}{%
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{l|cccc|cccc|cccc}
 \toprule
 & \multicolumn{4}{c|}{S1 Stationary} & \multicolumn{4}{c|}{S2 Mid Outage} & \multicolumn{4}{c}{S3 Premium Promo} \\
@@ -35,7 +35,7 @@ $1.000$ & $0.109$ & $412$ & $0.810$ & \texttt{n/a} & $0.170$ & $399$ & $0.745$ &
 \bottomrule
 \end{tabular}%
 }
-\end{table}
+\end{table*}
 
 The two endpoints sandwich the regimes that matter for our analysis:
 $\gamma = 1$ is the no-discount fallback that recovers a vanilla contextual

@@ -109,7 +109,10 @@ def real_pregen_store() -> JsonlPregenStore:
 def real_tasks() -> list:
     from pilot402.pregen.tasks import load_all_tasks
 
-    tasks = load_all_tasks(Path(__file__).parents[1] / "data" / "tasks")
+    task_dir = Path(__file__).parents[1] / "data" / "tasks"
+    if not task_dir.is_dir():
+        pytest.skip("data/tasks/ is empty; run pregen first")
+    tasks = load_all_tasks(task_dir)
     if not tasks:
         pytest.skip("data/tasks/ is empty; run pregen first")
     return tasks

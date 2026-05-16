@@ -2,7 +2,7 @@
 
 **402Pilot** is a decision layer that sits above x402-style micropayment protocols. It gives autonomous agents an online policy for deciding *which* paid service to call — balancing output quality against cost under a fixed wallet budget, without prior knowledge of provider behavior.
 
-The core algorithm is **PA-DCT** (Payment-Aware Discounted Contextual Thompson sampling): a budget-aware, non-stationary contextual bandit that learns from reward feedback across irreversible per-call payments, with dual posteriors over both quality and cost.
+The core algorithm is **PA-DCT** (Payment-Aware Discounted Contextual Thompson sampling): a budget-aware, non-stationary contextual bandit that learns from reward feedback across irreversible per-call payments, with dual Q- and cost posteriors.
 
 ---
 
@@ -32,23 +32,24 @@ PA_reward = (1 − λ_norm) · utility − λ_norm · c̃     # ranking criterio
 
 `q` is task quality, `c̃` is normalized cost, `f` is a failure flag, `λ_t` is a budget-pressure multiplier that rises as the wallet depletes. Posterior updates use `utility` (λ-free), so the policy's beliefs track provider quality independently of decision-time budget pressure. The latency term in earlier drafts was retired — no provider in this benchmark specifies a latency profile, and ablations showed it contributed ~1% of reward magnitude.
 
-**Dual posteriors over (quality, cost).** Each (arm, task-type) bucket maintains separate Gaussian posteriors for quality and cost, both with discount factor γ=0.999. The cost posterior lets the policy detect price shocks (S3) the same way the quality posterior detects degradation (S2).
+**Dual posteriors over (Q, cost).** Each (arm, task-type) bucket maintains separate Gaussian posteriors for Q (utility as the service-quality signal) and cost, both with discount factor γ=0.999. The cost posterior lets the policy detect price shocks (S3) the same way the Q-posterior detects degradation (S2).
 
 **Non-stationarity via discounted sufficient statistics.** Exponential discount on per-arm posteriors lets the policy adapt to provider drift without forgetting stable arms too quickly.
 
 If `latexmk` is missing:
 
 ```bash
-pdflatex neurips_2026 && bibtex neurips_2026 && pdflatex neurips_2026 && pdflatex neurips_2026
+cd paper
+pdflatex main && bibtex main && pdflatex main && pdflatex main
 ```
 
-Five heterogeneous provider agents, three task types, three market scenarios, 30 seeds × 10,000 rounds per cell. All responses pre-generated from real LLM calls (20,575 frozen `PregenRecord`s); experiments replay from fixed fixtures for reproducibility.
+Five heterogeneous provider agents, four evaluation buckets, three market scenarios, 30 seeds × 10,000 rounds per cell. All responses pre-generated from real LLM calls (20,575 frozen `PregenRecord`s); experiments replay from fixed fixtures for reproducibility.
 
 | Provider   | Model         | Special behavior                                |
 | ---------- | ------------- | ----------------------------------------------- |
-| P-cheap    | qwen3.5-flash | No tools, parametric memory only                |
-| P-mid      | GPT-5.4-mini  | BM25 retrieval                                  |
-| P-premium  | GPT-5.4       | CoT + code execution                            |
+| P-cheap    | qwen3.5-flash | Uniform prompt                                  |
+| P-mid      | GPT-5.4-mini  | Uniform prompt                                  |
+| P-premium  | GPT-5.4       | Uniform prompt                                  |
 | P-adv      | GPT-5.4-mini  | Adversarial system prompt (fluent but wrong)    |
 | P-flaky    | GPT-5.4-mini  | 40% timeout injection                           |
 
@@ -65,18 +66,17 @@ P-mid, P-adv, and P-flaky share the same cost tier ($0.002) and base model. A ru
 ## Quickstart
 
 ```bash
-# 1. Install in editable mode (Python ≥ 3.10)
+# 1. Install in editable mode (Python ≥ 3.11)
 pip install -e .
 
-# 2. Run unit tests (281 tests; ~4 seconds)
+# 2. Run unit tests
 pytest
 
 # 3. Quick end-to-end smoke (PA-DCT × 3 scenarios × 3 seeds × 200 rounds)
 python /path/to/smoke_test_rename.py    # see scripts/
 
 # 4. Full main sweep (30 seeds × 10,000 rounds × 7 policies × 3 scenarios)
-python -m scripts.run_scenario_sweep                  # S1 + S2
-python -m scripts.run_s3_promo_v2                     # S3 v2 (locked design)
+python -m scripts.run_scenario_sweep
 
 # 5. Four-component ablation matrix
 python -m scripts.run_ablation_matrix
@@ -114,7 +114,7 @@ Six baselines plus an offline upper bound, all run on identical seeds:
 
 ## Headline Results
 
-PA-DCT outperforms the strongest fixed/rule baseline on every scenario, with statistically significant gains under non-stationary shocks (vs Always-P-mid: S2 outage `t = 4.90, p < 0.001`; S3 promo `t = 7.50, p < 0.0001`). Detail:
+PA-DCT has the most robust non-oracle trade-off profile across quality, ROI, and PA-gap. It is not the winner of every individual metric: cheap fixed routing maximizes ROI by under-spending, and some fixed/rule policies win isolated quality cells. The main result is that PA-DCT adapts under both reliability and price shocks while staying top-three on every rank-comparable main-table metric. Detail:
 
 | Scenario | Full PA-DCT cum_PA | vs Oracle gap | Adaptation time          |
 | -------- | ------------------ | ------------- | ------------------------ |
@@ -135,7 +135,7 @@ For workshops, also set `\workshoptitle{...}` after `\title{...}`.
 │   ├── system_design.md
 │   ├── experiment_design.md
 │   └── code_structure.md
-├── pilot402/           # Python package — implemented; 281 tests pass
+├── pilot402/           # Python package
 │   ├── core/           # types, config, seeds, interfaces (Protocols)
 │   ├── pregen/         # frozen-fixture loaders for replay
 │   ├── policies/       # PADCTPolicy + 5 baselines
@@ -147,7 +147,7 @@ For workshops, also set `\workshoptitle{...}` after `\title{...}`.
 ├── results/            # Run outputs (gitignored)
 ├── viz/                # Interactive explainer (React + Vite, GitHub Pages)
 ├── logs/               # Design-decision docs + analysis writeups
-└── tests/              # 281 unit tests
+└── tests/              # unit and integration tests
 ```
 
 Full module layout: [`docs/code_structure.md`](docs/code_structure.md). All paper-relevant decisions consolidated in [`logs/paper_design_decisions.md`](logs/paper_design_decisions.md). Anti-prior-art audit in [`logs/literature_review.md`](logs/literature_review.md).
@@ -159,12 +159,12 @@ Full module layout: [`docs/code_structure.md`](docs/code_structure.md). All pape
 | Component                      | Status        |
 | ------------------------------ | ------------- |
 | Pre-generation (LLM calls)     | ✅ Complete (20,575 records) |
-| Core implementation            | ✅ Complete (281 tests pass) |
+| Core implementation            | ✅ Complete |
 | Main sweep S1/S2/S3            | ✅ Complete (30 seeds × 7 policies) |
 | 4-component ablation matrix    | ✅ Complete (360 cells) |
 | 4 official metrics             | ✅ Computed |
-| Statistical significance       | 🟡 PA-DCT vs Always-Mid done; cross-baseline pairwise pending |
-| Hyperparameter sensitivity     | 🟡 Pending (γ sweep for appendix) |
+| Statistical significance       | ✅ Computed |
+| Hyperparameter sensitivity     | ✅ γ sweep reported in appendix |
 | Paper writing                  | 🟡 In progress |
 | Interactive viz (`viz/`)       | ✅ Built; data fixtures regenerated against locked sweeps |
 | Paper figures                  | ⏳ Deferred to paper finalization |

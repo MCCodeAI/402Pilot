@@ -14,7 +14,7 @@
 #
 # FIRST-TIME SETUP:
 #   cd ~/Documents/GitHub
-#   git clone https://git@git.overleaf.com/69faa6c9c08812ba6863e6bb 402Pilot-overleaf
+#   git clone https://git@git.overleaf.com/6a082432eb43ebce16b669d0 402Pilot-overleaf
 #   (username 'git', password is your Overleaf Git Authentication Token:
 #    Account Settings → Project sync → Git Integration → New Token)
 #
@@ -57,7 +57,7 @@ ERROR: $OVERLEAF_DIR is not a git clone.
 
 First-time setup:
   cd "$(cd "$REPO_ROOT/.." && pwd)"
-  git clone https://git@git.overleaf.com/69faa6c9c08812ba6863e6bb 402Pilot-overleaf
+  git clone https://git@git.overleaf.com/6a082432eb43ebce16b669d0 402Pilot-overleaf
 
 You'll be prompted for username (use 'git') and password (paste your
 Overleaf Git Authentication Token from Account Settings → Project sync).
@@ -94,6 +94,34 @@ if [ -n "$LOCAL_HEAD" ] && [ -n "$REMOTE_HEAD" ] && [ "$LOCAL_HEAD" != "$REMOTE_
   if [ "$AHEAD" != "0" ] && [ "$AHEAD" != "?" ]; then
     echo "    pulling Overleaf changes into sibling (fast-forward only)..."
     git pull --ff-only origin master
+  fi
+fi
+
+# --- Safety: do not overwrite an ACM Overleaf template with old local paper -
+if [ "$DRY_RUN" -eq 0 ] && [ "${ALLOW_OVERWRITE_ACM_TEMPLATE:-0}" != "1" ]; then
+  OVERLEAF_IS_ACM=0
+  LOCAL_IS_ACM=0
+
+  if [ -f "$OVERLEAF_DIR/main.tex" ] && grep -Eq '\\documentclass(\[[^]]*\])?\{acmart\}' "$OVERLEAF_DIR/main.tex"; then
+    OVERLEAF_IS_ACM=1
+  fi
+
+  if [ -f "$PAPER_DIR/main.tex" ] && grep -Eq '\\documentclass(\[[^]]*\])?\{acmart\}' "$PAPER_DIR/main.tex"; then
+    LOCAL_IS_ACM=1
+  fi
+
+  if [ "$OVERLEAF_IS_ACM" -eq 1 ] && [ "$LOCAL_IS_ACM" -eq 0 ]; then
+    cat <<EOF >&2
+ERROR: Overleaf clone is an ACM project, but local paper/ is not using an
+ACM main.tex entry point yet.
+
+Refusing to overwrite the ACM template with the current local paper/.
+Migrate the ACM files into paper/ first, or intentionally bypass this guard:
+
+  ALLOW_OVERWRITE_ACM_TEMPLATE=1 ./scripts/sync_paper_to_overleaf.sh "$MSG"
+
+EOF
+    exit 1
   fi
 fi
 

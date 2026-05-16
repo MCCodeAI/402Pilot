@@ -120,7 +120,7 @@ def _scenario_config(scenario_id: ScenarioId) -> ScenarioConfig:
     if scenario_id == ScenarioId.S3_PRICE_SHOCK:
         return ScenarioConfig(
             name=scenario_id,
-            kwargs={"shock_round": 3000, "price_multiplier": 0.4},
+            kwargs={"shock_round": 1000, "price_multiplier": 0.2},
         )
     raise ValueError(scenario_id)
 

@@ -1,7 +1,7 @@
 \section{402Pilot-Bench Dataset Card}
 \label{appendix:dataset}
 
-402Pilot-Bench is the replay benchmark introduced as Contribution C4
+402Pilot-Bench is the replay benchmark introduced as Contribution C3
 (\S\ref{sec:intro}); it is the artifact every empirical claim in this
 paper is computed against. This appendix is a datasheet
 in the spirit of \citet{gebru2021datasheets}, covering composition,
@@ -19,7 +19,7 @@ sources plus one custom subset, partitioned into four evaluation
 buckets used by PA-DCT's contextual structure ($K_b = 4$). Counts and
 sources are reported in Table~\ref{tab:dataset-card}.
 
-\begin{table}[htbp]
+\begin{table*}[t]
 \centering
 \small
 \caption{Per-bucket composition of 402Pilot-Bench. The web-search domain
@@ -30,7 +30,7 @@ to a deterministic content-filter rejection on the cheapest provider's
 API; excluding it for every provider keeps quality comparisons
 apples-to-apples.}
 \label{tab:dataset-card}
-\begin{tabular}{lllrl}
+\begin{tabularx}{\linewidth}{@{}llXrl@{}}
 \toprule
 Bucket & Domain & Source & Tasks & License \\
 \midrule
@@ -41,8 +41,8 @@ T3b & Web search (open)  & Custom open-ended subset (this work)            & $22
 \midrule
 \multicolumn{3}{l}{\textbf{Total}} & $\mathbf{823}$ & \\
 \bottomrule
-\end{tabular}
-\end{table}
+\end{tabularx}
+\end{table*}
 
 \paragraph{Pre-generated responses.}
 For each (task, provider) pair we pre-generate $V = 5$ response versions,
@@ -79,7 +79,7 @@ emphasize three design points:
   timeout-injection rate (P-flaky) --- and not by any static metadata. A
   policy that ranks providers by spec sheet alone cannot tell them apart.
 \item P-cheap (\$0.0005/call, weakest model) and P-premium (\$0.01/call,
-  strongest model + tool use) anchor the cost--quality frontier and
+  strongest model) anchor the cost--quality frontier and
   participate in S3, where P-premium's effective price drops to \$0.002
   at round $1{,}000$ to create the promotional opportunity.
 \item Adversarial behavior (P-adv) is implemented through a system-prompt

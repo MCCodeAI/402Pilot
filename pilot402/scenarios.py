@@ -25,8 +25,8 @@ Three scenarios are defined here, all locked at the M3.E design freeze
   the failures, while a posterior-tracking policy can detect the
   reliability regression and migrate.
 
-* **S3 — Premium Drop.** From round 3000 onwards, P-premium price is
-  multiplied by 0.4 ($0.01 → $0.004). Quality and failure rate
+* **S3 — Premium Drop.** From round 1000 onwards, P-premium price is
+  multiplied by 0.2 ($0.01 → $0.002). Quality and failure rate
   unchanged. Real-world precedent: GPT-4 → GPT-4o, Claude 3 Opus →
   3.5 Sonnet — new flagship tier renders the prior mid-tier
   cost-dominated. Targets ``AlwaysMid`` indirectly: Mid's absolute
@@ -249,7 +249,7 @@ class PremiumDropScenario(Scenario):
     """Permanent price cut on the premium tier (new-flagship release model).
 
     From ``shock_round`` onwards, ``target_provider``'s price is multiplied
-    by ``price_multiplier`` (default 0.4 → $0.01 → $0.004). Quality, latency,
+    by ``price_multiplier`` (default 0.2 → $0.01 → $0.002). Quality, latency,
     failure rate are untouched.
 
     The transformation is applied to BOTH the affordability price (so
@@ -263,8 +263,8 @@ class PremiumDropScenario(Scenario):
     def __init__(
         self,
         *,
-        shock_round: int = 3000,
-        price_multiplier: float = 0.4,
+        shock_round: int = 1000,
+        price_multiplier: float = 0.2,
         target_provider: ProviderId = ProviderId.P_PREMIUM,
     ) -> None:
         if shock_round < 0:

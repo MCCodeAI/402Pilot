@@ -130,6 +130,8 @@ def real_pregen_store() -> JsonlPregenStore:
 @pytest.fixture(scope="module")
 def real_tasks() -> list:
     from pilot402.pregen.tasks import load_all_tasks
+    if not TASKS_DIR.is_dir():
+        pytest.skip("data/tasks/ is empty; run pregen first")
     tasks = load_all_tasks(TASKS_DIR)
     if not tasks:
         pytest.skip("data/tasks/ is empty; run pregen first")
@@ -276,7 +278,7 @@ class TestPremiumDrop:
 
     def test_pre_shock_identity(self) -> None:
         s = PremiumDropScenario()
-        for round_idx in (0, 1000, s.shock_round - 1):
+        for round_idx in (0, s.shock_round // 2, s.shock_round - 1):
             assert s.effective_price(round_idx, ProviderId.P_PREMIUM, 0.01) == 0.01
             rec = _make_record(provider_id=ProviderId.P_PREMIUM, cost=0.01)
             assert s.transform_record(round_idx, rec) is rec
@@ -525,15 +527,15 @@ class TestLoopIntegration:
 
         records = [LogRecord.model_validate_json(line) for line
                    in log_path.read_text().splitlines()]
-        pre_shock = [r for r in records if r.round < 3000
+        pre_shock = [r for r in records if r.round < scenario.shock_round
                      and r.chosen_arm == ProviderId.P_PREMIUM]
-        post_shock = [r for r in records if r.round >= 3000
+        post_shock = [r for r in records if r.round >= scenario.shock_round
                       and r.chosen_arm == ProviderId.P_PREMIUM]
         assert pre_shock, "expected some pre-shock premium charges"
         assert post_shock, "expected some post-shock premium charges"
-        # Pre-shock cost should center on $0.01; post-shock on $0.004.
+        # Pre-shock cost should center on $0.01; post-shock on $0.002.
         assert all(abs(r.charged_cost_usdc - 0.01) < 1e-9 for r in pre_shock)
-        assert all(abs(r.charged_cost_usdc - 0.004) < 1e-9 for r in post_shock)
+        assert all(abs(r.charged_cost_usdc - 0.002) < 1e-9 for r in post_shock)
 
 
 # ---------------------------------------------------------------------------
@@ -585,8 +587,8 @@ class TestOracleWithScenarios:
 
         records = [LogRecord.model_validate_json(line) for line
                    in log_path.read_text().splitlines()]
-        pre = [r for r in records if r.round < 3000]
-        post = [r for r in records if r.round >= 3000]
+        pre = [r for r in records if r.round < scenario.shock_round]
+        post = [r for r in records if r.round >= scenario.shock_round]
         assert pre and post
         pre_premium = sum(1 for r in pre if r.chosen_arm == ProviderId.P_PREMIUM)
         post_premium = sum(1 for r in post if r.chosen_arm == ProviderId.P_PREMIUM)

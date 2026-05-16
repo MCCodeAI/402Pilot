@@ -3,8 +3,9 @@
 Export real experiment data from results/ into viz/public/data/ JSON fixtures.
 
 Reads:
-    results/scenario_sweep/{S1,S2,S3}/{policy}/seed_NN.jsonl     (round-level)
-    results/scenario_sweep/{S1,S2,S3}/summary.jsonl              (per-seed aggregates)
+    results/scenario_sweep/{S1,S2}/{policy}/seed_NN.jsonl        (round-level)
+    results/scenario_sweep_s3promo_v2/{policy}/seed_NN.jsonl     (locked S3)
+    results/scenario_sweep/{S1,S2}/summary.jsonl                 (per-seed aggregates)
     results/ablation_matrix/{no_c,no_d,no_p,no_ts}/{S1,S2,S3}/padct/seed_NN.jsonl
 
 Writes:
@@ -47,10 +48,10 @@ def scenario_dir(scenario: str) -> Path:
     """Return the canonical sweep directory for this scenario.
 
     S1 / S2 live under ``results/scenario_sweep/{S1,S2}/<policy>/seed_NN.jsonl``.
-    S3 v2 (locked design: PremiumDropScenario shock_round=1000,
-    price_multiplier=0.2) lives under ``results/scenario_sweep_s3promo_v2/<policy>/``
-    (no scenario subdir). The earlier ``results/scenario_sweep/S3/`` is M3.E
-    historical S3 — kept on disk for traceability but NOT the locked design.
+    The locked paper fixtures for S3 (PremiumDropScenario shock_round=1000,
+    price_multiplier=0.2) live under ``results/scenario_sweep_s3promo_v2/<policy>/``
+    (no scenario subdir). A historical ``results/scenario_sweep/S3/`` may exist
+    from the earlier M3.E design and should not be used for paper figures.
     """
     if scenario == "S3":
         return SCENARIO_SWEEP_S3_V2
