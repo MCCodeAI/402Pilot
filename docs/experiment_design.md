@@ -1,5 +1,8 @@
 # Experiment Design — 402Pilot-Bench
 
+**Status:** historical design draft. The ACM paper is the source of truth for
+current scenario definitions and reported metrics.
+
 402Pilot-Bench is the single evaluation used in this paper. It comprises
 three market scenarios, a fixed comparator set, four ablations of PA-DCT,
 and a fixed metric suite — all run against the same pre-generated response
@@ -141,7 +144,9 @@ a fundamental property of any reward-feedback learning system.
 
 #### Task sampling
 
-- Default mixture: uniform over T1, T2, T3 (≈ 33% each per run).
+- Default mixture: empirical uniform sampling over the 823-task cache:
+  T1/T2/T3a/T3b appear in proportion to their cache counts
+  (164/220/219/220).
 - Tasks are drawn with replacement; sampling sequence is determined by the run
 seed, ensuring reproducibility across all 30 seeds.
 - Difficulty is implicit in the benchmark datasets; no separate
@@ -154,9 +159,9 @@ difficulty-sampling distribution is needed.
 | ------------------- | ------------ | --------- | --------- | -------- | ------------ |
 | Coding              | HumanEval    | 164       | 5         | 5        | 4,100        |
 | Multi-hop QA        | HotpotQA val | 220       | 5         | 5        | 5,500        |
-| Web search — closed | TriviaQA-web | 220       | 5         | 5        | 5,500        |
+| Web search — closed | TriviaQA-web | 219 effective (220 raw, 1 filtered) | 5 | 5 | 5,475 |
 | Web search — open   | OpenAssistant filt. | 220 | 5         | 5        | 5,500        |
-| **Total**           |              | **824**   |           |          | **≈ 20,600** |
+| **Total**           |              | **823 effective** |      |          | **20,575** |
 
 The 164 for coding is the full HumanEval test split (no sampling). The
 other three sources are deterministically sampled; per-source seeds are
@@ -182,16 +187,13 @@ schedule differs.
 - **S1 — Stationary.** No parameter changes throughout. Establishes the
 static-market baseline and measures the base rate at which each policy
 learns to distinguish P-adv and P-flaky from P-mid.
-- **S2 — Abrupt degradation.** At round 3,000, P-premium's quality steps down
-(switches to a lower-quality response pool). At round 5,000, P-flaky's
-timeout rate spikes from its baseline 40% to 80%. Tests whether PA-DCT
-detects and adapts to abrupt quality and reliability changes faster than
-non-discounted policies.
-- **S3 — Price shock.** At round 5,000, P-premium's price doubles; P-mid's
-price halves. Response quality is unaffected; only cost parameters change.
-Tests whether the budget-aware λ_t correctly re-weights the cost penalty
-in response to price restructuring, and whether the bandit avoids shifting
-spend toward P-adv and P-flaky (which do not receive the P-mid price cut).
+- **S2 — Mid outage.** During rounds 3,000--5,500, P-mid fails 30% of the
+time via timeout injection, then fully recovers. Tests whether PA-DCT adapts
+to a reliability shock in an otherwise unchanged market.
+- **S3 — Premium promo.** At round 1,000, P-premium's price drops from
+$0.01 to $0.002, matching P-mid. Response quality is unaffected; only cost
+changes. Tests whether the learned cost posterior lets PA-DCT capture a
+price-promotion opportunity.
 
 ---
 
@@ -285,4 +287,3 @@ distinct problem.
 - All runs execute on a local DEVnet (Anvil fork of Base) for speed and
 reproducibility; no public testnet is used at any stage.
 - No live financial transactions; the wallet is a mock wallet throughout.
-

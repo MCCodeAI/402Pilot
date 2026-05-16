@@ -72,8 +72,8 @@ pip install -e .
 # 2. Run unit tests
 pytest
 
-# 3. Quick end-to-end smoke (PA-DCT × 3 scenarios × 3 seeds × 200 rounds)
-python /path/to/smoke_test_rename.py    # see scripts/
+# 3. Quick end-to-end smoke (3 scenarios × 3 seeds × 200 rounds; all policies + oracle)
+python -m scripts.run_scenario_sweep --num-seeds 3 --num-rounds 200 --out-dir results/smoke
 
 # 4. Full main sweep (30 seeds × 10,000 rounds × 7 policies × 3 scenarios)
 python -m scripts.run_scenario_sweep

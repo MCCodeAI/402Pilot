@@ -148,7 +148,6 @@ class PathConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     pregen_dir: Path = Path("data/pregen")
-    calibration_dir: Path = Path("data/calibration")
     tasks_dir: Path = Path("data/tasks")
     results_dir: Path = Path("results")
 

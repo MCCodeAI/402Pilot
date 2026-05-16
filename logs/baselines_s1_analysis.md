@@ -176,9 +176,8 @@ The S1 result is the "stationary baseline" story:
 
 The **interesting story is in S2 / S3** (non-stationary scenarios),
 where Always-Mid cannot adapt to runtime changes:
-- S2: P-premium quality drops at round 3000; P-flaky failure rate
-  spikes to 80% at round 5000
-- S3: P-premium price doubles, P-mid price halves at round 5000
+- S2: P-mid has a 30% timeout outage during rounds 3,000--5,500
+- S3: P-premium price drops from $0.01 to $0.002 at round 1,000
 
 PA-DCT's discount mechanism + TS exploration **should** detect these
 changes and re-allocate, while Always-Mid keeps using a now-suboptimal

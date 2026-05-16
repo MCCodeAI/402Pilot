@@ -1,8 +1,8 @@
 # Tier 3 Full Pregen — Final Analysis
 
 **Date**: 2026-05-02
-**Scale**: 5 providers × 4 task types × 824 tasks × 5 versions = **20,575 records**
-(20,600 - 25 from `trivia/jp_3954` content-filter exclusion)
+**Scale**: 5 providers × 823 effective tasks × 5 versions = **20,575 records**
+(824 raw cached tasks minus `trivia/jp_3954`, excluded for DashScope content-filter fairness)
 
 **Wall clock**: ~2.5 hours (with one mid-run interruption + Vercel top-up)
 **Recorded x402 charge**: $109.05

@@ -1,6 +1,8 @@
 """Unified entry point for loading all task sources.
 
-Composition fixed by PLAN §3.5: ~165 + 220 + 220 + 220 = 825 tasks total.
+The raw cache composition is 164 + 220 + 220 + 220 = 824 tasks. The
+paper benchmark uses 823 effective tasks after the DashScope content-filter
+exclusion in ``triviaqa.py`` removes ``trivia/jp_3954`` at load time.
 Override per-source caps via ``limits`` for thin-pregen runs.
 """
 
@@ -21,7 +23,7 @@ DEFAULT_LIMITS: dict[str, int | None] = {
     "triviaqa": 220,
     "openweb": 220,
 }
-# Total: 824 tasks per full pregen.
+# Raw cache total: 824 tasks; effective benchmark total: 823 after TriviaQA filter.
 
 
 def _all_loaders() -> list[TaskLoader]:

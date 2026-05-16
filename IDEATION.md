@@ -1,5 +1,9 @@
 402Pilot: Learning What to Pay For in Agent Micropayment Markets
 
+**Status:** superseded by the ACM paper and current implementation. Kept as
+an ideation record; do not treat scenario counts, method names, or benchmark
+numbers here as current specification.
+
 
 
 

@@ -76,6 +76,5 @@ policy:
 
 paths:
   pregen_dir: "data/pregen"
-  calibration_dir: "data/calibration"
   tasks_dir: "data/tasks"
   results_dir: "results"

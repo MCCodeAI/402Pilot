@@ -11,7 +11,7 @@ Usage::
     python -m scripts.run_pregen experiments/main.yaml \\
         --limits humaneval=5 hotpotqa=5 triviaqa=5 openweb=5
 
-    # Full pregen (5 providers × 824 tasks × 5 versions = 20,600 calls)
+    # Full pregen (5 providers × 823 effective tasks × 5 versions = 20,575 calls)
     python -m scripts.run_pregen experiments/main.yaml
 
     # Dry run — print the call plan without invoking any LLMs

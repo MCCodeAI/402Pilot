@@ -1,5 +1,8 @@
 # Paper Outline — 402Pilot
 
+**Status:** historical planning draft. The ACM paper is the source of truth
+for current claims, metrics, and scenario definitions.
+
 Target format: 9 pages of content + unbounded references + appendix
 (NeurIPS-style). Compatible with ICML / AAAI with minor trimming.
 
@@ -181,7 +184,7 @@ Full design in `docs/experiment_design.md`.
 
 ### 6.1 402Pilot-Bench setup (~0.5 page)
 
-- **Pre-generated dataset.** 824 tasks across T1/T2/T3; 5 response versions
+- **Pre-generated dataset.** 823 effective tasks across T1/T2/T3a/T3b; 5 response versions
   per (task, provider) pair from real LLM calls; quality scored at
   pre-generation time. Ensures reproducibility while grounding quality
   signals in real model outputs.

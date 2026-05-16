@@ -132,8 +132,8 @@ content filter; documented in `pilot402/pregen/tasks/triviaqa.py`.
 | Scenario | Round 0–2999 | Round 3000–4999 | Round 5000–9999 |
 |---|---|---|---|
 | **S1 — Stationary** | All providers fixed | Fixed | Fixed |
-| **S2 — Abrupt degradation** | Fixed | P-premium quality drops | P-flaky timeout 40% → 80% |
-| **S3 — Price shock** | Fixed | Fixed | P-premium ×2, P-mid ÷2 |
+| **S2 — Mid outage** | Fixed | P-mid timeout 30% during rounds 3,000--5,500 | Fixed |
+| **S3 — Premium promo** | Fixed | Fixed | P-premium price drops from $0.01 to $0.002 at round 1,000 |
 
 S1 is what M3.C/D have been calibrated against. S2/S3 are M3.B (next).
 

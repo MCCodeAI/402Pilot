@@ -1,5 +1,9 @@
 # Repository Layout
 
+**Status:** historical target-layout draft. The current repository tree,
+README, and ACM paper are the source of truth; this file is kept for design
+history and may not describe every current module exactly.
+
 This is the *target* repository layout. Only `IDEATION.md`, `PLAN.md`,
 `README.md`, and `docs/` currently exist; everything else
 (`pilot402/`, `experiments/`, `scripts/`, `tests/`, `paper/`, `viz/`,
@@ -108,7 +112,7 @@ pilot402/
 │       └── price_shock.py      # S3: provider price multipliers shift at round 5,000
 │
 ├── pregen/                     # Pre-generation pipeline (Phase 1 only; run once before any experiment)
-│   ├── generator.py            # drives ~20,600 LLM API calls (5 providers × 824 tasks × 5 versions)
+│   ├── generator.py            # drives 20,575 LLM API calls (5 providers × 823 effective tasks × 5 versions)
 │   ├── scorer.py               # computes and caches pass@1, EM/F1, and LLM-as-judge scores per response
 │   └── dataset.py              # dataset schema (PregenRecord) + load/query interface used by env/
 │
@@ -159,11 +163,9 @@ pilot402/
 │       │                       #   cost differences are encoded in the per-endpoint x402
 │       │                       #   price; behavioural differences (quality / latency / failure)
 │       │                       #   come from env/providers.py via the PregenStore replay
-│       ├── p_cheap.py          # P-cheap   (Qwen3-8B, no tools)
-│       ├── p_mid.py            # P-mid     (GPT-5.4-mini, BM25)
-│       ├── p_premium.py        # P-premium (GPT-5.4, CoT + tools)
-│       ├── p_adv.py            # P-adv     (GPT-5.4-mini + adversarial system prompt)
-│       └── p_flaky.py          # P-flaky   (GPT-5.4-mini + 40% timeout injection)
+│       ├── __init__.py         # provider registry and make_p_* factories
+│       │                       #   for P-cheap, P-mid, P-premium, and P-adv
+│       └── p_flaky.py          # P-flaky timeout wrapper
 │
 ├── runner/                     # Experiment runner
 │   ├── loop.py                 # per-round orchestration only:

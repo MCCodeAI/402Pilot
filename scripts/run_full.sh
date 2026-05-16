@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tier 3 — full pregen sweep.
 #
-# Scale: 5 providers × 824 tasks × 5 versions = 20,600 cells.
+# Scale: 5 providers × 823 effective tasks × 5 versions = 20,575 cells.
 # Output: data/pregen/ (the canonical location PregenStore reads from).
 #
 # Idempotent: --resume skips cells already on disk, so you can Ctrl+C the run
@@ -34,7 +34,7 @@ echo
 {
     echo "=== Full Tier 3 sweep started at $(date) ==="
     echo
-    echo "==> Step 1/2: pregen full task set (20,600 cells)"
+    echo "==> Step 1/2: pregen full task set (20,575 cells)"
     python -m scripts.run_pregen experiments/main.yaml \
         --concurrency 8 \
         --resume
