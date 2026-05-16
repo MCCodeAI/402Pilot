@@ -114,7 +114,7 @@ The ablation tests whether PA-DCT's full design is a balanced adaptive policy ra
 \centering
 \small
 \setlength{\tabcolsep}{3.5pt}
-\caption{Component ablations on 402Pilot-Bench. Values are metrics, not deltas; PA-gap/$T$ is per-round empirical PA-regret against the True Oracle (Eq.~\ref{eq:pa-regret}). $\bar q_T$ is full-horizon mean quality ($\sum q_t/T$, unserved rounds $\to 0$); ${}^{\dagger}$ marks variants that bankrupt mid-run (the $-P$ ablation in S1/S2). \texttt{n/a} means no shock event; \texttt{n.r.} means not run.}
+\caption{Component ablations on 402Pilot-Bench. Values are metrics, not deltas. PA-gap/$T$ is reported as mean$\pm$std over $30$ seeds; other metrics are means. $\bar q_T$ counts unserved rounds as zero; ${}^{\dagger}$ marks mid-run bankruptcy. \texttt{n/a}: no shock; \texttt{n.r.}: not run.}
 \label{tab:ablations}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{l|cccc|cccc|cccc}
@@ -122,12 +122,12 @@ The ablation tests whether PA-DCT's full design is a balanced adaptive policy ra
 & \multicolumn{4}{c|}{S1 Stationary} & \multicolumn{4}{c|}{S2 Mid Outage} & \multicolumn{4}{c}{S3 Premium Promo} \\
 Variant & PA-gap/$T$ & ROI & $\bar q_T$ & AdaptT & PA-gap/$T$ & ROI & $\bar q_T$ & AdaptT & PA-gap/$T$ & ROI & $\bar q_T$ & AdaptT \\
 \midrule
-Full PA-DCT      & $0.133$ & $378$ & $0.797$ & \texttt{n/a} & $0.166$ & $357$ & $0.761$ & $1467$ & $0.121$ & $429$ & $0.831$ & $200$  \\
-$-P$             & $0.855$ & $111$ & $0.555^{\dagger}$ & \texttt{n/a} & $0.878$ & $103$ & $0.517^{\dagger}$ & $1611$ & $0.259$ & $351$ & $0.840$ & $200$  \\
-$-D$             & $0.109$ & $412$ & $0.810$ & \texttt{n/a} & $0.170$ & $399$ & $0.745$ & $2249$ & $0.114$ & $426$ & $0.838$ & $279$  \\
-$-C$             & $0.116$ & $390$ & $0.812$ & \texttt{n/a} & $0.158$ & $368$ & $0.761$ & $1176$ & $0.109$ & $425$ & $0.848$ & $398$  \\
-$-TS$            & $0.130$ & $535$ & $0.740$ & \texttt{n/a} & $0.175$ & $537$ & $0.687$ & $1125$ & $0.145$ & $552$ & $0.742$ & $2232$ \\
-$-C_{\mathrm{post}}$ & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & $0.144$ & $423$ & $0.797$ & $\infty$ \\
+Full PA-DCT      & $0.133\pm 0.005$ & $378$ & $0.797$ & \texttt{n/a} & $0.166\pm 0.008$ & $357$ & $0.761$ & $1467$ & $0.121\pm 0.005$ & $429$ & $0.831$ & $200$  \\
+$-P$             & $0.855\pm 0.059$ & $111$ & $0.555^{\dagger}$ & \texttt{n/a} & $0.878\pm 0.051$ & $103$ & $0.517^{\dagger}$ & $1611$ & $0.259\pm 0.037$ & $351$ & $0.840$ & $200$  \\
+$-D$             & $0.109\pm 0.010$ & $412$ & $0.810$ & \texttt{n/a} & $0.170\pm 0.013$ & $399$ & $0.745$ & $2249$ & $0.114\pm 0.009$ & $426$ & $0.838$ & $279$  \\
+$-C$             & $0.116\pm 0.004$ & $390$ & $0.812$ & \texttt{n/a} & $0.158\pm 0.007$ & $368$ & $0.761$ & $1176$ & $0.109\pm 0.004$ & $425$ & $0.848$ & $398$  \\
+$-TS$            & $0.130\pm 0.046$ & $535$ & $0.740$ & \texttt{n/a} & $0.175\pm 0.048$ & $537$ & $0.687$ & $1125$ & $0.145\pm 0.024$ & $552$ & $0.742$ & $2232$ \\
+$-C_{\mathrm{post}}$ & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & \texttt{n.r.} & $0.144\pm 0.005$ & $423$ & $0.797$ & $\infty$ \\
 \bottomrule
 \end{tabular}%
 }
