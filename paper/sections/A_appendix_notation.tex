@@ -146,14 +146,14 @@ For each affordable arm $a \in \mathcal{A}_t$:
 \begin{aligned}
 \tilde{\hat c}^{a,k_t}
 &= \mathrm{clip}(\hatc{a}{k_t}/c_{\max},0,1),\\
-\pi_a
+s_a
 &= (1-\lamn)\,\hatu{a}{k_t}
   - \lamn\,\tilde{\hat c}^{a,k_t}.
 \end{aligned}
 \]
-The chosen arm is $a_t = \arg\max_{a\in\mathcal{A}_t}\pi_a$. Under $-TS$
+The chosen arm is $a_t = \arg\max_{a\in\mathcal{A}_t}s_a$. Under $-TS$
 replace $\sim$ with $=$ (use posterior means). Under $-P$ force $\lamn = 0$
-in $\pi_a$.
+in $s_a$.
 
 \subsection{Scenarios}
 \label{app:notation-scenarios}
@@ -192,7 +192,7 @@ $\AdaptT$        & trailing-200 ROI shock-response time; S2 reaches $\geq 95\%$ 
 \toprule
 Label & Means & Effect on PA-DCT \\
 \midrule
-$-P$            & no payment-aware ranking  & force $\lamn = 0$ in $\pi_a$ \\
+$-P$            & no payment-aware ranking  & force $\lamn = 0$ in $s_a$ \\
 $-D$            & no discount               & $\gamma = \gamma_c = 1$ \\
 $-C$            & no contextual bucketing   & $K_b = 1$ (single global bucket) \\
 $-TS$           & no Thompson sampling      & rank arms by posterior means $\thetaq{a}{k}, \thetac{a}{k}$ \\

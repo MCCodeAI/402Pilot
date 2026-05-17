@@ -176,7 +176,7 @@ Then $R^{a,k}_{w_t} = \phi_t^\top \theta^{a,k}$. The $1/c_{\max}$ factor is abso
 the standard contextual-bandit per-round regret with feature $\phi_t$ and per-arm parameter $\theta^{a,k}$. Crucially, $\phi_t$ may depend on past actions through $\lamn$, but this dependence is fully absorbed into the comparator's choice of $a^\star_t$ at round $t$, so the regret is well-defined as a one-step difference rather than a coupled trajectory comparison.
 
 \paragraph{Step 3: cost clipping contributes a lower-order term.}
-PA-DCT actually computes $\pi_a = (1-w)\hatu{a}{k} - w\,\mathrm{clip}(\hatc{a}{k}/c_{\max},0,1)$; this differs from $\hat R^{a,k}_w$ only on the event $\mathcal{C}_a := \{\hatc{a}{k}/c_{\max} \notin [0,1]\}$. The next lemma shows this event is rare under (A3$^\prime$).
+PA-DCT actually computes $s_a = (1-w)\hatu{a}{k} - w\,\mathrm{clip}(\hatc{a}{k}/c_{\max},0,1)$; this differs from $\hat R^{a,k}_w$ only on the event $\mathcal{C}_a := \{\hatc{a}{k}/c_{\max} \notin [0,1]\}$. The next lemma shows this event is rare under (A3$^\prime$).
 
 \begin{lemma}[Clip event probability]
 \label{lem:clip}

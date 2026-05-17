@@ -74,7 +74,7 @@ s_a
   - \lamn\,\tilde{\hat c}^{a,k_t}.
 \end{aligned}
 \end{equation}
-The policy chooses $a_t=\arg\max_{a\in\mathcal{A}_t}s_a$, with deterministic tie-breaking. Algorithm~\ref{alg:padct} states the round loop in the \texttt{select}/\texttt{update} contract.
+The policy chooses $a_t=\arg\max_{a\in\mathcal{A}_t}s_a$, with deterministic tie-breaking. Algorithm~\ref{alg:padct} states the round loop in the \texttt{select}/\texttt{update} contract; if $\mathcal{A}_t$ is empty, the layer stops the episode before invoking the policy.
 
 \begin{algorithm}[H]
 \caption{PA-DCT policy loop.}
@@ -85,10 +85,10 @@ The policy chooses $a_t=\arg\max_{a\in\mathcal{A}_t}s_a$, with deterministic tie
 \For{$(a,k)\in\{1,\ldots,K\}\times\{1,\ldots,K_b\}$}
   \State $n^{a,k}\leftarrow 0$;\quad $S^{a,k}\leftarrow 0$;\quad ${S_c}^{a,k}\leftarrow 0$
 \EndFor
-\For{$t=0,1,\ldots,T-1$}
+\For{each round where the layer invokes \texttt{select}}
+  \State Receive $\mathbf{x}_t$ and nonempty $\mathcal{A}_t$ from the layer
   \State For all $(a,k)$: discount $n^{a,k}$, $S^{a,k}$, and ${S_c}^{a,k}$ by $\gamma$
-  \State Receive $\mathbf{x}_t$ and $\mathcal{A}_t$ from the layer;\quad read $\lambda_t$;\quad $k_t\leftarrow k(\mathbf{x}_t)$
-  \If{$\mathcal{A}_t=\emptyset$} terminate the episode \EndIf
+  \State Read $\lambda_t$;\quad $k_t\leftarrow k(\mathbf{x}_t)$
   \State $\lamn\leftarrow\lambda_t/(1+\lambda_t)$
   \For{$a\in\mathcal{A}_t$}
     \State Sample $\hatu{a}{k_t}$ and $\hatc{a}{k_t}$ using Eq.~\eqref{eq:padct-sample}
@@ -104,12 +104,11 @@ The policy chooses $a_t=\arg\max_{a\in\mathcal{A}_t}s_a$, with deterministic tie
 \subsection{Locked Settings}
 \label{sec:method-hyperparams}
 
-All experiments use one locked configuration: $\mu_{0,q}=0.5$, $\sigma^2_{0,q}=1.0$, and $\sigma^2_q=0.09$ for the Q-posterior; prior mean $\bar c_a$, $\sigma^2_{0,c}=10^{-4}$, and $\sigma^2_c=10^{-6}$ for the C-posterior; $\gamma=0.999$; $\nu=0.5$; $\alpha=2$ in the wallet-pressure schedule; and $c_{\max}=\$0.01$, the highest listed provider price. The default bucket map uses task type only ($K_b=4$), while budget pressure enters through $\lambda_t$ rather than through the bucket index. These values are fixed before evaluation and are not tuned per scenario or seed; Appendix~\ref{appendix:sensitivity} records the sensitivity evidence and unswept constants.
+All experiments use one locked configuration: $\mu_{0,q}=0.5$, $\sigma^2_{0,q}=1.0$, and $\sigma^2_q=0.09$ for the Q-posterior; prior mean $\bar c_a$, $\sigma^2_{0,c}=10^{-4}$, and $\sigma^2_c=10^{-6}$ for the C-posterior; $\gamma=0.999$; $\nu=0.5$; $\alpha=2.0$ in the wallet-pressure schedule; and $c_{\max}=\$0.01$, the highest listed provider price. The default bucket map uses task type only ($K_b=4$), while budget pressure enters through $\lambda_t$ rather than through the bucket index. These values are fixed before evaluation and are not tuned per scenario or seed; Appendix~\ref{appendix:sensitivity} records the sensitivity evidence and unswept constants.
 
 \subsection{Scope and Computation}
 \label{sec:method-theory}
-\label{sec:method-complexity}
 
 PA-DCT combines standard ingredients: contextual Thompson sampling~\citep{russo2014learning}, discounted sufficient statistics for non-stationary bandits~\citep{garivier2011discounted,qi2023dsts}, and budget-aware scoring in the spirit of bandits with knapsacks~\citep{badanidiyuru2018bandits}. Appendix~\ref{appendix:proofs} states the formal scope. In brief, the payment-aware reward is bounded; per-cell posteriors are consistent in the stationary no-discount limit; under the stationary, well-specified, no-discount assumptions, PA-DCT reduces to per-bucket Gaussian Thompson sampling and inherits an $\tilde O(\sqrt{K K_b T})$ Bayesian PA-regret bound; and with discounting, old evidence after a change point is forgotten at rate $\gamma^\tau$, yielding the recovery horizon in Cor.~\ref{cor:recovery}. This is not a full policy-level regret theorem for every piecewise-stationary wallet trajectory; Appendix~\ref{app:proof-limitations} records the remaining boundaries.
 
-The per-round policy cost is $O(KK_b)$ time and memory: a discount sweep over all cells, two Gaussian samples for each affordable arm, and a constant-time update of the chosen cell. In our experiments $K=5$ and $K_b=4$, so the policy maintains twenty cells. For larger provider sets, the discount sweep can be implemented lazily with per-cell timestamps. This bound is only the policy-computation cost; 402Pilot-Bench removes live model-inference and settlement latency so the experiments measure decision quality rather than deployment latency.
+The per-round policy cost is $O(KK_b+|\mathcal{A}_t|)$ time and $O(KK_b)$ memory: a discount sweep over all cells, two Gaussian samples for each affordable arm, and a constant-time update of the chosen cell. In our experiments $K=5$ and $K_b=4$, so the policy maintains twenty cells and the time cost is $O(KK_b)$. For larger provider sets, the discount sweep can be implemented lazily with per-cell timestamps. This bound is only the policy-computation cost; 402Pilot-Bench removes live model-inference and settlement latency so the experiments measure decision quality rather than deployment latency.
