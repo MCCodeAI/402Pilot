@@ -1,7 +1,7 @@
 \section{The 402Pilot Decision Layer}
 \label{sec:layer}
 
-402Pilot is a reusable decision boundary above payment execution. In each round, the layer receives a task and wallet snapshot, obtains the wallet-feasible provider set, invokes a policy, delegates the selected payment to the protocol stack, and feeds only the chosen outcome back to the policy. This realizes the admissible-policy constraint in \S\ref{sec:problem}: feasible-set masking prevents unaffordable actions, and updates use only history and chosen-arm feedback. The layer does not modify the protocol, hold funds, or cross the settlement boundary. Figure~\ref{fig:architecture} sketches the per-round flow.
+402Pilot turns the formal setting in \S\ref{sec:problem} into a narrow boundary between an autonomous agent and the payment substrate. Each round follows a quote--select--pay--observe loop: the layer receives a task and wallet snapshot, asks which providers are feasible, calls a policy to choose one of them, delegates the selected payment and service call, and returns only the chosen outcome to the policy. Feasible-set masking prevents unaffordable actions, and chosen-only updates keep the policy within the admissible information pattern of \S\ref{sec:problem}. The layer does not modify the protocol, hold funds, or cross the settlement boundary. Figure~\ref{fig:architecture} sketches the per-round flow.
 
 \begin{figure*}[t]
 \centering
@@ -10,13 +10,13 @@
 \label{fig:architecture}
 \end{figure*}
 
-On the payment side, the layer uses three operations over the current candidate providers:
+On the payment side, 402Pilot asks the substrate for three things:
 \begin{align*}
 &\mathtt{feasible}(\{p_{a,t}\}) \to \mathcal{A}_t,\qquad
 \mathtt{pressure}() \to \lambda_t,\\
 &\mathtt{pay}(a_t) \to (\mathrm{response}_t,\mathrm{receipt}_t).
 \end{align*}
-The receipt gives the realized charge $c_t$. A task scorer maps the response into quality $q_t$ and failure flag $f_t$; in our reproducible frozen-replay benchmark, 402Pilot-Bench, these values are read from cached evaluation records. The layer distinguishes no affordable action from paid non-delivery: the former stops the run, while the latter is feedback with $f_t=1$ and realized charge $c_t$. Retry logic, settlement faults, discovery, and observability remain substrate concerns.
+The receipt supplies the realized charge $c_t$, and a task scorer maps the response to $(q_t,f_t)$. In our frozen-replay benchmark, 402Pilot-Bench, both are read from cached evaluation records. No affordable action stops the run; paid non-delivery is feedback with $f_t=1$ and realized charge $c_t$. Retry, settlement faults, discovery, and observability remain outside the layer.
 
 The upper policy contract is equally small. A policy is any object exposing
 \begin{align*}
@@ -27,4 +27,4 @@ where $\mathcal{A}_t \subseteq \{1, \ldots, K\}$ is the wallet-feasible subset a
 
 A key design choice is that the update receives \emph{utility} $\ut$ and realized cost $c_t$, rather than the payment-aware reward $\rt$. The same payment-aware form defines the selection score and evaluation objective, but realized $\rt$ is not an observation of provider quality. Updating posteriors on $\rt$ would entangle provider beliefs with the policy's own wallet trajectory, undermining the posterior interpretation used in \S\ref{sec:method}: the same provider would appear worse late in a budget-tight run than early in the run, even if its service behavior had not changed. In 402Pilot, beliefs about provider utility and cost are updated from $(\ut,c_t)$, while wallet pressure enters selection through $\lambda_t$.
 
-This boundary is payment-rail agnostic. The same contract can sit above any rail that exposes payable candidates, executes the selected payment, and returns a charge receipt. Settlement, provider discovery, observability, multi-agent coordination, and strategic bidding remain outside the layer. \S\ref{sec:method} instantiates the policy side with PA-DCT, a concrete policy implementation and method that uses the optional wallet-pressure channel while preserving the same \texttt{select}/\texttt{update} contract.
+This boundary is policy-agnostic as well as payment-rail agnostic. Fixed rules, random baselines, and learned policies all implement the same \texttt{select}/\texttt{update} contract; any rail that exposes payable candidates, executes the selected payment, and returns a charge receipt can sit underneath it. Settlement, provider discovery, observability, multi-agent coordination, and strategic bidding remain outside the layer. \S\ref{sec:method} instantiates the policy side with PA-DCT, a concrete method that uses the optional wallet-pressure channel while preserving the same contract.
