@@ -1,4 +1,4 @@
-"""Compute Table 5 (Main Results) metrics from per-cell JSONL logs.
+"""Compute the main-results table metrics from per-cell JSONL logs.
 
 For each (scenario, policy) cell, aggregates the per-round logs into:
 
@@ -186,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
         json.dump(aggregated, fh, indent=2)
 
     # Pretty-print a paper-ready table.
-    print("Paper Table 5: Main Results")
+    print("Paper main-results table")
     print("=" * 110)
     print(
         f"{'Policy':<24} | "
