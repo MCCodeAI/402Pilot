@@ -6,13 +6,13 @@ PA-DCT instantiates the policy side of the 402Pilot layer. Its job is narrow: in
 \subsection{Utility and Cost Beliefs}
 \label{sec:method-posteriors}
 
-Let $k_t=k(\mathbf{x}_t)$ map a task context to one of $K_b$ buckets; in the benchmark $K_b=4$, one bucket for each task type in \S\ref{sec:eval-setup}. For every arm $a$ and bucket $k$, PA-DCT maintains:
+Let $k_t=k(\mathbf{x}_t)$ map a task context to one of $K_b$ buckets; in the benchmark $K_b=4$, one bucket for each task type in \S\ref{sec:eval-setup}. For every provider (arm) $a$ and bucket $k$, PA-DCT maintains:
 \begin{itemize}
 \item \textbf{Q-posterior}: a Normal--Normal posterior over utility $\ut=q_t-\nu f_t$.
 \item \textbf{C-posterior}: a Normal--Normal posterior over realized cost $c_t$.
 \end{itemize}
 
-Each cell stores a shared effective count $n^{a,k}_t$, a utility sum $S^{a,k}_t$, and a cost sum ${S_c}^{a,k}_t$. The Q-posterior has prior $\mathcal{N}(\mu_{0,q},\sigma^2_{0,q})$ and likelihood variance $\sigma^2_q$:
+Each cell stores an effective count $n^{a,k}_t$ shared by the two posteriors, a utility sum $S^{a,k}_t$, and a cost sum ${S_c}^{a,k}_t$. The Q-posterior has prior $\mathcal{N}(\mu_{0,q},\sigma^2_{0,q})$ and likelihood variance $\sigma^2_q$:
 \begin{equation}
 \label{eq:posterior-q}
 \begin{aligned}
@@ -48,7 +48,7 @@ S^{a_t,k_t}_t &\mathrel{+}= \ut,\\
 {S_c}^{a_t,k_t}_t &\mathrel{+}= c_t.
 \end{aligned}
 \end{equation}
-The discount is wall-clock rather than pull-conditional: a provider can become better, worse, cheaper, or more expensive even while it is not selected. We use $\gamma=0.999$ for both posteriors, giving an effective horizon near $10^3$ rounds and a half-life of about $693$ rounds; Appendix~\ref{appendix:sensitivity} discusses this choice.
+Discounting is round-based rather than pull-conditional: every cell ages once per round, because a provider can become better, worse, cheaper, or more expensive even while it is not selected. We use $\gamma=0.999$ for both posteriors, giving an effective horizon near $10^3$ rounds and a half-life of about $693$ rounds; Appendix~\ref{appendix:sensitivity} discusses this choice.
 
 \subsection{Selection Rule}
 \label{sec:method-decision}
@@ -85,7 +85,7 @@ The policy chooses $a_t=\arg\max_{a\in\mathcal{A}_t}s_a$, with deterministic tie
 \For{$(a,k)\in\{1,\ldots,K\}\times\{1,\ldots,K_b\}$}
   \State $n^{a,k}\leftarrow 0$;\quad $S^{a,k}\leftarrow 0$;\quad ${S_c}^{a,k}\leftarrow 0$
 \EndFor
-\For{each round where the layer invokes \texttt{select}}
+\For{each served round $t$ with $\mathcal{A}_t\neq\emptyset$}
   \State Receive $\mathbf{x}_t$ and nonempty $\mathcal{A}_t$ from the layer
   \State For all $(a,k)$: discount $n^{a,k}$, $S^{a,k}$, and ${S_c}^{a,k}$ by $\gamma$
   \State Read $\lambda_t$;\quad $k_t\leftarrow k(\mathbf{x}_t)$
@@ -104,11 +104,11 @@ The policy chooses $a_t=\arg\max_{a\in\mathcal{A}_t}s_a$, with deterministic tie
 \subsection{Locked Settings}
 \label{sec:method-hyperparams}
 
-All experiments use one locked configuration: $\mu_{0,q}=0.5$, $\sigma^2_{0,q}=1.0$, and $\sigma^2_q=0.09$ for the Q-posterior; prior mean $\bar c_a$, $\sigma^2_{0,c}=10^{-4}$, and $\sigma^2_c=10^{-6}$ for the C-posterior; $\gamma=0.999$; $\nu=0.5$; $\alpha=2.0$ in the wallet-pressure schedule; and $c_{\max}=\$0.01$, the highest listed provider price. The default bucket map uses task type only ($K_b=4$), while budget pressure enters through $\lambda_t$ rather than through the bucket index. These values are fixed before evaluation and are not tuned per scenario or seed; Appendix~\ref{appendix:sensitivity} records the sensitivity evidence and unswept constants.
+All experiments use one locked configuration. For the Q-posterior, we set $\mu_{0,q}=0.5$, $\sigma^2_{0,q}=1.0$, and $\sigma^2_q=0.09$. For the C-posterior, we set prior mean $\bar c_a$, $\sigma^2_{0,c}=10^{-4}$, and $\sigma^2_c=10^{-6}$. The remaining constants are $\gamma=0.999$, $\nu=0.5$, $\alpha=2.0$ in the wallet-pressure schedule, and $c_{\max}=\$0.01$, the highest listed provider price. The default bucket map uses task type only ($K_b=4$), while budget pressure enters through $\lambda_t$ rather than through the bucket index. These values are fixed before evaluation and are not tuned per scenario or seed; Appendix~\ref{appendix:sensitivity} records the sensitivity evidence and unswept constants.
 
 \subsection{Scope and Computation}
 \label{sec:method-theory}
 
-PA-DCT combines standard ingredients: contextual Thompson sampling~\citep{russo2014learning}, discounted sufficient statistics for non-stationary bandits~\citep{garivier2011discounted,qi2023dsts}, and budget-aware scoring in the spirit of bandits with knapsacks~\citep{badanidiyuru2018bandits}. Appendix~\ref{appendix:proofs} states the formal scope. In brief, the payment-aware reward is bounded; per-cell posteriors are consistent in the stationary no-discount limit; under the stationary, well-specified, no-discount assumptions, PA-DCT reduces to per-bucket Gaussian Thompson sampling and inherits an $\tilde O(\sqrt{K K_b T})$ Bayesian PA-regret bound; and with discounting, old evidence after a change point is forgotten at rate $\gamma^\tau$, yielding the recovery horizon in Cor.~\ref{cor:recovery}. This is not a full policy-level regret theorem for every piecewise-stationary wallet trajectory; Appendix~\ref{app:proof-limitations} records the remaining boundaries.
+PA-DCT combines standard ingredients: contextual Thompson sampling~\citep{russo2014learning}, discounted sufficient statistics for non-stationary bandits~\citep{garivier2011discounted,qi2023dsts}, and budget-aware scoring in the spirit of bandits with knapsacks~\citep{badanidiyuru2018bandits}. Appendix~\ref{appendix:proofs} states the formal scope. In brief, the payment-aware reward is bounded, and per-cell posteriors are consistent in the stationary no-discount limit. Under stationary, well-specified, no-discount assumptions, PA-DCT reduces to per-bucket Gaussian Thompson sampling and inherits an $\tilde O(\sqrt{K K_b T})$ Bayesian PA-regret bound. With discounting, old evidence after a change point is forgotten at rate $\gamma^\tau$, yielding the recovery horizon in Cor.~\ref{cor:recovery}. This is not a full policy-level regret theorem for every piecewise-stationary wallet trajectory; Appendix~\ref{app:proof-limitations} records the remaining boundaries.
 
 The per-round policy cost is $O(KK_b+|\mathcal{A}_t|)$ time and $O(KK_b)$ memory: a discount sweep over all cells, two Gaussian samples for each affordable arm, and a constant-time update of the chosen cell. In our experiments $K=5$ and $K_b=4$, so the policy maintains twenty cells and the time cost is $O(KK_b)$. For larger provider sets, the discount sweep can be implemented lazily with per-cell timestamps. This bound is only the policy-computation cost; 402Pilot-Bench removes live model-inference and settlement latency so the experiments measure decision quality rather than deployment latency.
