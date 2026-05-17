@@ -1,7 +1,7 @@
 \section{The 402Pilot Decision Layer}
 \label{sec:layer}
 
-402Pilot turns the formal setting in \S\ref{sec:problem} into a narrow boundary between an autonomous agent and the payment substrate. Each round follows a quote--select--pay--observe loop: the layer receives a task and wallet snapshot, asks which providers are feasible, calls a policy to choose one of them, delegates the selected payment and service call, and returns only the chosen outcome to the policy. Feasible-set masking prevents unaffordable actions, and chosen-only updates keep the policy within the admissible information pattern of \S\ref{sec:problem}. The layer does not modify the protocol, hold funds, or cross the settlement boundary; x402 is our motivating rail, but the same contract fits above any rail that exposes payable candidates, executes the selected payment, and returns a charge receipt. Figure~\ref{fig:architecture} sketches the per-round flow.
+402Pilot turns the formal setting in \S\ref{sec:problem} into a narrow boundary between an autonomous agent and the payment substrate. Each round follows a quote--select--pay--observe loop: the layer receives a task, wallet snapshot, and quoted candidate set, asks which providers are feasible, calls a policy to choose one of them, delegates the selected payment and service call, and passes only the chosen outcome to the policy. Feasible-set masking prevents unaffordable actions, and chosen-only updates keep the policy within the admissible information pattern of \S\ref{sec:problem}. The layer does not modify the protocol, hold funds, or cross the settlement boundary; x402 is our motivating rail, but the same contract fits above any rail that exposes payable candidates, executes the selected payment, and returns a charge receipt. Figure~\ref{fig:architecture} sketches the per-round flow.
 
 \begin{figure*}[t]
 \centering
@@ -10,13 +10,13 @@
 \label{fig:architecture}
 \end{figure*}
 
-On the payment side, 402Pilot asks the substrate for three things:
+On the payment side, 402Pilot consumes a quoted candidate set $\mathcal{Q}_t$: provider identifiers and prices produced upstream by discovery and pricing machinery. Given $\mathcal{Q}_t$, the wallet/payment interface exposes three operations:
 \begin{align*}
-&\mathtt{feasible}(\{p_{a,t}\}) \to \mathcal{A}_t,\qquad
+&\mathtt{feasible}(\mathcal{Q}_t) \to \mathcal{A}_t,\qquad
 \mathtt{pressure}() \to \lambda_t,\\
 &\mathtt{pay}(a_t) \to (\mathrm{response}_t,\mathrm{receipt}_t).
 \end{align*}
-The receipt supplies the realized charge $c_t$, and a task scorer maps the response to $(q_t,f_t)$. In our frozen-replay benchmark, 402Pilot-Bench, both are read from cached evaluation records. No affordable action stops the run; paid non-delivery is feedback with $f_t=1$ and realized charge $c_t$. Retry, settlement faults, discovery, and observability remain outside the layer.
+The receipt supplies the realized charge $c_t$, and a task scorer maps the response to $(q_t,f_t)$. In our frozen-replay benchmark, 402Pilot-Bench, both are read from cached evaluation records. No affordable action stops the run; paid non-delivery is feedback with $f_t=1$ and realized charge $c_t$. Discovery, quote formation, retry, settlement faults, and observability remain outside the layer.
 
 On the policy side, a policy exposes two methods:
 \begin{align*}
