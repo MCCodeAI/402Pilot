@@ -6,7 +6,7 @@
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/402pilotlayer.png}
-\caption{The 402Pilot decision-layer architecture. The layer supplies a task-context representation and wallet-feasible providers to \texttt{policy.select}; settlement and service execution remain outside the layer. After the provider responds, a task scorer and payment receipt produce $(q_t,c_t,f_t)$, which the layer converts to $(\ut,c_t)$ for \texttt{policy.update}.}
+\caption{The 402Pilot per-round decision flow. A task and quoted candidates $\mathcal{Q}_t$ enter the layer; the wallet masks candidates to $\mathcal{A}_t$ and exposes pressure $\lambda_t$, and PA-DCT selects the paid arm $a_t$. The x402 stack executes the payment and service call; the returned response and receipt yield $(q_t,c_t,f_t)$, after which the layer records spend and passes $(\ut,c_t)$ to \texttt{policy.update}.}
 \label{fig:architecture}
 \end{figure*}
 
