@@ -6,17 +6,18 @@
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/402pilotlayer.png}
-\caption{The 402Pilot decision-layer architecture. The layer supplies a task-context representation and wallet-feasible providers to \texttt{policy.select}; settlement and service execution remain outside the layer. After the provider responds, a task scorer and payment receipt produce $(q_t,c_t,f_t)$ for \texttt{policy.update}.}
+\caption{The 402Pilot decision-layer architecture. The layer supplies a task-context representation and wallet-feasible providers to \texttt{policy.select}; settlement and service execution remain outside the layer. After the provider responds, a task scorer and payment receipt produce $(q_t,c_t,f_t)$, which the layer converts to $(\ut,c_t)$ for \texttt{policy.update}.}
 \label{fig:architecture}
 \end{figure*}
 
-On the payment side, 402Pilot consumes a quoted candidate set $\mathcal{Q}_t$: provider identifiers and prices produced upstream by discovery and pricing machinery, with the price component instantiating $\mathbf{p}_t$ from \S\ref{sec:problem}. Given $\mathcal{Q}_t$, the wallet/payment interface exposes three operations:
+On the payment side, 402Pilot consumes a quoted candidate set $\mathcal{Q}_t$: provider identifiers and prices produced upstream by discovery and pricing machinery, with the price component instantiating $\mathbf{p}_t$ from \S\ref{sec:problem}. Given $\mathcal{Q}_t$, the wallet/payment interface exposes four operations:
 \begin{align*}
 &\mathtt{feasible}(\mathcal{Q}_t) \to \mathcal{A}_t,\qquad
 \mathtt{pressure}() \to \lambda_t,\\
-&\mathtt{pay}(a_t) \to (\mathrm{response}_t,\mathrm{receipt}_t).
+&\mathtt{pay}(a_t) \to (\mathrm{response}_t,\mathrm{receipt}_t),\qquad
+\mathtt{record\_spend}(c_t) \to \emptyset .
 \end{align*}
-The receipt supplies the realized charge $c_t$, and a task scorer maps the response to $(q_t,f_t)$. In our frozen-replay benchmark, 402Pilot-Bench, both are read from cached evaluation records. No affordable action stops the run; paid non-delivery is feedback with $f_t=1$ and realized charge $c_t$. Discovery, quote formation, retry, settlement faults, and observability remain outside the layer.
+The receipt supplies the realized charge $c_t$, which the layer records with the wallet; a task scorer maps the response to $(q_t,f_t)$. In our frozen-replay benchmark, 402Pilot-Bench, both are read from cached evaluation records. No affordable action stops the run; paid non-delivery is feedback with $f_t=1$ and realized charge $c_t$. Discovery, quote formation, retry, settlement faults, and observability remain outside the layer.
 
 On the policy side, a policy exposes two methods:
 \begin{align*}

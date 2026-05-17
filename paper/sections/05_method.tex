@@ -1,18 +1,18 @@
-\section{Method: PA-DCT}
+\section{The PA-DCT Policy}
 \label{sec:method}
 
-PA-DCT is an instance of contextual Thompson sampling adapted to the agent-native payment decision-making setting (\S\ref{sec:intro}). Each (arm, task-type-bucket) cell maintains \emph{two} independent Gaussian posteriors---one over utility, one over cost---both tracked through discounted sufficient statistics. The scalar reward $\rt$ in Eq.~\eqref{eq:reward} is therefore a ranking and evaluation objective, not a posterior target. At decision time, the policy samples both posteriors and ranks affordable arms by a budget-pressure-weighted score; on receipt of the realized outcome, only the chosen cell's posteriors are updated, after a global discount sweep over every cell.
+PA-DCT instantiates the policy side of the 402Pilot layer. Its job is narrow: inside \texttt{select}, choose one affordable provider; inside \texttt{update}, learn only from the chosen outcome. The policy keeps two beliefs for each provider--task bucket, one about service utility and one about realized cost. At selection time it discounts old evidence, samples both beliefs, combines them with the current wallet pressure, and returns the provider with the best sampled trade-off. After the chosen call, it receives $(\ut,c_t)$ and updates only the chosen cell. Thus $\rt$ from Eq.~\eqref{eq:reward} remains the decision and evaluation objective, while provider beliefs are learned from utility and cost observations.
 
-\subsection{Dual Gaussian posteriors}
+\subsection{Utility and Cost Beliefs}
 \label{sec:method-posteriors}
 
-For each arm $a \in \{1,\ldots,K\}$ and bucket $k \in \{1,\ldots,K_b\}$ (where $K_b$ is the number of context buckets, default $4$, one per evaluation bucket / task type), we maintain two posteriors:
+Let $k_t=k(\mathbf{x}_t)$ map a task context to one of $K_b$ buckets; in the benchmark $K_b=4$, one bucket for each task type in \S\ref{sec:eval-setup}. For every arm $a$ and bucket $k$, PA-DCT maintains:
 \begin{itemize}
-\item \textbf{Q-posterior}, tracking the per-arm utility $\ut = q_t - \nu f_t$. Conjugate Normal-Normal with prior $\mathcal{N}(\mu_{0,q}, \sigma^2_{0,q})$ and likelihood variance $\sigma^2_q$.
-\item \textbf{C-posterior}, tracking the per-arm raw cost $c_t$. Same Normal-Normal form, with prior $\mathcal{N}(\bar c_a, \sigma^2_{0,c})$ where $\bar c_a$ is the spec base price for arm $a$, and likelihood variance $\sigma^2_c$.
+\item \textbf{Q-posterior}: a Normal--Normal posterior over utility $\ut=q_t-\nu f_t$.
+\item \textbf{C-posterior}: a Normal--Normal posterior over realized cost $c_t$.
 \end{itemize}
 
-Each cell carries discounted sufficient statistics: a shared effective sample count $n^{a,k}_t \in \mathbb{R}_{\geq 0}$, a weighted sum of utilities $S^{a,k}_t \in \mathbb{R}$ for the Q-posterior, and a weighted sum of realized costs ${S_c}^{a,k}_t \in \mathbb{R}$ for the C-posterior. Posterior parameters follow the closed-form Normal--Normal expressions, e.g.\ for Q:
+Each cell stores a shared effective count $n^{a,k}_t$, a utility sum $S^{a,k}_t$, and a cost sum ${S_c}^{a,k}_t$. The Q-posterior has prior $\mathcal{N}(\mu_{0,q},\sigma^2_{0,q})$ and likelihood variance $\sigma^2_q$:
 \begin{equation}
 \label{eq:posterior-q}
 \begin{aligned}
@@ -25,117 +25,91 @@ Each cell carries discounted sufficient statistics: a shared effective sample co
   + \frac{S^{a,k}_t}{\sigma^2_q}\right).
 \end{aligned}
 \end{equation}
-The C-posterior uses the analogous form with $(\thetac{a}{k}, \Sigmac{a}{k})$, $\bar c_a$ in place of $\mu_{0,q}$, $\sigma^2_c$ in place of $\sigma^2_q$, and ${S_c}^{a,k}_t$ in place of $S^{a,k}_t$.
+The C-posterior uses the same form with $(\thetac{a}{k},\Sigmac{a}{k})$, prior mean $\bar c_a$ (the arm's spec price), likelihood variance $\sigma^2_c$, and cost sum ${S_c}^{a,k}_t$.
 
-\paragraph{Why a learned cost posterior.}
-If realized prices were fixed and observed before selection, PA-DCT could use the spec price $\bar c_a$ directly. Our decision-layer contract deliberately does not assume this: effective prices $p_{a,t}$ may drift over time, and the policy observes only the feasible set $\mathcal{A}_t$ before payment, not the full price vector $\mathbf{p}_t$. The spec price $\bar c_a$ therefore serves as the C-posterior prior mean, while selected calls reveal realized charges $c_t=p_{a_t,t}$. Learning a posterior over $c_t$ lets PA-DCT react to price shocks through the same discounted evidence mechanism used by the Q-posterior for quality and reliability shocks.
+The learned C-posterior is what lets PA-DCT respond to price drift. If prices were fixed and visible before selection, the spec price $\bar c_a$ would be enough. In the 402Pilot contract, however, the policy sees the affordable set before payment and learns numeric charges only from receipts. PA-DCT therefore treats $\bar c_a$ as a prior and lets selected charges $c_t=p_{a_t,t}$ move the cost belief, just as selected utilities move the Q-posterior.
 
-\subsection{Discounted sufficient statistics}
+\subsection{Discounted Updates}
 \label{sec:method-discount}
 
-We apply a multiplicative discount $\gamma \in (0, 1]$ to every cell's sufficient statistics at the start of each round, before any new observation arrives:
+To track non-stationarity, PA-DCT discounts every cell at the start of each round:
 \begin{equation}
 \begin{aligned}
-n^{a,k}_t &= \gamma \cdot n^{a,k}_{t-1},\\
-S^{a,k}_t &= \gamma \cdot S^{a,k}_{t-1},\\
-{S_c}^{a,k}_t &= \gamma \cdot {S_c}^{a,k}_{t-1}.
+n^{a,k}_t &= \gamma n^{a,k}_{t-1},\\
+S^{a,k}_t &= \gamma S^{a,k}_{t-1},\\
+{S_c}^{a,k}_t &= \gamma {S_c}^{a,k}_{t-1}.
 \end{aligned}
 \end{equation}
-After the round's chosen arm produces an observation, only its bucket increments:
+After the chosen provider returns feedback, only the chosen cell receives the new observation:
 \begin{equation}
 \begin{aligned}
-n^{a_t, k_t}_t &\mathrel{+}= 1,\\
-S^{a_t, k_t}_t &\mathrel{+}= \ut\ \,(\text{Q}),\\
-{S_c}^{a_t, k_t}_t &\mathrel{+}= c_t\ \,(\text{C}).
+n^{a_t,k_t}_t &\mathrel{+}= 1,\\
+S^{a_t,k_t}_t &\mathrel{+}= \ut,\\
+{S_c}^{a_t,k_t}_t &\mathrel{+}= c_t.
 \end{aligned}
 \end{equation}
-Discounting applies regardless of whether a cell was pulled this round---non-stationarity is wall-clock, not pull-conditional. We use $\gamma = 0.999$ for both posteriors (effective half-life $\approx 693$ rounds), chosen to remain responsive within shock windows of a few thousand rounds without forgetting the stationary baseline too quickly. The role of $\gamma$ in controlling post-shock adaptation speed is analyzed in Cor.~\ref{cor:recovery}.
+The discount is wall-clock rather than pull-conditional: a provider can become better, worse, cheaper, or more expensive even while it is not selected. We use $\gamma=0.999$ for both posteriors, giving an effective horizon near $10^3$ rounds and a half-life of about $693$ rounds; Appendix~\ref{appendix:sensitivity} discusses this choice.
 
-\subsection{Decision rule}
+\subsection{Selection Rule}
 \label{sec:method-decision}
 
-At round $t$, after observing $\mathbf{x}_t$ and setting $k_t=k(\mathbf{x}_t)$, the wallet/payment interface provides the budget-pressure multiplier $\lambda_t$ and the affordable set $\mathcal{A}_t$. PA-DCT sets $\lamn=\lambda_t/(1+\lambda_t)$ and scores each affordable arm using independent Thompson samples from the Q- and C-posteriors for the current bucket:
+At round $t$, PA-DCT receives $\mathbf{x}_t$ and the affordable set $\mathcal{A}_t$ from the layer, and reads wallet pressure $\lambda_t$ through the optional channel defined in \S\ref{sec:layer}. It sets $\lamn=\lambda_t/(1+\lambda_t)$ and draws one Thompson sample from each posterior for every affordable arm:
 \begin{equation}
 \label{eq:padct-sample}
 \begin{aligned}
 \hatu{a}{k_t}
 &\sim \mathcal{N}\!\big(\thetaq{a}{k_t},\, \Sigmaq{a}{k_t}\big),\\
 \hatc{a}{k_t}
-&\sim \mathcal{N}\!\big(\thetac{a}{k_t},\, \Sigmac{a}{k_t}\big),
+&\sim \mathcal{N}\!\big(\thetac{a}{k_t},\, \Sigmac{a}{k_t}\big).
 \end{aligned}
 \end{equation}
+The sampled score mirrors the payment-aware reward, using sampled utility and sampled normalized cost:
 \begin{equation}
 \label{eq:padct-score}
 \begin{aligned}
 \tilde{\hat c}^{a,k_t}
-&= \mathrm{clip}\!\big(\hatc{a}{k_t}/c_{\max},\, 0,\, 1\big),\\
+&= \mathrm{clip}\!\big(\hatc{a}{k_t}/c_{\max},\,0,\,1\big),\\
 s_a
-&= (1 - \lamn)\,\hatu{a}{k_t}
+&= (1-\lamn)\,\hatu{a}{k_t}
   - \lamn\,\tilde{\hat c}^{a,k_t}.
 \end{aligned}
 \end{equation}
-The chosen arm is $a_t = \arg\max_{a \in \mathcal{A}_t} s_a$, with ties broken by any fixed rule. We write $s_a$ for the per-arm decision score to avoid clashing with the policy symbol $\pi$. Algorithm~\ref{alg:padct} states the per-round procedure end-to-end.
+The policy chooses $a_t=\arg\max_{a\in\mathcal{A}_t}s_a$, with deterministic tie-breaking. Algorithm~\ref{alg:padct} states the round loop in the \texttt{select}/\texttt{update} contract.
 
-\begin{algorithm}[t]
-\caption{PA-DCT: Payment-Aware Discounted Contextual Thompson sampling.}
+\begin{algorithm}[H]
+\caption{PA-DCT policy loop.}
 \label{alg:padct}
 \begin{algorithmic}[1]
-\Require Provider set $\{1,\ldots,K\}$ with spec costs $\bar c_a$.
-\Require Discount $\gamma$; failure penalty $\nu$; cost normalizer $c_{\max}$.
-\Require Context encoder $k(\cdot)$.
-\Require Q-posterior priors $(\mu_{0,q},\sigma^2_{0,q},\sigma^2_q)$.
-\Require C-posterior priors $(\sigma^2_{0,c},\sigma^2_c)$.
-\Require Wallet/payment interface returning $\lambda_t$ and the affordable set $\mathcal{A}_t$.
-\For{$(a, k) \in \{1,\ldots,K\} \times \{1,\ldots,K_b\}$}
-  \State $n^{a,k} \leftarrow 0$;\quad $S^{a,k} \leftarrow 0$
-  \State ${S_c}^{a,k} \leftarrow 0$
+\Require Spec costs $\bar c_a$; discount $\gamma$; normalizer $c_{\max}$.
+\Require Encoder $k(\cdot)$ and Q/C posterior priors.
+\For{$(a,k)\in\{1,\ldots,K\}\times\{1,\ldots,K_b\}$}
+  \State $n^{a,k}\leftarrow 0$;\quad $S^{a,k}\leftarrow 0$;\quad ${S_c}^{a,k}\leftarrow 0$
 \EndFor
-\For{$t = 0, 1, \ldots, T-1$}
-  \State For all $(a,k)$: $n^{a,k} \leftarrow \gamma\,n^{a,k}$
-  \State For all $(a,k)$: $S^{a,k} \leftarrow \gamma\,S^{a,k}$
-  \State For all $(a,k)$: ${S_c}^{a,k} \leftarrow \gamma\,{S_c}^{a,k}$
-  \State Observe $\mathbf{x}_t$, $B_t$;\quad $k_t \leftarrow k(\mathbf{x}_t)$
-  \State Read $\lambda_t$ and $\mathcal{A}_t$ from the wallet/payment interface
-  \State $\lamn \leftarrow \lambda_t / (1 + \lambda_t)$
-  \If{$\mathcal{A}_t = \emptyset$} terminate the episode (no affordable provider) \EndIf
-  \For{$a \in \mathcal{A}_t$}
-    \State $\hatu{a}{k_t} \sim \mathcal{N}\!\big(\thetaq{a}{k_t},\,\Sigmaq{a}{k_t}\big)$
-    \State $\hatc{a}{k_t} \sim \mathcal{N}\!\big(\thetac{a}{k_t},\,\Sigmac{a}{k_t}\big)$
-    \State $\tilde{\hat c}^{a,k_t} \leftarrow \mathrm{clip}(\hatc{a}{k_t}/c_{\max}, 0, 1)$
-    \State $s_a \leftarrow (1-\lamn)\,\hatu{a}{k_t} - \lamn\,\tilde{\hat c}^{a,k_t}$
+\For{$t=0,1,\ldots,T-1$}
+  \State For all $(a,k)$: discount $n^{a,k}$, $S^{a,k}$, and ${S_c}^{a,k}$ by $\gamma$
+  \State Receive $\mathbf{x}_t$ and $\mathcal{A}_t$ from the layer;\quad read $\lambda_t$;\quad $k_t\leftarrow k(\mathbf{x}_t)$
+  \If{$\mathcal{A}_t=\emptyset$} terminate the episode \EndIf
+  \State $\lamn\leftarrow\lambda_t/(1+\lambda_t)$
+  \For{$a\in\mathcal{A}_t$}
+    \State Sample $\hatu{a}{k_t}$ and $\hatc{a}{k_t}$ using Eq.~\eqref{eq:padct-sample}
+    \State $s_a\leftarrow(1-\lamn)\hatu{a}{k_t}-\lamn\,\mathrm{clip}(\hatc{a}{k_t}/c_{\max},0,1)$
   \EndFor
-  \State $a_t \leftarrow \arg\max_{a \in \mathcal{A}_t} s_a$
-  \State Pay via the protocol; observe $(q_t, c_t, f_t)$;\quad $\ut \leftarrow q_t - \nu f_t$
-  \State Update chosen cell: $n^{a_t,k_t} \mathrel{+}= 1$
-  \State $S^{a_t,k_t} \mathrel{+}= \ut$;\quad ${S_c}^{a_t,k_t} \mathrel{+}= c_t$
-  \State wallet.\texttt{record\_spend}$(c_t)$
+  \State Select $a_t\leftarrow\arg\max_{a\in\mathcal{A}_t}s_a$
+  \State Receive update feedback $(\ut,c_t)$ from the layer
+  \State $n^{a_t,k_t}\mathrel{+}=1$;\quad $S^{a_t,k_t}\mathrel{+}=\ut$;\quad ${S_c}^{a_t,k_t}\mathrel{+}=c_t$
 \EndFor
 \end{algorithmic}
 \end{algorithm}
 
-\subsection{Hyperparameters}
+\subsection{Locked Settings}
 \label{sec:method-hyperparams}
 
-We fix the following constants across every experiment in the paper:
-\begin{itemize}
-\item Q-posterior: $\mu_{0,q} = 0.5$, $\sigma^2_{0,q} = 1.0$, $\sigma^2_q = 0.09$ (neutral utility prior with broad cold-start uncertainty).
-\item C-posterior: prior mean $\bar c_a$, $\sigma^2_{0,c} = 10^{-4}$, $\sigma^2_c = 10^{-6}$ (spec-price prior and near-deterministic replay costs).
-\item Discount: $\gamma = 0.999$ for both Q- and C-posteriors (effective horizon $\approx 10^3$ rounds).
-\item Reward and budget constants: $\nu = 0.5$, $\alpha = 2$, $c_{\max} = \$0.01$ (failure penalty, wallet-pressure sharpness, and highest listed provider price).
-\item Bucket count: $K_b = 4$ (one per task type, see \S\ref{sec:eval-setup}). The logged encoder also records difficulty, remaining-budget fraction, and $\lambda_t$; the default PA-DCT bucket map uses the task-type one-hot coordinates, while budget pressure enters the ranking score through $\lambda_t$.
-\end{itemize}
-These values are locked before evaluation and not tuned per scenario or per seed. Appendix~\ref{appendix:sensitivity} discusses sensitivity and unswept constants.
+All experiments use one locked configuration: $\mu_{0,q}=0.5$, $\sigma^2_{0,q}=1.0$, and $\sigma^2_q=0.09$ for the Q-posterior; prior mean $\bar c_a$, $\sigma^2_{0,c}=10^{-4}$, and $\sigma^2_c=10^{-6}$ for the C-posterior; $\gamma=0.999$; $\nu=0.5$; $\alpha=2$ in the wallet-pressure schedule; and $c_{\max}=\$0.01$, the highest listed provider price. The default bucket map uses task type only ($K_b=4$), while budget pressure enters through $\lambda_t$ rather than through the bucket index. These values are fixed before evaluation and are not tuned per scenario or seed; Appendix~\ref{appendix:sensitivity} records the sensitivity evidence and unswept constants.
 
-\subsection{Theoretical properties}
+\subsection{Scope and Computation}
 \label{sec:method-theory}
-
-PA-DCT combines standard bandit ingredients---contextual Thompson sampling~\citep{russo2014learning}, discounted sufficient statistics for non-stationary bandits~\citep{garivier2011discounted,qi2023dsts}, and budget-aware reward shaping in the spirit of bandits-with-knapsacks~\citep{badanidiyuru2018bandits}---but their interaction through dual utility/cost posteriors, a wallet-weighted score, and contextual buckets is not covered directly by a standard theorem. The analysis in Appendix~\ref{appendix:proofs} verifies which guarantees transfer to this combination and what role the discount plays after shocks.
-
-Appendix~\ref{appendix:proofs} establishes four results. First, the payment-aware reward is bounded, $\rt \in [-1,+1]$ (Prop.~\ref{prop:reward-bounded}). Second, in the stationary no-discount limit ($\gamma=1$), each per-cell Normal--Normal posterior is almost-surely consistent as its pull count diverges (Prop.~\ref{prop:consistency}). Third, under the stationary, well-specified Gaussian Bayesian model, $\gamma=1$, and the cost-margin and policy-state comparator assumptions stated in Appendix~\ref{appendix:proofs}, PA-DCT reduces to per-bucket Gaussian Thompson sampling and inherits an $\tilde O(\sqrt{K K_b T})$ Bayesian PA-regret bound by reduction to Russo and Van Roy~\citep{russo2014learning} (Thm.~\ref{thm:stationary-regret}). Fourth, after an abrupt change-point of magnitude $\Delta$, the per-arm Q-posterior bias admits a closed-form bound; conditional on post-shock observations of that arm, old evidence is forgotten at rate $\gamma^\tau$, yielding the recovery horizon $\tau \geq \log(\Delta/\delta)/\log(1/\gamma)$ in the data-dominated regime (Thm.~\ref{thm:adaptation}, Cor.~\ref{cor:recovery}). For $\gamma=0.999$, this corresponds to an effective sample horizon of roughly $1/(1-\gamma)=1{,}000$ rounds, or a half-life of about $693$ rounds.
-
-The theory should be read at this scope: the PA-regret guarantee is the stationary, no-discount, policy-state result above; the discount analysis explains posterior adaptation after observations rather than a full policy-level PA-regret bound for every piecewise-stationary wallet trajectory. Appendix~\ref{app:proof-limitations} records the remaining technical boundaries, including misspecified likelihood variances, boundary-priced arms under the cost-margin assumption, and the distinction between the policy-state comparator and the empirical True Oracle.
-
-\subsection{Computational complexity}
 \label{sec:method-complexity}
 
-Per round, PA-DCT performs (i) a global discount sweep over every cell, $O(K K_b)$, (ii) two Gaussian samples and one $\arg\max$ over the affordable set $\mathcal{A}_t$, $O(|\mathcal{A}_t|) \leq O(K)$, and (iii) one closed-form Normal--Normal update on the chosen cell, $O(1)$. Total per-round cost is $O(K K_b)$ time and $O(K K_b)$ memory; with the locked $K=5$ and $K_b=4$ this is twenty cells. Posterior parameters are computed from sufficient statistics on demand, so they do not change the asymptotic bound. For large provider sets, the discount sweep can be implemented lazily by storing a last-updated timestamp per cell; Algorithm~\ref{alg:padct} shows the explicit sweep for clarity. This is a policy-computation bound: 402Pilot-Bench removes live model-inference and settlement latency, so the experiments evaluate decision quality rather than deployment latency.
+PA-DCT combines standard ingredients: contextual Thompson sampling~\citep{russo2014learning}, discounted sufficient statistics for non-stationary bandits~\citep{garivier2011discounted,qi2023dsts}, and budget-aware scoring in the spirit of bandits with knapsacks~\citep{badanidiyuru2018bandits}. Appendix~\ref{appendix:proofs} states the formal scope. In brief, the payment-aware reward is bounded; per-cell posteriors are consistent in the stationary no-discount limit; under the stationary, well-specified, no-discount assumptions, PA-DCT reduces to per-bucket Gaussian Thompson sampling and inherits an $\tilde O(\sqrt{K K_b T})$ Bayesian PA-regret bound; and with discounting, old evidence after a change point is forgotten at rate $\gamma^\tau$, yielding the recovery horizon in Cor.~\ref{cor:recovery}. This is not a full policy-level regret theorem for every piecewise-stationary wallet trajectory; Appendix~\ref{app:proof-limitations} records the remaining boundaries.
+
+The per-round policy cost is $O(KK_b)$ time and memory: a discount sweep over all cells, two Gaussian samples for each affordable arm, and a constant-time update of the chosen cell. In our experiments $K=5$ and $K_b=4$, so the policy maintains twenty cells. For larger provider sets, the discount sweep can be implemented lazily with per-cell timestamps. This bound is only the policy-computation cost; 402Pilot-Bench removes live model-inference and settlement latency so the experiments measure decision quality rather than deployment latency.
