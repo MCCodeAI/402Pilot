@@ -10,7 +10,7 @@
 \label{fig:architecture}
 \end{figure*}
 
-On the payment side, 402Pilot conceptually consumes a quoted candidate set $\mathcal{Q}_t$: provider identifiers and prices produced upstream by discovery and pricing machinery, with the price component instantiating $\mathbf{p}_t$ from \S\ref{sec:problem}. Given $\mathcal{Q}_t$, the wallet/payment interface exposes four operations:
+On the payment side, 402Pilot conceptually consumes a quoted candidate set $\mathcal{Q}_t$: provider identifiers and prices produced upstream by discovery and pricing machinery. The price component instantiates $\mathbf{p}_t$ from \S\ref{sec:problem}. Given $\mathcal{Q}_t$, the wallet/payment interface exposes four operations:
 \begin{align*}
 &\mathtt{feasible}(\mathcal{Q}_t) \to \mathcal{A}_t,\qquad
 \mathtt{pressure}() \to \lambda_t,\\
@@ -24,7 +24,7 @@ On the policy side, a policy exposes two methods:
 &\mathtt{select}(\mathbf{x}_t,\, \mathcal{A}_t) \to a_t \in \mathcal{A}_t, \\
 &\mathtt{update}(\mathbf{x}_t,\, a_t,\, \ut,\, c_t) \to \emptyset,
 \end{align*}
-where $\mathcal{A}_t \subseteq \{1, \ldots, K\}$ is the wallet-feasible subset at round $t$. The layer supplies a task-context representation $\mathbf{x}_t$; policies may use it directly or map it to internal buckets. Any implementation of these two methods is a drop-in policy---fixed rules, random baselines, and learned policies share the same evaluation loop. Two things stay outside the method interface: numeric effective charges before payment (the policy sees only $\mathcal{A}_t$), and policy internals (priors, posteriors, and other private state). Payment-aware policies may additionally read $\lambda_t$ through the optional wallet-pressure channel inside \texttt{select}; non-payment-aware comparators do not.
+where $\mathcal{A}_t \subseteq \{1, \ldots, K\}$ is the wallet-feasible subset at round $t$. The layer supplies a task-context representation $\mathbf{x}_t$; policies may use it directly or map it to internal buckets. Any implementation of these two methods is a drop-in policy---fixed rules, random baselines, and learned policies share the same evaluation loop. Two things stay outside the method interface: numeric effective charges before payment (the policy sees only $\mathcal{A}_t$), and policy internals (priors, posteriors, and other private state). Payment-aware policies may additionally read $\lambda_t$ through the optional wallet-pressure channel inside \texttt{select}; non-payment-aware comparators ignore this channel.
 
 After observation, the layer converts scorer outputs into utility, $\ut=q_t-\nu f_t$ (Eq.~\ref{eq:utility}), and passes only $(\ut,c_t)$ to \texttt{update}. It does not pass the realized payment-aware reward $\rt$. That reward is useful for scoring decisions, but it mixes provider behavior with wallet pressure: the same provider could look worse simply because the wallet is tighter, not because its service quality changed. 402Pilot therefore learns provider utility and cost from $(\ut,c_t)$, and uses wallet pressure $\lambda_t$ only inside \texttt{select}.
 

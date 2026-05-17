@@ -34,6 +34,7 @@ Symbol & Meaning & Domain / value \\
 $q_t$       & Quality score for chosen arm & $[0,1]$ (evaluator-grounded) \\
 $\bar c_a$  & Nominal listed cost for arm $a$ & known before the run; prior mean for C-posterior \\
 $p_{a,t}$   & Effective charge if arm $a$ is called & latent before selection; may drift \\
+$\mathcal{Q}_t$ & Quoted candidate set & provider-price pairs $\{(a,p_{a,t})\}_{a=1}^K$ from upstream discovery/pricing \\
 $\mathcal{A}_t$ & Affordable provider set & $\{a:p_{a,t}\le B_t\}$, exposed to policy \\
 $c_t$       & Raw cost charged this round (USDC) & selected charge $p_{a_t,t}$ \\
 $\ctilde$   & Normalized cost & $\mathrm{clip}(c_t/c_{\max},0,1)$, $c_{\max} = \$0.01$ \\

@@ -1,7 +1,7 @@
 \section{The PA-DCT Policy}
 \label{sec:method}
 
-PA-DCT instantiates the policy side of the 402Pilot layer. Its job is narrow: inside \texttt{select}, choose one affordable provider; inside \texttt{update}, learn only from the chosen outcome. The policy keeps two beliefs for each provider--task bucket, one about service utility and one about realized cost. At selection time it discounts old evidence, samples both beliefs, combines them with the current wallet pressure, and returns the provider with the best sampled trade-off. After the chosen call, it receives $(\ut,c_t)$ and updates only the chosen cell. Thus $\rt$ from Eq.~\eqref{eq:reward} remains the decision and evaluation objective, while provider beliefs are learned from utility and cost observations.
+PA-DCT instantiates the policy side of the 402Pilot layer. Its job is narrow: inside \texttt{select}, choose one affordable provider; inside \texttt{update}, learn only from the chosen outcome. The policy keeps two beliefs for each provider--task bucket, one about service utility and one about realized cost. At selection time it discounts old evidence, samples both beliefs, combines them with the current wallet pressure, and returns the provider with the best sampled trade-off. After the chosen call, it receives $(\ut,c_t)$ and updates only the chosen cell. The payment-aware reward $\rt$ (Eq.~\eqref{eq:reward}) is used for decision-time scoring and benchmark evaluation; provider beliefs are learned from $(\ut,c_t)$, never from $\rt$.
 
 \subsection{Utility and Cost Beliefs}
 \label{sec:method-posteriors}
@@ -12,7 +12,7 @@ Let $k_t=k(\mathbf{x}_t)$ map a task context to one of $K_b$ buckets; in the ben
 \item \textbf{C-posterior}: a Normal--Normal posterior over realized cost $c_t$.
 \end{itemize}
 
-Each cell stores an effective count $n^{a,k}_t$ shared by the two posteriors, a utility sum $S^{a,k}_t$, and a cost sum ${S_c}^{a,k}_t$. The Q-posterior has prior $\mathcal{N}(\mu_{0,q},\sigma^2_{0,q})$ and likelihood variance $\sigma^2_q$:
+Each cell stores an effective count $n^{a,k}_t$ shared by the two posteriors (each pull contributes one utility observation and one cost observation), a utility sum $S^{a,k}_t$, and a cost sum ${S_c}^{a,k}_t$. The Q-posterior has prior $\mathcal{N}(\mu_{0,q},\sigma^2_{0,q})$ and likelihood variance $\sigma^2_q$:
 \begin{equation}
 \label{eq:posterior-q}
 \begin{aligned}
