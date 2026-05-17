@@ -1,11 +1,13 @@
 \section{Evaluation}
 \label{sec:eval}
 
+There is no off-the-shelf benchmark for buyer-side payment decisions by autonomous agents: existing task datasets measure answer quality, but not repeated provider choice under a finite wallet, hidden provider reliability, realized prices, and post-payment feedback. We therefore build the evaluation from public task sources while making the paid-service interaction explicit. The key design is frozen replay: we generate multiple LLM responses for each task--provider pair once, score them once, and then replay those scored outcomes to every policy under shared seeds. This preserves variation from real LLM calls while making policy comparisons reproducible.
+
 \subsection{Experimental Setup}
 \label{sec:eval-setup}
 
 \paragraph{Benchmark.}
-The evaluation asks a simple question: when an agent has a finite wallet, can it learn which provider is worth paying for as quality and price change? We answer this with \emph{402Pilot-Bench}, a frozen-replay benchmark grounded in real LLM outputs. It contains $823$ tasks across coding (HumanEval pass@1), multi-hop QA (HotpotQA max EM/F1), and web search. Web search is split into closed-form T3a (deterministic max EM/F1) and open-ended T3b (cached LLM-as-judge), yielding the four task buckets T1/T2/T3a/T3b used by PA-DCT ($K_b=4$). For each (task, provider) pair we pre-generate $V=5$ response versions, yielding $823\times5\times5=20{,}575$ scored responses. During evaluation, all policies see the same replay stream; scenario changes modify realized failures or effective prices, not the underlying task pool.
+\emph{402Pilot-Bench} contains $823$ tasks across coding (HumanEval pass@1), multi-hop QA (HotpotQA max EM/F1), and web search. Web search is split into closed-form T3a (deterministic max EM/F1) and open-ended T3b (cached LLM-as-judge), yielding the four task buckets T1/T2/T3a/T3b used by PA-DCT ($K_b=4$). For each (task, provider) pair we pre-generate $V=5$ response versions, yielding $823\times5\times5=20{,}575$ scored responses. During evaluation, all policies see the same replay stream; scenario changes modify realized failures or effective prices, not the underlying task pool.
 
 \paragraph{Providers.}
 The provider set is small but structured. P-cheap, P-mid, and P-premium form the visible price--quality ladder that a budgeted buyer would expect. P-mid, P-adv, and P-flaky form the harder case: they share the same base price (\$0.002/call) and base model, but differ in observed outcomes. P-adv produces fluent but wrong answers, while P-flaky returns billed timeouts. A selector that only reads static metadata cannot separate these three arms; it has to learn from paid feedback. Table~\ref{tab:providers} summarizes the five pipelines.
