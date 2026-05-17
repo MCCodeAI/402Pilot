@@ -64,7 +64,7 @@ All reported means average over the same $30$ seed identifiers within each scena
 \subsection{Main Results}
 \label{sec:eval-main}
 
-PA-DCT's value appears when payment is part of the learning loop. Each paid call supplies feedback, and the policy uses that feedback to keep a finite wallet pointed at providers that are still worth buying. In stationary S1, it mostly stays with the reliable mid-tier while paying a small exploration cost; under the S2 outage, it backs away from the degraded mid-tier; under the S3 promotion, it redirects spend toward premium. Table~\ref{tab:main} and Fig.~\ref{fig:learning-curves} show the result: not a one-column win, but a robust payment policy that remains solvent and competitive across quality, ROI, and PA-gap/$T$ while adapting without scenario-specific rules.
+PA-DCT is not designed for static optimality in one fixed market; it is a wallet-constrained policy for learning and adapting in complex, changing markets. Table~\ref{tab:main} shows the resulting trade-off. In stationary S1, its exploration creates a small cost relative to the best fixed mid-tier arm. In S2, under the P-mid outage, PA-DCT maintains quality with much less budget than BudgetRule and avoids Always-P-cheap's quality collapse. In S3, it captures the premium promotion, improving over Always-P-mid in quality and ROI while achieving the best non-oracle PA-gap/$T$. This balance is the point: PA-DCT is not always a one-column winner, but it remains solvent and competitive across quality, ROI, and PA-gap/$T$ without scenario-specific rules.
 
 \begin{table*}[t]
 \centering
@@ -105,23 +105,25 @@ True Oracle (UB)  & $0.901$ & $32$ & $561$ & $0.000$
 }
 \end{table*}
 
-\begin{figure*}[t]
+\paragraph{Learned adaptation.}
+The clearest evidence is the allocation curve. Fixed-arm baselines cannot react after deployment, and BudgetRule only follows a preset wallet threshold rather than observed reliability or price. PA-DCT changes allocation from feedback: in Fig.~\ref{fig:learning-curves}, it quickly moves away from P-mid during the S2 outage and shifts toward P-premium after the S3 price drop. In S1, where no shock occurs, the allocation remains mid-dominated, so the same mechanism does not force churn when feedback is stable. The policy moves when the market changes and settles when it does not.
+
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.32\linewidth]{figures/S1.png}\hfill
-\includegraphics[width=0.32\linewidth]{figures/S2.png}\hfill
-\includegraphics[width=0.32\linewidth]{figures/S3.png}
+\includegraphics[width=0.92\linewidth]{figures/S1.png}
+\vspace{-1.0ex}
+\includegraphics[width=0.92\linewidth]{figures/S2.png}
+\vspace{-1.0ex}
+\includegraphics[width=0.92\linewidth]{figures/S3.png}
 \caption{PA-DCT provider-allocation share over rounds. Shaded regions mark shock windows: the policy remains mid-dominated in S1, moves away from P-mid during S2, and shifts toward P-premium in S3.}
 \label{fig:learning-curves}
-\end{figure*}
-
-\paragraph{Learned adaptation.}
-The clearest evidence is the allocation curve. Fixed-arm baselines cannot react after deployment, and BudgetRule only follows a preset wallet threshold rather than observed reliability or price. PA-DCT changes allocation from feedback: in Fig.~\ref{fig:learning-curves}, it leaves P-mid during the S2 outage and shifts toward P-premium after the S3 price drop. In S1, where no shock occurs, the allocation remains mid-dominated, so the same mechanism does not force churn when feedback is stable. The policy moves when the market changes and settles when it does not.
+\end{figure}
 
 \paragraph{Quality under a budget.}
 The learned reallocations matter because the cheap safe policy under-serves tasks, while static high-quality policies can spend in the wrong places. In S2, PA-DCT reaches $\bar q_T=0.761$ while spending $42\%$ of the budget, compared with $0.610$ for Always-P-cheap at $10\%$ budget use. Its gain over Always-P-mid is small in absolute quality ($0.761$ vs.\ $0.757$) but significant under paired seeds ($\Delta\bar q_T=+0.004$, $p=1.67\times10^{-3}$), and it comes from learning around the outage rather than following a fixed provider. In S3, PA-DCT improves over Always-P-mid on all three rank-comparable metrics: $\bar q_T$ ($0.831$ vs.\ $0.819$), ROI ($429$ vs.\ $410$), and PA-gap/$T$ ($0.121$ vs.\ $0.129$). Always-P-premium reaches the highest S3 quality once premium becomes cheap, but it does so with lower ROI and much worse PA-gap because it pays for premium before the promotion as well.
 
 \paragraph{Payment-aware trade-off.}
-S1 is the stationary sanity check and the place where PA-DCT's cost is visible. The fixed reliable mid-tier arm has the lowest non-oracle PA-gap/$T$ ($0.101$), while PA-DCT lands at $0.133$ and trails by about $2.2$ percentage points in $\bar q_T$ because it keeps exploring and maintaining shock-ready posteriors. We read this as the price of adaptivity, not as a stationary-market win. The main table also shows why no single static baseline is enough: Always-P-cheap has the highest ROI but the lowest $\bar q_T$, BudgetRule maximizes $\bar q_T$ in S1/S2 while using $80\%$ of the budget and incurring large PA-gap/$T$, and Always-P-premium only becomes attractive after S3 makes its target arm cheap.
+S1 is the stationary sanity check and the place where PA-DCT's cost is visible. The fixed reliable mid-tier arm has the lowest non-oracle PA-gap/$T$ ($0.101$), while PA-DCT lands at $0.133$ and trails by about $2.2$ percentage points in $\bar q_T$ because it keeps exploring and maintaining shock-ready posteriors. We read this as the price of adaptivity rather than a failure in the stationary market. The main table also shows why no single static baseline is enough: Always-P-cheap has the highest ROI but the lowest $\bar q_T$, BudgetRule maximizes $\bar q_T$ in S1/S2 while using $80\%$ of the budget and incurring large PA-gap/$T$, and Always-P-premium only becomes attractive after S3 makes its target arm cheap.
 
 \paragraph{Robustness across axes.}
 This is the main table's robustness message. Across quality, ROI, and PA-gap/$T$ in S1/S2/S3, PA-DCT is the only non-oracle policy that never falls below third place. The exact ranking is less important than the failure pattern: every fixed or rule-based policy has a regime where it ranks poorly on quality, efficiency, or payment-aware objective, while PA-DCT remains consistently near the top without scenario-specific rules.
