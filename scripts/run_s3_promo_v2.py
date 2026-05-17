@@ -38,6 +38,8 @@ from pilot402.core import ProviderId, ScenarioConfig, ScenarioId
 from pilot402.core.config import load_config
 from pilot402.policies import (
     BudgetRulePolicy,
+    ContextualBTSPolicy,
+    ContextualDSTSPolicy,
     PADCTPolicy,
     RandomPolicy,
     always_cheapest,
@@ -68,7 +70,9 @@ PROVIDER_PRICES = {
 POLICY_ORDER = [
     "random",
     "always_cheapest", "always_mid", "always_premium",
-    "budget_rule", "padct",
+    "budget_rule",
+    "contextual_dsts", "contextual_bts",
+    "padct",
 ]
 
 
@@ -79,6 +83,20 @@ def _make_policy(name: str, *, wallet, seed: int):
     if name == "always_premium":  return always_premium()
     if name == "budget_rule":
         return BudgetRulePolicy(wallet=wallet, provider_prices=PROVIDER_PRICES)
+    if name == "contextual_dsts":
+        # Drift-aware but no wallet pressure / no cost learning.
+        # Distinct prime keeps RNG stream independent from PA-DCT under the
+        # same paired seed (paired-seed integrity from the loop's sampler).
+        return ContextualDSTSPolicy(
+            rng=default_rng(seed * 4861 + 17),
+            provider_ids=tuple(PROVIDER_PRICES.keys()),
+        )
+    if name == "contextual_bts":
+        # Cost-learning but no discount; raw r/c ratio scoring.
+        return ContextualBTSPolicy(
+            rng=default_rng(seed * 5023 + 19),
+            provider_costs=PROVIDER_PRICES,
+        )
     if name == "padct":
         return PADCTPolicy(
             rng=default_rng(seed * 6271 + 13),
@@ -155,7 +173,12 @@ def _run_policy_cell(cfg, *, policy_name, seed, tasks, store, log_path):
     )
     policy = _make_policy(policy_name, wallet=wallet, seed=seed)
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.unlink(missing_ok=True)
+    # Truncate any leftover partial log instead of unlink so we work cleanly
+    # on filesystems that allow create-but-not-delete (e.g. some FUSE mounts).
+    try:
+        log_path.unlink(missing_ok=True)
+    except PermissionError:
+        log_path.open("w").close()
     with JsonlRecorder(path=log_path) as rec:
         run_one_seed(
             cfg, tasks=tasks, store=store, policy=policy, wallet=wallet,
@@ -172,7 +195,10 @@ def _run_oracle_cell(cfg, *, seed, tasks, store, log_path):
         alpha=cfg.budget.alpha, target_burn_rate=cfg.budget.target_burn_rate,
     )
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.unlink(missing_ok=True)
+    try:
+        log_path.unlink(missing_ok=True)
+    except PermissionError:
+        log_path.open("w").close()
     with JsonlRecorder(path=log_path) as rec:
         run_true_oracle_seed(
             cfg, tasks=tasks, store=store, wallet=wallet,

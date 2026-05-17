@@ -11,8 +11,9 @@ computes, for each scenario × baseline pair:
 q_bar_T is full-horizon mean quality Σq_t / T (unserved rounds → 0); read
 from the explicit summary field, falling back to cum_quality / T.
 
-Comparisons (15 pairs total):
-    PA-DCT vs {Random, AlwaysCheap, AlwaysMid, AlwaysPremium, BudgetRule}
+Comparisons (21 pairs total, since 2026-05-18 expansion):
+    PA-DCT vs {Random, AlwaysCheap, AlwaysMid, AlwaysPremium, BudgetRule,
+               Contextual DS-TS, Contextual BTS}
     × {S1, S2, S3 v2}
 
 Why bootstrap CIs plus paired normal p-values:
@@ -55,13 +56,16 @@ def scenario_dir(scenario: str) -> Path:
 # Treat 'padcts' (legacy summary key) as PA-DCT.
 PADCT_KEYS = ("padct", "padcts")
 BASELINE_KEYS = ("random", "always_cheapest", "always_mid",
-                 "always_premium", "budget_rule")
+                 "always_premium", "budget_rule",
+                 "contextual_dsts", "contextual_bts")
 BASELINE_LABEL = {
-    "random":          "Random",
-    "always_cheapest": "AlwaysCheap",
-    "always_mid":      "AlwaysMid",
-    "always_premium":  "AlwaysPremium",
-    "budget_rule":     "BudgetRule",
+    "random":           "Random",
+    "always_cheapest":  "AlwaysCheap",
+    "always_mid":       "AlwaysMid",
+    "always_premium":   "AlwaysPremium",
+    "budget_rule":      "BudgetRule",
+    "contextual_dsts":  "ContextualDSTS",
+    "contextual_bts":   "ContextualBTS",
 }
 SCENARIOS = ["S1", "S2", "S3"]
 
@@ -263,11 +267,12 @@ def main(argv: list[str] | None = None) -> int:
     md.append("")
     md.append("Use these to annotate PA-gap comparisons in the paper's main table.")
     md.append("")
-    md.append("| Scenario | vs Random | vs AlwaysCheap | vs AlwaysMid | vs AlwaysPremium | vs BudgetRule |")
-    md.append("|---|---|---|---|---|---|")
+    md.append("| Scenario | vs Random | vs AlwaysCheap | vs AlwaysMid | vs AlwaysPremium | vs BudgetRule | vs ContextualDSTS | vs ContextualBTS |")
+    md.append("|---|---|---|---|---|---|---|---|")
     for scen in SCENARIOS:
         cells = []
-        for bk in ("Random", "AlwaysCheap", "AlwaysMid", "AlwaysPremium", "BudgetRule"):
+        for bk in ("Random", "AlwaysCheap", "AlwaysMid", "AlwaysPremium",
+                   "BudgetRule", "ContextualDSTS", "ContextualBTS"):
             r = next((r for r in rows
                       if r["scenario"] == scen and r["baseline"] == bk
                       and r["metric"] == "PA_gap_advantage"), None)

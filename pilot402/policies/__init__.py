@@ -5,20 +5,30 @@ Each policy satisfies the ``Policy`` Protocol from
 from the affordable set given a context vector, and an ``update`` method
 that ingests post-call utility.
 
-Order of arrival (PLAN.md §5):
+Policies in the repo:
 
-* ``random.RandomPolicy``   — uniform-random baseline; no learning.
-* ``fixed.AlwaysX``         — pin a specific provider; useful for upper /
-                              lower bounds (Always-P-premium, Always-P-cheap).
-* ``rule.BudgetRule``       — hand-written budget threshold heuristic.
-* ``oracle.OraclePolicy``   — hindsight-optimal upper bound.
-* ``ts.ThompsonSampling``   — vanilla TS, no discount, no λ.
-* ``dts.DiscountedTS``      — adds γ-discount.
-* ``padct.PADCTPolicy``     — PA-DCT (this paper's bandit algorithm).
+* ``random.RandomPolicy``           — uniform-random baseline; no learning.
+* ``fixed.AlwaysX``                 — pin a specific provider; useful for upper /
+                                      lower bounds (Always-P-premium, Always-P-cheap).
+* ``rule.BudgetRule``               — hand-written budget threshold heuristic
+                                      (Frugal-style static cascade under the
+                                      §3 admissible contract).
+* ``oracle.OraclePolicy``           — hindsight-optimal upper bound.
+* ``contextual_dsts.ContextualDSTSPolicy``
+                                    — DS-TS (Qi et al. 2023) extended to task
+                                      buckets; drift-aware, no wallet pressure,
+                                      no cost posterior.
+* ``contextual_bts.ContextualBTSPolicy``
+                                    — BTS (Xia et al. 2015) extended to
+                                      Gaussian Q/C posteriors and task buckets;
+                                      learns cost but no discount.
+* ``padct.PADCTPolicy``             — PA-DCT (this paper's bandit algorithm).
 """
 
 from __future__ import annotations
 
+from pilot402.policies.contextual_bts import ContextualBTSPolicy
+from pilot402.policies.contextual_dsts import ContextualDSTSPolicy
 from pilot402.policies.fixed import (
     FixedPolicy,
     always_cheapest,
@@ -32,6 +42,8 @@ from pilot402.policies.rule import BudgetRulePolicy
 
 __all__ = [
     "BudgetRulePolicy",
+    "ContextualBTSPolicy",
+    "ContextualDSTSPolicy",
     "FixedPolicy",
     "GaussianPosterior",
     "PADCTPolicy",

@@ -45,6 +45,8 @@ from pilot402.core import (
 from pilot402.core.config import load_config
 from pilot402.policies import (
     BudgetRulePolicy,
+    ContextualBTSPolicy,
+    ContextualDSTSPolicy,
     PADCTPolicy,
     RandomPolicy,
     always_cheapest,
@@ -79,6 +81,8 @@ POLICY_ORDER = [
     "always_mid",
     "always_premium",
     "budget_rule",
+    "contextual_dsts",
+    "contextual_bts",
     "padct",
 ]
 
@@ -94,6 +98,24 @@ def _make_policy(name: str, *, wallet, seed: int):
         return always_premium()
     if name == "budget_rule":
         return BudgetRulePolicy(wallet=wallet, provider_prices=PROVIDER_PRICES)
+    if name == "contextual_dsts":
+        # DS-TS shares PA-DCT's Q-posterior priors and γ; only difference is
+        # the omitted wallet-pressure and cost-posterior mechanisms. Use a
+        # distinct prime in the seed so the RNG stream is independent from
+        # PA-DCT's at the same seed_idx (paired-seed comparison stays valid
+        # via the loop's sampler/version seeds, which derive from `seed`).
+        return ContextualDSTSPolicy(
+            rng=default_rng(seed * 4861 + 17),
+            provider_ids=tuple(PROVIDER_PRICES.keys()),
+        )
+    if name == "contextual_bts":
+        # BTS shares PA-DCT's Q and C priors; only difference is γ=1 (no
+        # discount) and ratio scoring. Distinct prime for an independent
+        # RNG stream.
+        return ContextualBTSPolicy(
+            rng=default_rng(seed * 5023 + 19),
+            provider_costs=PROVIDER_PRICES,
+        )
     if name == "padct":
         return PADCTPolicy(
             rng=default_rng(seed * 6271 + 13),
@@ -234,7 +256,12 @@ def run_one_cell(
     reward_calc = RewardCalculator(nu=cfg.reward.nu)
 
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.unlink(missing_ok=True)
+    # Truncate any leftover partial log instead of unlink so we work cleanly
+    # on filesystems that allow create-but-not-delete (e.g. some FUSE mounts).
+    try:
+        log_path.unlink(missing_ok=True)
+    except PermissionError:
+        log_path.open("w").close()
     with JsonlRecorder(path=log_path) as rec:
         run_one_seed(
             cfg, tasks=tasks, store=store,
@@ -269,7 +296,12 @@ def run_oracle_cell(
     reward_calc = RewardCalculator(nu=cfg.reward.nu)
 
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.unlink(missing_ok=True)
+    # Truncate any leftover partial log instead of unlink so we work cleanly
+    # on filesystems that allow create-but-not-delete (e.g. some FUSE mounts).
+    try:
+        log_path.unlink(missing_ok=True)
+    except PermissionError:
+        log_path.open("w").close()
     with JsonlRecorder(path=log_path) as rec:
         run_true_oracle_seed(
             cfg, tasks=tasks, store=store,
