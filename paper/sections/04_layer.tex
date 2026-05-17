@@ -1,7 +1,7 @@
 \section{The 402Pilot Decision Layer}
 \label{sec:layer}
 
-402Pilot turns the formal setting in \S\ref{sec:problem} into a narrow boundary between an autonomous agent and the payment substrate. Each round follows a quote--select--pay--observe loop: the layer receives a task, wallet snapshot, and quoted candidate set, asks which providers are feasible, calls a policy to choose one of them, delegates the selected payment and service call, and passes only the chosen outcome to the policy. Feasible-set masking prevents unaffordable actions, and chosen-only updates keep the policy within the admissible information pattern of \S\ref{sec:problem}. The layer does not modify the protocol, hold funds, or cross the settlement boundary; x402 is our motivating rail, but the same contract fits above any rail that exposes payable candidates, executes the selected payment, and returns a charge receipt. Figure~\ref{fig:architecture} sketches the per-round flow.
+402Pilot turns the formal setting in \S\ref{sec:problem} into a narrow boundary between an autonomous agent and the payment substrate. Each round follows a quote--select--pay--observe loop: the layer receives a task, wallet snapshot, and quoted candidate set, asks which providers are feasible, and calls a policy to choose one of them. The layer then delegates the selected payment and service call, and passes only the chosen outcome to the policy. Feasible-set masking prevents unaffordable actions, and chosen-only updates keep the policy within the admissible information pattern of \S\ref{sec:problem}. The layer does not modify the protocol, hold funds, or cross the settlement boundary; x402 is our motivating rail, but the same contract fits above any rail that exposes payable candidates, executes the selected payment, and returns a charge receipt. Figure~\ref{fig:architecture} sketches the per-round flow.
 
 \begin{figure*}[t]
 \centering
@@ -10,7 +10,7 @@
 \label{fig:architecture}
 \end{figure*}
 
-On the payment side, 402Pilot consumes a quoted candidate set $\mathcal{Q}_t$: provider identifiers and prices produced upstream by discovery and pricing machinery. Given $\mathcal{Q}_t$, the wallet/payment interface exposes three operations:
+On the payment side, 402Pilot consumes a quoted candidate set $\mathcal{Q}_t$: provider identifiers and prices produced upstream by discovery and pricing machinery, with the price component instantiating $\mathbf{p}_t$ from \S\ref{sec:problem}. Given $\mathcal{Q}_t$, the wallet/payment interface exposes three operations:
 \begin{align*}
 &\mathtt{feasible}(\mathcal{Q}_t) \to \mathcal{A}_t,\qquad
 \mathtt{pressure}() \to \lambda_t,\\
