@@ -22,7 +22,7 @@ The receipt supplies the realized charge $c_t$, which the layer records with the
 On the policy side, a policy exposes two methods:
 \begin{align*}
 &\mathtt{select}(\mathbf{x}_t,\, \mathcal{A}_t) \to a_t \in \mathcal{A}_t, \\
-&\mathtt{update}(\mathbf{x}_t,\, a_t,\, \ut,\, c_t) \to \emptyset,
+&\mathtt{update}(\mathbf{x}_t,\, a_t,\, \ut,\, c_t),
 \end{align*}
 where $\mathcal{A}_t \subseteq \{1, \ldots, K\}$ is the wallet-feasible subset at round $t$. The layer supplies a task-context representation $\mathbf{x}_t$; policies may use it directly or map it to internal buckets. Any implementation of these two methods is a drop-in policy---fixed rules, random baselines, and learned policies share the same evaluation loop. Two things stay outside the method interface: numeric effective charges before payment (the policy sees only $\mathcal{A}_t$), and policy internals (priors, posteriors, and other private state). Payment-aware policies may additionally read $\lambda_t$ through the optional wallet-pressure channel inside \texttt{select}; non-payment-aware comparators ignore this channel.
 
