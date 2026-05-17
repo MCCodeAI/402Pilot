@@ -1,10 +1,10 @@
 \section{Evaluation}
 \label{sec:eval}
 
+Agent-native payment decision-making is a new evaluation setting: an agent repeatedly chooses among paid providers, spends from a finite wallet, and learns only from post-payment outcomes. Existing LLM benchmarks do not capture this full loop, so we construct 402Pilot-Bench on top of public task datasets that provide recognizable workloads and established scorers. We instantiate this loop by pre-generating and scoring multiple responses for each task--provider pair, then replaying the cached outcomes under shared seeds, provider menus, wallet budgets, and market scenarios. This frozen-replay design preserves real LLM output variation while avoiding repeated live provider calls, which would add cost and confound policy effects with API drift and sampling noise.
+
 \subsection{Experimental Setup}
 \label{sec:eval-setup}
-
-Because agent-native payment decisions combine task quality, paid provider choice, finite wallets, and post-payment feedback, no existing LLM benchmark directly instantiates the full loop. We therefore turn public task datasets into a frozen-replay benchmark: for each task--provider pair, we pre-generate and score response variants, then replay the same cached outcomes under fixed seeds, provider menus, budgets, and market scenarios. This design preserves real model-output variation while isolating policy behavior from live API drift, sampling noise, and repeated inference cost.
 
 \paragraph{Benchmark.}
 \emph{402Pilot-Bench} contains $823$ tasks across coding (HumanEval pass@1), multi-hop QA (HotpotQA max EM/F1), and web search. Web search is split into closed-form T3a (deterministic max EM/F1) and open-ended T3b (cached LLM-as-judge), yielding the four task buckets T1/T2/T3a/T3b used by PA-DCT ($K_b=4$). The cache stores $V=5$ response versions for each (task, provider) pair, yielding $823\times5\times5=20{,}575$ scored responses. During evaluation, scenario changes modify realized failures or effective prices, not the underlying task pool.
@@ -12,23 +12,24 @@ Because agent-native payment decisions combine task quality, paid provider choic
 \paragraph{Providers.}
 The five providers are arranged along two axes: a visible price--quality ladder (P-cheap/P-mid/P-premium) and a same-price decoy set (P-mid/P-adv/P-flaky) whose base price and base model match but whose outcomes differ. P-adv produces fluent but wrong answers, while P-flaky returns billed timeouts. A selector that only reads static metadata cannot separate these three arms; it has to learn from paid feedback. Table~\ref{tab:providers} summarizes the five pipelines.
 
-\begin{table*}[t]
+\begin{table}[!htbp]
 \centering
 \caption{Provider set used in 402Pilot-Bench. P-mid, P-adv, and P-flaky share the same price tier and base model.}
 \label{tab:providers}
-\small
-\begin{tabularx}{\linewidth}{@{}llXcX@{}}
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabularx}{\linewidth}{@{}lcX@{}}
 \toprule
-Provider   & Model         & Prompt / behaviour             & Price (\$/call) & Notes \\
+Provider & Price & Pipeline \\
 \midrule
-P-cheap    & qwen3.5-flash & uniform prompt                 & $0.0005$ & weakest, cheapest \\
-P-mid      & GPT-5.4-mini  & uniform prompt                 & $0.002$  & reliable mid tier \\
-P-premium  & GPT-5.4       & uniform prompt                 & $0.01$   & strongest, priciest \\
-P-adv      & GPT-5.4-mini  & 60\% adversarial prompt        & $0.002$  & fluent but wrong \\
-P-flaky    & GPT-5.4-mini  & 40\% timeout injection         & $0.002$  & unreliable mid \\
+P-cheap   & $0.0005$ & qwen3.5-flash; uniform prompt; \emph{weakest cheap tier} \\
+P-mid     & $0.002$  & GPT-5.4-mini; uniform prompt; \emph{reliable mid tier} \\
+P-premium & $0.01$   & GPT-5.4; uniform prompt; \emph{strongest premium tier} \\
+P-adv     & $0.002$  & GPT-5.4-mini; 60\% adversarial prompt; \emph{fluent wrong answers} \\
+P-flaky   & $0.002$  & GPT-5.4-mini; 40\% timeout injection; \emph{billed timeouts} \\
 \bottomrule
 \end{tabularx}
-\end{table*}
+\end{table}
 
 \paragraph{Scenarios and scale.}
 The same benchmark is replayed under three market regimes. S1 is stationary operation. S2 injects a reliability shock: P-mid has $30\%$ forced failures from rounds $3{,}000$--$5{,}500$ and then recovers. S3 injects a price shock: at round $1{,}000$, P-premium's effective price drops from \$0.01 to \$0.002, matching the mid-tier price. Each (policy, scenario) cell uses $30$ paired seeds, $T=10{,}000$ rounds, and budget $B=\$50$; a seed fixes the task order, response-version draws, and scenario events for all policies in that scenario. At the listed premium price, the budget buys only $5{,}000$ premium calls, so a policy must manage wallet pressure rather than simply choosing the strongest model throughout.
@@ -37,9 +38,28 @@ The same benchmark is replayed under three market regimes. S1 is stationary oper
 We compare PA-DCT with policies a buyer could use without online learning: Random, the three fixed-arm policies Always-P-cheap, Always-P-mid, and Always-P-premium, and BudgetRule, a wallet-threshold heuristic inspired by cost-aware cascade routing~\citep{chen2023frugalgpt}. BudgetRule chooses P-premium above $50\%$ remaining budget, P-mid above $20\%$, and P-cheap below that. We also include a replay True Oracle that peeks at every affordable arm's realized outcome before choosing. It owns its own wallet trajectory, so it is an upper-bound reference rather than an admissible online policy. All non-oracle policies use locked settings across scenarios and seeds.
 
 \paragraph{Metrics and statistical protocol.}
-The results are read as a trade-off panel rather than a single leaderboard, following cost-aware LLM routing practice~\citep{chen2023frugalgpt}. \emph{Full-horizon mean quality} $\bar q_T=(1/T)\sum_{t<\tau}q_t$ measures service quality and assigns $q_t=0$ after wallet exhaustion. \emph{Budget use} $100\sum_{t<\tau}c_t/B$ reports wallet consumption. \emph{ROI} $=\sum_{t<\tau}q_t/\sum_{t<\tau}c_t$ measures quality per dollar, but it is an efficiency diagnostic rather than a quality objective: a very cheap policy can have high ROI while serving low-quality answers. For the scalar objective, we report per-round \emph{PA-gap} $(R^{\mathrm{TO}}_T-R^\pi_T)/T$ to the replay True Oracle, where $R^\pi_T=\sum_{t<\tau}r_t$; this compares policies against the same upper-bound replay reference without ranking them by raw cumulative reward under different wallet trajectories. \emph{AdaptT} measures shock response with a trailing-$200$ ROI window: recovery to $95\%$ of pre-outage ROI in S2, and capture of the S3 promotion by reaching $110\%$ of pre-promotion ROI. We use AdaptT only for adaptive PA-DCT variants in Table~\ref{tab:ablations}.
+The results are read as a trade-off panel rather than a single leaderboard, following cost-aware LLM routing practice~\citep{chen2023frugalgpt}. Table~\ref{tab:metrics} defines the reported metrics. ROI is an efficiency diagnostic rather than a quality objective: a very cheap policy can have high ROI while serving low-quality answers.
 
-All reported means average over the same $30$ seed identifiers within each scenario. Claimed differences use paired seeds with bootstrap confidence intervals and paired normal-approximation $p$-values on the corresponding metric.
+\begin{table}[!htbp]
+\centering
+\caption{Evaluation metrics.}
+\label{tab:metrics}
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\toprule
+Metric & Calculation & Meaning \\
+\midrule
+$\bar q_T$ & $(1/T)\sum_{t<\tau}q_t$ & Mean quality; exhausted rounds count as zero. \\
+Budget use & $100\sum_{t<\tau}c_t/B$ & Wallet share spent. \\
+ROI & $\sum_{t<\tau}q_t/\sum_{t<\tau}c_t$ & Quality per dollar; efficiency only. \\
+PA-gap/$T$ & $(R^{\mathrm{TO}}_T-R^\pi_T)/T$ & Gap to replay True Oracle; lower is better. \\
+AdaptT & Trailing-$200$ ROI threshold & Shock-response time for adaptive variants. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+All reported means average over the same $30$ seed identifiers within each scenario. Claimed differences use paired seeds with bootstrap confidence intervals and paired normal-approximation $p$-values on the corresponding metric. Because evaluation uses frozen replay rather than live inference, the reported metrics are independent of local hardware; the released harness fixes seeds, cached responses, and scenario scripts.
 
 \subsection{Main Results}
 \label{sec:eval-main}
