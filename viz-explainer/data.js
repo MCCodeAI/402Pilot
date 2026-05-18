@@ -3,7 +3,7 @@ window.PILOT402_EXPLAINER_DATA = {
   "provenance": {
     "S1": "logs/m3f_results.md + results/scenario_sweep/S1",
     "S2": "logs/m3f_results.md + results/scenario_sweep/S2",
-    "S3": "logs/m3f_results.md + results/scenario_sweep_s3promo_v2"
+    "S3": "logs/m3f_results.md + results/scenario_sweep_s3promo"
   },
   "providers": {
     "P-cheap": {
@@ -90,7 +90,7 @@ window.PILOT402_EXPLAINER_DATA = {
       "label": "S3 Premium promo",
       "zhLabel": "S3 Premium promo",
       "short": "promo",
-      "source": "results/scenario_sweep_s3promo_v2",
+      "source": "results/scenario_sweep_s3promo",
       "eventRound": 1000,
       "eventWindow": [
         1000,

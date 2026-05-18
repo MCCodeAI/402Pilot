@@ -84,16 +84,21 @@ def _resolve_log(in_dir: Path, scenario: str, policy: str, seed: int) -> Path:
     """Resolve the per-cell log path for a (scenario, policy, seed).
 
     Historical note: the paper's S3 column uses
-    ``results/scenario_sweep_s3promo_v2/<policy>/seed_NN.jsonl`` (no
+    ``results/scenario_sweep_s3promo/<policy>/seed_NN.jsonl`` (no
     scenario subdirectory; the directory itself is S3-specific) because
     that run was produced after a scenario-config update and is the
     canonical S3 data. S1 and S2 still live under the standard
     ``results/scenario_sweep/<scenario>/<policy>/`` layout.
     """
     if scenario == "S3":
-        s3promo = Path("results/scenario_sweep_s3promo_v2") / policy / f"seed_{seed:02d}.jsonl"
-        if s3promo.is_file():
-            return s3promo
+        s3promo = Path("results/scenario_sweep_s3promo") / policy / f"seed_{seed:02d}.jsonl"
+        if not s3promo.is_file():
+            raise FileNotFoundError(
+                f"Canonical S3 log missing: {s3promo}. "
+                "Run `python -m scripts.run_s3_promo`; refusing to fall back "
+                "to the legacy S3 directory."
+            )
+        return s3promo
     return in_dir / scenario / policy / f"seed_{seed:02d}.jsonl"
 
 

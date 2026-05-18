@@ -18,10 +18,10 @@ Metrics:
 
 Per-cell JSONL log paths:
   - results/scenario_sweep/{S1,S2}/padct/seed_NN.jsonl        (full S1, S2)
-  - results/scenario_sweep_s3promo_v2/padct/seed_NN.jsonl     (full S3)
+  - results/scenario_sweep_s3promo/padct/seed_NN.jsonl     (full S3)
   - results/ablation_matrix/<ablation>/{S1,S2,S3}/padct/seed_NN.jsonl
       (no_p, no_d, no_c, no_ts — all three scenarios)
-  - results/scenario_sweep_s3promo_v2_ablation/padct/seed_NN.jsonl
+  - results/scenario_sweep_s3promo_ablation/padct/seed_NN.jsonl
       (no_c_post — S3 only; the S1/S2 variants were never run because
       pinning cost to spec only changes behaviour under a price shock)
 
@@ -97,17 +97,17 @@ def get_log_dir(ablation: str, scenario: str) -> Path | None:
     if ablation == "full":
         if scenario in ("S1", "S2"):
             return Path(f"results/scenario_sweep/{scenario}/padct")
-        return Path("results/scenario_sweep_s3promo_v2/padct")
+        return Path("results/scenario_sweep_s3promo/padct")
     if ablation == "no_c_post":
         # The S3-only price-shock-diagnostic variant lives in its own dir.
-        return Path("results/scenario_sweep_s3promo_v2_ablation/padct")
+        return Path("results/scenario_sweep_s3promo_ablation/padct")
     return Path(f"results/ablation_matrix/{ablation}/{scenario}/padct")
 
 
 def get_oracle_dir(scenario: str) -> Path:
     if scenario in ("S1", "S2"):
         return Path(f"results/scenario_sweep/{scenario}/oracle")
-    return Path("results/scenario_sweep_s3promo_v2/oracle")
+    return Path("results/scenario_sweep_s3promo/oracle")
 
 
 # ---------------------------------------------------------------------------

@@ -72,17 +72,18 @@ pip install -e .
 # 2. Run unit tests
 pytest
 
-# 3. Quick end-to-end smoke (3 scenarios × 3 seeds × 200 rounds; all policies + oracle)
-python -m scripts.run_scenario_sweep --num-seeds 3 --num-rounds 200 --out-dir results/smoke
+# 3. Quick end-to-end smoke (S1/S2 via main sweep; optional S3 via dedicated out-dir)
+python -m scripts.run_scenario_sweep --num-seeds 3 --num-rounds 200 --out-dir results/smoke --scenarios S1 S2 S3
 
-# 4. Full main sweep (30 seeds × 10,000 rounds × 8 non-oracle policies + oracle × 3 scenarios)
-python -m scripts.run_scenario_sweep
+# 4. Full main sweep
+python -m scripts.run_scenario_sweep --num-seeds 30 --scenarios S1 S2
+python -m scripts.run_s3_promo
 
 # 5. Four core ablations across all scenarios
 python -m scripts.run_ablation_matrix
 
 # 6. S3 cost-posterior diagnostic ablation
-python -m scripts.run_s3_promo_v2_ablation --policies padct --skip-oracle
+python -m scripts.run_s3_promo_ablation --policies padct --skip-oracle
 
 # 7. Compute the ablation metrics table from frozen JSONL logs
 python -m scripts.compute_ablation_metrics
@@ -126,7 +127,7 @@ PA-DCT has the most robust non-oracle trade-off profile across quality, ROI, and
 | -------- | ------------------ | ------------- | ------------------------ |
 | S1       | 5512 ± 54          | 1325          | n/a (no shock)           |
 | S2       | 5147 ± 80          | 1662          | 1467 rounds (30/30)      |
-| S3 v2    | 5911 ± 51          | 1206          | 200 rounds (30/30)       |
+| S3       | 5911 ± 51          | 1206          | 200 rounds (30/30)       |
 
 Ablations reveal that **P** protects solvency, **D** primarily speeds up shock recovery, **C** is not a monotone aggregate win but helps S3 opportunity capture, **TS** reduces brittle seed behavior, and the cost posterior is necessary to exploit the S3 price drop. See `logs/ablation_5metrics_table.md` for the reproducible ablation metrics.
 

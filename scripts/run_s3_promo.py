@@ -1,24 +1,26 @@
-"""S3 v2 ABLATION: PA-DCT with cost posterior DISABLED.
+"""S3 validation: Premium Promo at round 1000 (dual-posterior PA-DCT).
 
-Same scenario as run_s3_promo_v2.py (PremiumDropScenario shock_round=1000,
-price_multiplier=0.2) BUT we instantiate PADCTPolicy with
-enable_cost_posterior=False — recovering the vanilla pre-M3.F behavior where
-cost is read from a static spec dict at decision time and never updated.
+Pre-shock 0-1000: original calibration (cheap $0.0005, mid $0.002, premium $0.01).
+Post-shock 1000-10000: premium price drops to $0.002 (matches mid). 9000 rounds
+of post-shock learning give the dual-posterior PA-DCT time to update its cost
+posterior, detect the price shift, and migrate.
 
-Hypothesis: PA-DCT will fail to migrate to premium even though the actual
-market price has dropped, because the policy "thinks" premium still costs
-$0.01. This empirically validates the M3.F design claim that cost
-posteriors are NECESSARY for price-shock adaptation.
+Implemented via ``PremiumDropScenario(shock_round=1000, price_multiplier=0.2)``.
 
-Expected outcome (vs the dual-posterior version in run_s3_promo_v2.py):
-  PA-DCT PA        ≈ 5500-5600 (similar to S1; no cost-shock benefit)
-  PA-DCT premium share trajectory: 4% → 4% (no migration)
-  PA-DCT mean_q  ≈ 0.797 (same as S1; no premium uptake)
+Predicted outcomes (with dual-posterior PA-DCT, γ=0.999):
+  AlwaysMid PA       ≈ 5831 (mid price unchanged → no impact)
+  AlwaysPremium PA   ≈ ~1000-2400 (pre-shock $10 burn keeps it negative)
+  PA-DCT PA         ≈ 5500-5900 (depends on adaptation speed)
+  PA-DCT premium share trajectory: 4% → 30-60% over 9000 post-shock rounds
+                                    (visible learning curve)
+  PA-DCT task_success_rate ≈ 0.83-0.85 (rises post-shock as premium picks
+                                          increase mean q)
 
-Output: results/scenario_sweep_s3promo_v2_ablation/
+Paper claim with this scenario: PA-DCT demonstrates ACTIVE adaptation to
+price shocks via the cost posterior. Need not beat AlwaysMid in cum_PA;
+the visible arm-share migration is the contribution.
 
-Only PA-DCT is affected by the ablation; other policies are unchanged.
-We re-run only the padct cells to save compute.
+Output: results/scenario_sweep_s3promo/
 """
 
 from __future__ import annotations
@@ -36,7 +38,10 @@ from pilot402.core import ProviderId, ScenarioConfig, ScenarioId
 from pilot402.core.config import load_config
 from pilot402.policies import (
     BudgetRulePolicy,
+    ContextualBTSPolicy,
+    ContextualDSTSPolicy,
     PADCTPolicy,
+    RandomPolicy,
     always_cheapest,
     always_mid,
     always_premium,
@@ -63,30 +68,47 @@ PROVIDER_PRICES = {
 }
 
 POLICY_ORDER = [
+    "random",
     "always_cheapest", "always_mid", "always_premium",
-    "budget_rule", "padct",
+    "budget_rule",
+    "contextual_dsts", "contextual_bts",
+    "padct",
 ]
 
 
 def _make_policy(name: str, *, wallet, seed: int):
+    if name == "random":          return RandomPolicy(rng=default_rng(seed * 7919 + 1))
     if name == "always_cheapest": return always_cheapest()
     if name == "always_mid":      return always_mid()
     if name == "always_premium":  return always_premium()
     if name == "budget_rule":
         return BudgetRulePolicy(wallet=wallet, provider_prices=PROVIDER_PRICES)
+    if name == "contextual_dsts":
+        # Drift-aware but no wallet pressure / no cost learning.
+        # Distinct prime keeps RNG stream independent from PA-DCT under the
+        # same paired seed (paired-seed integrity from the loop's sampler).
+        return ContextualDSTSPolicy(
+            rng=default_rng(seed * 4861 + 17),
+            provider_ids=tuple(PROVIDER_PRICES.keys()),
+        )
+    if name == "contextual_bts":
+        # Cost-learning but no discount; raw r/c ratio scoring.
+        return ContextualBTSPolicy(
+            rng=default_rng(seed * 5023 + 19),
+            provider_costs=PROVIDER_PRICES,
+        )
     if name == "padct":
         return PADCTPolicy(
             rng=default_rng(seed * 6271 + 13),
             wallet=wallet,
             provider_costs=PROVIDER_PRICES,
             max_provider_cost=0.01,
-            enable_cost_posterior=False,   # ABLATION
         )
     raise ValueError(name)
 
 
 def _build_scenario():
-    """S3 v2: premium price drops to mid price at round 1000.
+    """S3: premium price drops to mid price at round 1000.
     From round 1000 onward, premium $0.01 × 0.2 = $0.002 = mid price.
     """
     return PremiumDropScenario(
@@ -134,7 +156,7 @@ def _row_from_log(policy_name: str, seed_idx: int, log_path: Path, num_rounds: i
         "policy": policy_name, "seed": seed_idx, "rounds": n,
         "bankrupt": bankrupt, "total_spent": total_spent,
         "failures": n_failures, "cum_pa_reward": cum_pa, "cum_q": cum_q,
-        # Legacy: served-only mean (Σq / n); downstream ROI = mean * rounds / spend works.
+        # Legacy: served-only mean (Σq / n). Downstream ROI = mean * rounds / spend works.
         "mean_quality": cum_q / n if n else 0.0,
         # New full-horizon fields, see run_scenario_sweep.py for schema rationale.
         "cum_quality": cum_q,
@@ -151,7 +173,12 @@ def _run_policy_cell(cfg, *, policy_name, seed, tasks, store, log_path):
     )
     policy = _make_policy(policy_name, wallet=wallet, seed=seed)
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.unlink(missing_ok=True)
+    # Truncate any leftover partial log instead of unlink so we work cleanly
+    # on filesystems that allow create-but-not-delete (e.g. some FUSE mounts).
+    try:
+        log_path.unlink(missing_ok=True)
+    except PermissionError:
+        log_path.open("w").close()
     with JsonlRecorder(path=log_path) as rec:
         run_one_seed(
             cfg, tasks=tasks, store=store, policy=policy, wallet=wallet,
@@ -168,7 +195,10 @@ def _run_oracle_cell(cfg, *, seed, tasks, store, log_path):
         alpha=cfg.budget.alpha, target_burn_rate=cfg.budget.target_burn_rate,
     )
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.unlink(missing_ok=True)
+    try:
+        log_path.unlink(missing_ok=True)
+    except PermissionError:
+        log_path.open("w").close()
     with JsonlRecorder(path=log_path) as rec:
         run_true_oracle_seed(
             cfg, tasks=tasks, store=store, wallet=wallet,
@@ -220,14 +250,16 @@ def main(argv=None) -> int:
     parser.add_argument("--config", type=Path, default=Path("experiments/main.yaml"))
     parser.add_argument("--num-seeds", type=int, default=30)
     parser.add_argument("--num-rounds", type=int, default=None)
-    parser.add_argument("--out-dir", type=Path, default=Path("results/scenario_sweep_s3promo_v2_ablation"))
+    parser.add_argument("--out-dir", type=Path, default=Path("results/scenario_sweep_s3promo"))
     parser.add_argument("--policies", nargs="+", default=POLICY_ORDER)
     parser.add_argument("--skip-oracle", action="store_true")
     args = parser.parse_args(argv)
 
     cfg = load_config(args.config)
     # Logging fidelity: tag every JSONL row with the actual scenario being
-    # run, not the YAML default (which is S1).
+    # run, not the YAML default (which is S1). The scenario *object* is
+    # built separately in _build_scenario(); this just keeps cfg.scenario
+    # metadata consistent with the simulation actually being run.
     cfg = cfg.model_copy(update={
         "scenario": ScenarioConfig(
             name=ScenarioId.S3_PRICE_SHOCK,
@@ -240,11 +272,11 @@ def main(argv=None) -> int:
     tasks = load_all_tasks(cfg.paths.tasks_dir)
     store = JsonlPregenStore(cfg.paths.pregen_dir)
     print(f"Loaded {len(tasks)} tasks, {len(store)} pregen records.", file=sys.stderr)
-    print(f"S3 v2 ABLATION: PA-DCT with enable_cost_posterior=False",
+    print(f"S3 Promo: cheap $0.0005, mid $0.002, premium $0.01 → $0.002 at round 1000",
           file=sys.stderr)
-    print(f"  Same scenario as run_s3_promo_v2.py but cost posterior is DISABLED",
+    print(f"  Pre-shock 0-1000: original calibration (premium expensive)",
           file=sys.stderr)
-    print(f"  Expected: PA-DCT does not migrate (recovers vanilla pre-M3.F bug)",
+    print(f"  Post-shock 1000-10000: premium = mid price (9000 rounds for adaptation)",
           file=sys.stderr)
 
     total_cells = len(args.policies) * cfg.num_seeds + (0 if args.skip_oracle else cfg.num_seeds)

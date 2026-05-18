@@ -4,7 +4,7 @@ Export real experiment data from results/ into viz/public/data/ JSON fixtures.
 
 Reads:
     results/scenario_sweep/{S1,S2}/{policy}/seed_NN.jsonl        (round-level)
-    results/scenario_sweep_s3promo_v2/{policy}/seed_NN.jsonl     (locked S3)
+    results/scenario_sweep_s3promo/{policy}/seed_NN.jsonl     (locked S3)
     results/scenario_sweep/{S1,S2}/summary.jsonl                 (per-seed aggregates)
     results/ablation_matrix/{no_c,no_d,no_p,no_ts}/{S1,S2,S3}/padct/seed_NN.jsonl
 
@@ -40,7 +40,7 @@ OUT = ROOT / "viz" / "public" / "data"
 
 SCENARIOS = ["S1", "S2", "S3"]
 SCENARIO_SWEEP = RESULTS / "scenario_sweep"
-SCENARIO_SWEEP_S3_V2 = RESULTS / "scenario_sweep_s3promo_v2"
+SCENARIO_SWEEP_S3PROMO = RESULTS / "scenario_sweep_s3promo"
 ABLATION_MATRIX = RESULTS / "ablation_matrix"
 
 
@@ -49,12 +49,13 @@ def scenario_dir(scenario: str) -> Path:
 
     S1 / S2 live under ``results/scenario_sweep/{S1,S2}/<policy>/seed_NN.jsonl``.
     The locked paper fixtures for S3 (PremiumDropScenario shock_round=1000,
-    price_multiplier=0.2) live under ``results/scenario_sweep_s3promo_v2/<policy>/``
-    (no scenario subdir). A historical ``results/scenario_sweep/S3/`` may exist
-    from the earlier M3.E design and should not be used for paper figures.
+    price_multiplier=0.2) live under ``results/scenario_sweep_s3promo/<policy>/``
+    (no scenario subdir). The earlier M3.E historical S3 has been archived
+    to ``results/_archive/scenario_sweep_S3_M3E/`` and should not be used
+    for paper figures.
     """
     if scenario == "S3":
-        return SCENARIO_SWEEP_S3_V2
+        return SCENARIO_SWEEP_S3PROMO
     return SCENARIO_SWEEP / scenario
 
 # Map experiment policy directory names to canonical viz policy IDs.
@@ -97,7 +98,7 @@ EVENT_MARKERS = {
     # S2 = MidOutageScenario(outage_start=3000, outage_end=5500,
     # outage_failure_rate=0.30): mid fails 30% of the time during this window.
     "S2": [(3000, "P-mid outage start"), (5500, "P-mid outage end")],
-    # S3 v2 = PremiumDropScenario(shock_round=1000, price_multiplier=0.2):
+    # S3 = PremiumDropScenario(shock_round=1000, price_multiplier=0.2):
     # premium price drops to mid price ($0.01 -> $0.002) at round 1000.
     "S3": [(1000, "Price shock (S3 promo)")],
 }

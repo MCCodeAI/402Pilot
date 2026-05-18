@@ -14,7 +14,7 @@ from the explicit summary field, falling back to cum_quality / T.
 Comparisons (21 pairs total, since 2026-05-18 expansion):
     PA-DCT vs {Random, AlwaysCheap, AlwaysMid, AlwaysPremium, BudgetRule,
                Contextual DS-TS, Contextual BTS}
-    × {S1, S2, S3 v2}
+    × {S1, S2, S3}
 
 Why bootstrap CIs plus paired normal p-values:
     Across 30 seeds the PA objective distribution can be skewed under
@@ -47,9 +47,9 @@ OUT = ROOT / "logs" / "significance_table.md"
 
 
 def scenario_dir(scenario: str) -> Path:
-    """Same dispatch as compute_ablation_metrics: S3 → s3promo_v2."""
+    """Same dispatch as compute_ablation_metrics: S3 → s3promo."""
     if scenario == "S3":
-        return RESULTS / "scenario_sweep_s3promo_v2"
+        return RESULTS / "scenario_sweep_s3promo"
     return RESULTS / "scenario_sweep" / scenario
 
 

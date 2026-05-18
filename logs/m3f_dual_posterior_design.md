@@ -174,12 +174,12 @@ policy.update(context, chosen_arm, reward.utility, record.cost_usdc)
 
 ---
 
-## 4. Math walkthrough — round 2000 of S3 v2 (verified empirically)
+## 4. Math walkthrough — round 2000 of S3 (verified empirically)
 
-To verify the design is sound, walk through one round on real data (seed 0, S3 v2).
+To verify the design is sound, walk through one round on real data (seed 0, S3).
 
 ### Setup
-- S3 v2: `PremiumDropScenario(shock_round=1000, price_multiplier=0.2)`
+- S3: `PremiumDropScenario(shock_round=1000, price_multiplier=0.2)`
 - Pre-shock 0-999: cheap=$0.0005, mid=$0.002, premium=$0.01
 - Post-shock 1000+: premium=$0.002 (= mid price)
 - Budget=$50, target_burn_rate=1e-4 (target spend $0.005/round)
@@ -300,7 +300,7 @@ All 21 PA-DCT tests pass; full suite 279/279 pass.
 | GaussianPosterior class | Unchanged (general enough for both q and c) ✓ |
 | Wallet / λ-dynamics | Unchanged ✓ |
 | Pregen data | Unchanged ✓ |
-| Scenarios (S1, S2, S3 v2) | Unchanged interface; only S3 design parameters tuned |
+| Scenarios (S1, S2, S3) | Unchanged interface; only S3 design parameters tuned |
 | All 5 fixed-policy baselines | Only signature change in update() — behavior identical ✓ |
 | Oracle (no policy update) | Unchanged ✓ |
 
@@ -314,9 +314,9 @@ See `logs/m3f_results.md` for full 30-seed × 3-scenario × 6-policy results. He
 |---|---|---|
 | **S1** (stationary) | No (pays 5.5% exploration cost) | baseline equivalence |
 | **S2** (mid outage) | **+79 PA, t=4.90, p<0.001** ✓ | Q-posterior (D + C) |
-| **S3 v2** (premium=mid promo at 1000) | **+80 PA, t=7.50, p<0.0001** ✓ | **C-posterior** (the M3.F contribution) |
+| **S3** (premium=mid promo at 1000) | **+80 PA, t=7.50, p<0.0001** ✓ | **C-posterior** (the M3.F contribution) |
 
-Premium share trajectory in S3 v2: ~5% pre-shock → **66% post-shock** (visible adaptation curve, the paper's centerpiece figure).
+Premium share trajectory in S3: ~5% pre-shock → **66% post-shock** (visible adaptation curve, the paper's centerpiece figure).
 
 ---
 

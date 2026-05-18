@@ -517,7 +517,7 @@ final scenarios are:
 - **S2 (Mid Outage)**: `MidOutageScenario(outage_start=3000, outage_end=5500, outage_failure_rate=0.30)`
   — P-mid times out 30% of the time during a 2500-round window. Real-world
   precedent: API rate limiting / regional outage. Tests Q-posterior adaptation.
-- **S3 v2 (Premium Promo)**: `PremiumDropScenario(shock_round=1000, price_multiplier=0.2)`
+- **S3 (Premium Promo)**: `PremiumDropScenario(shock_round=1000, price_multiplier=0.2)`
   — P-premium price drops to mid price ($0.002) at round 1000, persists.
   Real-world precedent: tier-wide repricing on flagship release (GPT-4o,
   Claude 3.5 Sonnet). Tests C-posterior adaptation.
@@ -548,18 +548,18 @@ implementation details, and a step-by-step round 2000 walkthrough.
 |---|---|---|---|---|---|---|
 | **S1** | 5831 ± 29 | 5512 ± 54 | -319 (exploration cost) | -28.8 | <0.0001 | Baseline |
 | **S2** | 5069 ± 37 | 5147 ± 80 | **+79** | **+4.90** | **<0.001** | **Q-posterior + D + C** |
-| **S3 v2** | 5831 ± 29 | 5911 ± 51 | **+80** | **+7.50** | **<0.0001** | **C-posterior + D + C** |
+| **S3** | 5831 ± 29 | 5911 ± 51 | **+80** | **+7.50** | **<0.0001** | **C-posterior + D + C** |
 
 **PA-DCT reverses AlwaysMid in BOTH non-stationary scenarios with
 statistically significant margins.** S1 is unchanged from M3.D
 (dual-posterior collapses immediately when costs are static — no harm).
 
-S3 v2 multi-metric reverse-beat: PA-DCT also wins ROI (429 > 410),
+S3 multi-metric reverse-beat: PA-DCT also wins ROI (429 > 410),
 mean_q (0.831 > 0.819), and spends LESS ($19.38 < $20.00). AlwaysPremium
 does NOT take the throne (3112 vs 5831) because its pre-shock 1000-round
 $10 burn under high λ produces unrecoverable negative cum_PA.
 
-Visible adaptation: PA-DCT premium share in S3 v2 climbs from ~5%
+Visible adaptation: PA-DCT premium share in S3 climbs from ~5%
 pre-shock to **~66% post-shock** — a clean visible learning curve which
 will be the paper's centerpiece figure.
 
@@ -577,10 +577,14 @@ will be the paper's centerpiece figure.
 ### 10.5 Full data location
 
 - Per-cell logs: `results/scenario_sweep/{S1,S2}/<policy>/seed_NN.jsonl`
-- S3 v2 logs: `results/scenario_sweep_s3promo_v2/<policy>/seed_NN.jsonl`
-- Aggregated summaries: `results/scenario_sweep/<scenario>/summary.jsonl`
-- Sweep scripts: `scripts/run_scenario_sweep.py` (S1, S2, original S3 — historical),
-  `scripts/run_s3_promo_v2.py` (S3 v2 — locked design)
+- S3 logs: `results/scenario_sweep_s3promo/<policy>/seed_NN.jsonl`
+- Aggregated summaries: `results/scenario_sweep/{S1,S2}/summary.jsonl`
+  and `results/scenario_sweep_s3promo/summary.jsonl`
+- Sweep scripts: `scripts/run_scenario_sweep.py` (canonical S1/S2 sweep),
+  `scripts/run_s3_promo.py` (S3 alone, dedicated script — same locked design,
+  kept because it lays out a cleaner traceable single-scenario sweep)
+- Archived: `results/_archive/scenario_sweep_S3_M3E/` is the pre-2026-05-03
+  M3.E historical S3; do NOT use for paper numbers (see README_DEPRECATED.txt)
 - Negative-result scripts (kept for record): `scripts/run_path_ab.py`
   (1:3:5 tier compression — failed pre-M3.F), `scripts/run_premium_promo.py`
   (premium=mid throughout — failed pre-M3.F)
@@ -726,7 +730,7 @@ appear in the title.
 Paper-relevant artifacts:
 - `experiments/main.yaml` — final calibrated config
 - `pilot402/runtime/reward.py` — reward formula implementation + docstring
-- `pilot402/policies/padcts.py` — dual-posterior PA-DCT (M3.F)
+- `pilot402/policies/padct.py` — dual-posterior PA-DCT (M3.F)
 - `pilot402/scenarios.py` — Stationary / MidOutage / PremiumDrop / TierCompression
 - `data/pregen/*.jsonl` — frozen 20,575 PregenRecords
 - `logs/baselines_s1_analysis.md` — pre-M3.E baseline + Oracle numbers (S1)
@@ -734,7 +738,7 @@ Paper-relevant artifacts:
 - `logs/tier3_final_analysis.md` — pregen calibration (provider quality matrix)
 - `logs/replication_comparison.md` — Tier 2 evidence (historical)
 - **`logs/m3f_dual_posterior_design.md`** — M3.F algorithm design + math (NEW)
-- **`logs/m3f_results.md`** — final 30-seed results across S1/S2/S3 v2 (NEW)
+- **`logs/m3f_results.md`** — final 30-seed results across S1/S2/S3 (NEW)
 - **`logs/m3f_walkthrough_annotated.md`** — pedagogical step-by-step round 2000
   walkthrough with full glossary of every term, formula, and English word (NEW)
 - `PLAN.md` / `IDEATION.md` — original design vision (pre-recalibration; refer

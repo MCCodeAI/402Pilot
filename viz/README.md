@@ -69,10 +69,10 @@ The fixtures currently shipped are **real** — exported by
 `scripts/export_viz_data.py` from:
 
 - `results/scenario_sweep/{S1,S2}/` — locked S1 + S2 sweeps (30 seeds × 7 policies)
-- `results/scenario_sweep_s3promo_v2/` — locked S3 v2 sweep (PremiumDropScenario,
-  shock at round 1000, premium price ×0.2). The earlier
-  `results/scenario_sweep/S3/` is M3.E historical S3, kept on disk for
-  traceability but **not** used by viz.
+- `results/scenario_sweep_s3promo/` — locked S3 sweep (PremiumDropScenario,
+  shock at round 1000, premium price ×0.2). The earlier M3.E historical
+  S3 has been archived to `results/_archive/scenario_sweep_S3_M3E/` and
+  is **not** used by viz.
 - `results/ablation_matrix/{no_c,no_d,no_p,no_ts}/{S1,S2,S3}/padct/` — 4 ablations × 3 scenarios × 30 seeds.
 
 To regenerate after a new run:

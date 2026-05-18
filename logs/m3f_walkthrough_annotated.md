@@ -1,8 +1,8 @@
-# Annotated Walkthrough — PA-DCT at Round 2000 of S3 v2 (seed 0)
+# Annotated Walkthrough — PA-DCT at Round 2000 of S3 (seed 0)
 
 This document explains **every** symbol, term, and formula that appears in the
 PA-DCT decision-time math, using one concrete round (round 2000 of seed 0 in
-the S3 v2 sweep) as the running example. Read this whenever you need to refresh
+the S3 sweep) as the running example. Read this whenever you need to refresh
 the algorithm's concepts.
 
 ---
@@ -16,7 +16,7 @@ the algorithm's concepts.
 | **Round** | One full decision cycle: pick a task, choose a provider, pay, observe quality, update. We run 10000 rounds per seed. |
 | **Seed** | A fixed random seed (we use seeds 0 through 29). Same seed → bit-identical run. We average across 30 seeds for statistical confidence. |
 | **PregenRecord** | A frozen `(task, provider, version) → (quality, cost, latency, failure_flag)` row stored on disk in `data/pregen/*.jsonl`. The runtime replays these records instead of calling LLMs live. |
-| **Scenario** | A function that transforms the market mid-experiment. S1 = identity (stationary). S2 = forces P-mid timeouts during rounds 3000-5500. **S3 v2** = drops P-premium price from $0.01 to $0.002 starting at round 1000. |
+| **Scenario** | A function that transforms the market mid-experiment. S1 = identity (stationary). S2 = forces P-mid timeouts during rounds 3000-5500. **S3** = drops P-premium price from $0.01 to $0.002 starting at round 1000. |
 | **Workload sampler** | Picks a `task_id` uniformly at random each round. Sampler is seeded so all policies see the **same task sequence** for a given seed. |
 
 ### Provider / cost terms
@@ -26,7 +26,7 @@ the algorithm's concepts.
 | **Arm** | A "provider" in bandit terminology. We have 5 arms: P-cheap, P-mid, P-premium, P-adv, P-flaky. |
 | **Affordable arms** | Subset of arms whose price ≤ remaining wallet balance. Computed each round. |
 | **base_price_usdc** | The provider's spec price (e.g., $0.002 for P-mid). Used as the prior mean for the cost posterior. |
-| **observed_cost** | The actual $ charged this round, AFTER the scenario transformation. In S3 v2 post-shock, `observed_cost` for premium = $0.002, even though `base_price_usdc` is still $0.01. |
+| **observed_cost** | The actual $ charged this round, AFTER the scenario transformation. In S3 post-shock, `observed_cost` for premium = $0.002, even though `base_price_usdc` is still $0.01. |
 | **max_provider_cost** | A constant ($0.01) used to **normalize** cost so that c̃ ∈ [0, 1]. Without it, c values from $0.0005 to $0.01 would have wildly different scales relative to quality (which is in [0, 1]). |
 | **c̃ (c-tilde, "normalized cost")** | `c̃ = clip(observed_cost / max_provider_cost, 0, 1)`. Dimensionless number in [0, 1] used in the PA reward formula. |
 
@@ -91,7 +91,7 @@ the algorithm's concepts.
 
 ## 1. Setup — what scenario we're in
 
-We're running **S3 v2**, defined as `PremiumDropScenario(shock_round=1000, price_multiplier=0.2)`.
+We're running **S3**, defined as `PremiumDropScenario(shock_round=1000, price_multiplier=0.2)`.
 
 | Round | What changes |
 |---|---|
@@ -110,7 +110,7 @@ We need to know the *current* λ_norm to compute PA-reward.
 
 ### Step 2a — read empirical spent
 
-From `results/scenario_sweep_s3promo_v2/padcts/seed_00.jsonl`, summing
+From `results/scenario_sweep_s3promo/padct/seed_00.jsonl`, summing
 `charged_cost_usdc` over rounds 0..1999:
 
 ```
@@ -405,7 +405,7 @@ This is **classical Bayesian online learning** — what TS does naturally — ex
 Re-run the seed and pull diagnostics:
 
 ```bash
-python -m scripts.run_s3_promo_v2 --num-seeds 1
+python -m scripts.run_s3_promo --num-seeds 1
 ```
 
 Then in Python:
@@ -414,7 +414,7 @@ Then in Python:
 import json
 from pathlib import Path
 records = [json.loads(line) for line in
-           Path("results/scenario_sweep_s3promo_v2/padcts/seed_00.jsonl")
+           Path("results/scenario_sweep_s3promo/padct/seed_00.jsonl")
            .read_text().splitlines()]
 print(f"spent at round 2000: ${sum(r['charged_cost_usdc'] for r in records[:2000]):.4f}")
 print(f"premium picks on T3b by round 2000: "
@@ -433,7 +433,7 @@ premium picks on T3b by round 2000: 204
 
 ## 8. Summary in one paragraph
 
-At round 2000 of S3 v2, PA-DCT has been under-spending (3.79/10 of target) so
+At round 2000 of S3, PA-DCT has been under-spending (3.79/10 of target) so
 λ_norm = 0.224 (cost penalty is weak). Among the 5 arms, premium-on-T3b has a
 posterior over quality centered at 0.910 ± 0.028 and a posterior over cost
 centered at $0.00237 ± $0.0001 (close to the true post-shock price $0.002).

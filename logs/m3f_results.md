@@ -1,4 +1,4 @@
-# M3.F Results — Dual-Posterior PA-DCT, 30-seed sweep across S1 / S2 / S3 v2
+# M3.F Results — Dual-Posterior PA-DCT, 30-seed sweep across S1 / S2 / S3
 
 **Date**: 2026-05-05
 **Sweep**: 30 seeds × 6 policies × 3 scenarios × 10000 rounds = 540 cells
@@ -40,7 +40,7 @@ premium price drops to mid price ($0.002) at round 1000, persists to end.
 
 **Failure rate**: PA-DCT 1.9% vs AlwaysMid 7.5% → **4× lower** (Q-posterior detects outage and migrates away)
 
-### S3 v2 — Premium promo at round 1000 (premium → $0.002, = mid price)
+### S3 — Premium promo at round 1000 (premium → $0.002, = mid price)
 
 | Policy | cum_PA | mean_q | ROI (q/$) | Regret | spend | fail % |
 |---|---|---|---|---|---|---|
@@ -76,7 +76,7 @@ premium price drops to mid price ($0.002) at round 1000, persists to end.
 
 **Read**: Mid arm share collapses from 75% → 19% during outage (algorithm detects and avoids), recovers to 66% (slightly conservative — γ-discount preserves some "scar" memory).
 
-### S3 v2 — pre vs post shock at round 1000 (PA-DCT, 30-seed mean)
+### S3 — pre vs post shock at round 1000 (PA-DCT, 30-seed mean)
 
 | Window | P-cheap | P-mid | P-premium | P-adv | P-flaky |
 |---|---|---|---|---|---|
@@ -98,13 +98,13 @@ Welch's t-test, n=30 each, α=0.05:
 |---|---|---|---|---|---|
 | S1 | -319 | 11.1 | -28.8 | <0.0001 | AlwaysMid wins (expected) |
 | **S2** | **+79** | 16.0 | **+4.90** | **<0.001** | **PA-DCT wins ✓** |
-| **S3 v2** | **+80** | 10.6 | **+7.50** | **<0.0001** | **PA-DCT wins ✓** |
+| **S3** | **+80** | 10.6 | **+7.50** | **<0.0001** | **PA-DCT wins ✓** |
 
 ### Cross-scenario degradation
 
 How much each policy loses (or gains) going from S1 → shock scenarios:
 
-| Policy | S1 → S2 | S1 → S3 v2 |
+| Policy | S1 → S2 | S1 → S3 |
 |---|---|---|
 | AlwaysMid | -762 (-13.1%) | 0 (mid price unchanged) |
 | **PA-DCT** | -365 (-6.6%) | **+399 (+7.2% gain)** |
@@ -139,10 +139,10 @@ All differences within statistical noise. Dual posterior is backward-compatible 
 
 ## 5. Paper figures we should produce
 
-1. **Per-scenario cum_PA bar chart** with 95% CI (S1 / S2 / S3 v2 × 6 policies)
-2. **Arm share over time** (PA-DCT only): two subplots — S2 with mid collapse + recovery, S3 v2 with premium climb. **Centerpiece.**
-3. **Q-posterior and C-posterior trajectories** for premium on T3b in S3 v2: two stacked traces over 10000 rounds, showing posterior_mean and posterior_var convergence
-4. **Ablation table** (M3.F.5+ todo): vanilla PA-DCT (no c-posterior) vs dual PA-DCT on S3 v2 — concrete proof of the contribution
+1. **Per-scenario cum_PA bar chart** with 95% CI (S1 / S2 / S3 × 6 policies)
+2. **Arm share over time** (PA-DCT only): two subplots — S2 with mid collapse + recovery, S3 with premium climb. **Centerpiece.**
+3. **Q-posterior and C-posterior trajectories** for premium on T3b in S3: two stacked traces over 10000 rounds, showing posterior_mean and posterior_var convergence
+4. **Ablation table** (M3.F.5+ todo): vanilla PA-DCT (no c-posterior) vs dual PA-DCT on S3 — concrete proof of the contribution
 5. **Multi-metric Pareto** table: each policy's (cum_PA, mean_q, ROI, fail_rate) per scenario; PA-DCT Pareto-dominant in S2 and S3
 
 ---
@@ -153,8 +153,8 @@ All differences within statistical noise. Dual posterior is backward-compatible 
 # S1 + S2 (uses results/scenario_sweep/)
 python -m scripts.run_scenario_sweep --num-seeds 30 --scenarios S1 S2
 
-# S3 v2 (uses results/scenario_sweep_s3promo_v2/)
-python -m scripts.run_s3_promo_v2
+# S3 (uses results/scenario_sweep_s3promo/)
+python -m scripts.run_s3_promo
 
 # Tests
 python -m pytest  # 279 pass, 2 skipped (optional deps)
@@ -166,12 +166,12 @@ Each sweep is 30 seeds × ~3-5s/cell × ~7 cells = ~10-15 minutes wall-clock tot
 
 ## 7. Ablation: cost posterior disabled (M3.F.6)
 
-To prove the cost posterior is the necessary mechanism, we ran S3 v2 with
+To prove the cost posterior is the necessary mechanism, we ran S3 with
 `PADCTPolicy(enable_cost_posterior=False)` — the policy still has the
 quality posterior and TS exploration, but reverts to using the static
 spec dict at decision time (the vanilla pre-M3.F behavior).
 
-### Result table (30 seeds, S3 v2)
+### Result table (30 seeds, S3)
 
 | Metric | Dual-posterior (M3.F) | Ablation (cost-posterior OFF) | Δ |
 |---|---|---|---|
@@ -220,5 +220,5 @@ quality-cost shift, not just a numeric refinement.
 ✅ **Scenarios**:
    - S1: `StationaryScenario()`
    - S2: `MidOutageScenario(outage_start=3000, outage_end=5500, outage_failure_rate=0.30)`
-   - S3 v2: `PremiumDropScenario(shock_round=1000, price_multiplier=0.2)`
+   - S3: `PremiumDropScenario(shock_round=1000, price_multiplier=0.2)`
 ✅ **30-seed × 3-scenario × 6-policy sweep done; results above are the final reported numbers**

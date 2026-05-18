@@ -1,4 +1,4 @@
-// Real run: results/scenario_sweep_s3promo_v2/padct/seed_00.jsonl (slimmed)
+// Real run: results/scenario_sweep_s3promo/padct/seed_00.jsonl (slimmed)
 {"round":0,"task_type":"T1","arm":"P-cheap","cost":0.0005,"latency":1.309,"quality":1.0,"failure":0,"utility":1.0,"reward":0.475,"budget_remaining":49.9995}
 {"round":1,"task_type":"T3b","arm":"P-flaky","cost":0.002,"latency":0.0,"quality":0.0,"failure":1,"utility":-0.5,"reward":-0.4574,"budget_remaining":49.9975}
 {"round":2,"task_type":"T2","arm":"P-mid","cost":0.002,"latency":0.974,"quality":1.0,"failure":0,"utility":1.0,"reward":0.7811,"budget_remaining":49.9955}

@@ -207,7 +207,7 @@ Full design in `docs/experiment_design.md`.
   in interpretable ways (see §7 limitations).
 - **Scenarios.** S1: Stationary. S2: Mid outage — `MidOutageScenario`,
   P-mid fails 30% of the time during rounds 3,000–5,500, fully recovers
-  after. S3 v2: Premium promo — `PremiumDropScenario`, P-premium price
+  after. S3: Premium promo — `PremiumDropScenario`, P-premium price
   drops at round 1,000 from $0.01 to $0.002 (matches mid), 9,000 rounds
   for the cost posterior to detect and the policy to migrate.
 - **Scale.** T = 10,000 rounds, N = 30 seeds per cell.

@@ -6,6 +6,7 @@
 # Temporary / lock files
 .~*
 *.lock
+*.bak
 
 # Word temp files
 ~$*.docx

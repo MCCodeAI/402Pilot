@@ -92,7 +92,7 @@ const scenarios = {
     label: "S3 Premium promo",
     zhLabel: "S3 Premium promo",
     short: "promo",
-    source: "results/scenario_sweep_s3promo_v2",
+    source: "results/scenario_sweep_s3promo",
     eventRound: 1000,
     eventWindow: [1000, 10000],
     summary: "P-premium drops from $0.01 to $0.002 starting at round 1000.",
@@ -365,7 +365,7 @@ async function main() {
     provenance: {
       S1: "logs/m3f_results.md + results/scenario_sweep/S1",
       S2: "logs/m3f_results.md + results/scenario_sweep/S2",
-      S3: "logs/m3f_results.md + results/scenario_sweep_s3promo_v2",
+      S3: "logs/m3f_results.md + results/scenario_sweep_s3promo",
     },
     providers: providerSpecs,
     scenarios,

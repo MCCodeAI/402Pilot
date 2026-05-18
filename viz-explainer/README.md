@@ -8,7 +8,7 @@
 - 使用零依赖静态 HTML/CSS/JS，直接打开 `index.html` 即可查看。
 - 数据口径：
   - S1/S2: `results/scenario_sweep/`
-  - S3: `results/scenario_sweep_s3promo_v2/`
+  - S3: `results/scenario_sweep_s3promo/`
   - headline 数字与 `logs/m3f_results.md` 的锁定表保持一致。
 
 ## Files
