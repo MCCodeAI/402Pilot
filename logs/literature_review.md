@@ -492,7 +492,7 @@ Cross-references for paper writing:
 - `paper_design_decisions.md` §11.7 — "agent-native bandits" definition
 - `logs/m3f_dual_posterior_design.md` — algorithm internals (cited
   internally only; not externally citeable)
-- `logs/ablation_4metrics_table.md` — empirical evidence supporting C5
+- `logs/ablation_5metrics_table.md` — empirical evidence supporting C5
 
 ---
 

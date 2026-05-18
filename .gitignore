@@ -50,6 +50,7 @@ htmlcov/
 
 # Local-only experiment outputs
 outputs/
+logs/.ablation_metrics_cache.json
 
 # LaTeX build artifacts
 paper/*.aux

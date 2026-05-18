@@ -69,7 +69,7 @@ POLICY_DIR_TO_ID = {
 }
 
 # Map ablation directory names to canonical labels.
-# (See logs/ablation_4metrics_table.md for what each component does.)
+# (See logs/ablation_5metrics_table.md for what each component does.)
 ABLATION_DIR_TO_ID = {
     "no_c": "A1-noContext",
     "no_d": "A2-noDiscount",

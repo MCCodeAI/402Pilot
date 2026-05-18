@@ -248,12 +248,12 @@ Full design in `docs/experiment_design.md`.
 
 ### 6.4 Ablations (~0.75 page)
 
-The four ablations correspond to the four letters of PA-DCT — each
-removes one named algorithmic component. Detailed per-cell numbers in
-`logs/ablation_4metrics_table.md`.
+The ablations remove one named PA-DCT component at a time, plus the
+S3-only cost-posterior diagnostic. Detailed per-cell numbers in
+`logs/ablation_5metrics_table.md`.
 
-- **Table 2.** Delta in cum_PA, ROI, cumulative regret, and adaptation
-  time for −P / −D / −C / −TS vs. full PA-DCT, across all three scenarios.
+- **Table 2.** PA-gap/T, ROI, full-horizon quality, and adaptation time
+  for −P / −D / −C / −TS / −Cpost vs. full PA-DCT.
 - **−P (no Payment-aware):** policy ranks by raw utility instead of
   `(1−λ_norm)·u − λ_norm·c̃`. cum_PA collapses to negative everywhere
   (S1 −1710, S2 −1966, S3 +4528 vs. full ~5500–5900). The agent picks

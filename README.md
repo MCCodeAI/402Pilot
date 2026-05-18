@@ -75,13 +75,16 @@ pytest
 # 3. Quick end-to-end smoke (3 scenarios × 3 seeds × 200 rounds; all policies + oracle)
 python -m scripts.run_scenario_sweep --num-seeds 3 --num-rounds 200 --out-dir results/smoke
 
-# 4. Full main sweep (30 seeds × 10,000 rounds × 7 policies × 3 scenarios)
+# 4. Full main sweep (30 seeds × 10,000 rounds × 8 non-oracle policies + oracle × 3 scenarios)
 python -m scripts.run_scenario_sweep
 
-# 5. Four-component ablation matrix
+# 5. Four core ablations across all scenarios
 python -m scripts.run_ablation_matrix
 
-# 6. Compute the four official metrics
+# 6. S3 cost-posterior diagnostic ablation
+python -m scripts.run_s3_promo_v2_ablation --policies padct --skip-oracle
+
+# 7. Compute the ablation metrics table from frozen JSONL logs
 python -m scripts.compute_ablation_metrics
 ```
 
@@ -91,7 +94,7 @@ Configuration is in `experiments/main.yaml`. Pregen data lives in `data/pregen/*
 
 ## Comparators
 
-Six baselines plus an offline upper bound, all run on identical seeds:
+Seven baselines plus PA-DCT and an offline upper bound, all run on identical seeds:
 
 | Policy            | Type                                                          |
 | ----------------- | ------------------------------------------------------------- |
@@ -100,21 +103,24 @@ Six baselines plus an offline upper bound, all run on identical seeds:
 | Always-P-mid      | Fixed (mid tier)                                              |
 | Always-P-premium  | Fixed (strongest non-adaptive)                                |
 | Budget rule       | Threshold heuristic over remaining budget                     |
+| Contextual DS-TS  | Drift-aware Thompson sampling without wallet pressure/cost posterior |
+| Contextual BTS    | Budgeted Thompson sampling with stationary cost posterior     |
 | **PA-DCT**        | **Ours** (dual-posterior contextual TS with budget penalty)   |
 | True Oracle       | Free-running with hindsight per-round arm peek (upper bound)  |
 
-**Four-component ablation** (each removes one PA-DCT component):
+**Ablations** (each removes one PA-DCT component, plus one S3 diagnostic):
 
 - **−P** (Payment-aware): policy ranks by raw utility instead of `(1−λ_norm)·u − λ_norm·c̃`
 - **−D** (Discount): γ = 1 (no forgetting)
 - **−C** (Contextual): single global bucket instead of per-task-type buckets
 - **−TS** (Thompson sampling): greedy on posterior mean instead of sampling
+- **−Cpost** (Cost posterior): pins realized cost to the spec price in S3
 
 ---
 
 ## Headline Results
 
-PA-DCT has the most robust non-oracle trade-off profile across quality, ROI, and PA-gap. It is not the winner of every individual metric: cheap fixed routing maximizes ROI by under-spending, and some fixed/rule policies win isolated quality cells. The main result is that PA-DCT adapts under both reliability and price shocks while staying top-three on every rank-comparable main-table metric. Detail:
+PA-DCT has the most robust non-oracle trade-off profile across quality, ROI, and PA-gap. It is not the winner of every individual metric: cheap fixed routing maximizes ROI by under-spending, and some fixed/rule policies win isolated quality cells. The main result is that PA-DCT adapts under both reliability and price shocks while remaining jointly competitive across the evaluation panel. Detail:
 
 | Scenario | Full PA-DCT cum_PA | vs Oracle gap | Adaptation time          |
 | -------- | ------------------ | ------------- | ------------------------ |
@@ -122,7 +128,7 @@ PA-DCT has the most robust non-oracle trade-off profile across quality, ROI, and
 | S2       | 5147 ± 80          | 1662          | 1467 rounds (30/30)      |
 | S3 v2    | 5911 ± 51          | 1206          | 200 rounds (30/30)       |
 
-Ablations reveal that **P** is uniformly necessary (cum_PA collapses to negative without it), **D** primarily speeds up shock recovery (35% faster in S2), **C** helps when task-type heterogeneity is exploitable (S3) but not when shocks are uniform (S2), and **TS** reduces seed variance 5–9× without changing the mean. See `logs/ablation_4metrics_table.md` for the full 4 × 4 × 3 matrix.
+Ablations reveal that **P** protects solvency, **D** primarily speeds up shock recovery, **C** is not a monotone aggregate win but helps S3 opportunity capture, **TS** reduces brittle seed behavior, and the cost posterior is necessary to exploit the S3 price drop. See `logs/ablation_5metrics_table.md` for the reproducible ablation metrics.
 
 For workshops, also set `\workshoptitle{...}` after `\title{...}`.
 

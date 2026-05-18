@@ -173,6 +173,32 @@ distribution.
 English-language text-in / text-out. Multi-lingual, code-execution
 sandboxed, and multi-modal extensions are natural follow-up benchmarks.
 
+\subsection{Reproducing tables}
+\label{app:dataset-reproducing-tables}
+
+The released artifact separates replay generation from table
+aggregation. Recomputing tables from existing JSONL logs requires no live
+LLM calls and usually takes minutes on a laptop; rerunning the full
+$30$-seed, $10{,}000$-round sweeps can take several CPU-hours and is
+dominated by local JSONL I/O.
+
+Run the following scripts with \texttt{python -m scripts.<name>}:
+\begin{itemize}
+\item \texttt{compute\_main\_table} recomputes Table~\ref{tab:main}.
+\item \texttt{compute\_significance} recomputes the paired checks in
+  \S\ref{sec:eval-main}.
+\item \texttt{compute\_ablation\_metrics} recomputes
+  Table~\ref{tab:ablations}, including the S3 cost-posterior diagnostic.
+\end{itemize}
+
+To regenerate the JSONL logs before aggregation, use:
+\begin{itemize}
+\item \texttt{run\_scenario\_sweep} for the main table;
+\item \texttt{run\_ablation\_matrix} for the four core ablation toggles;
+\item \texttt{run\_s3\_promo\_v2\_ablation} for the S3 cost-posterior
+  diagnostic, with the \texttt{padct} policy and existing S3 oracle logs.
+\end{itemize}
+
 \subsection{Distribution and maintenance}
 \label{app:dataset-distribution}
 
