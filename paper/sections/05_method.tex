@@ -76,7 +76,7 @@ s_a
 \end{equation}
 The policy chooses $a_t=\arg\max_{a\in\mathcal{A}_t}s_a$, with deterministic tie-breaking. Algorithm~\ref{alg:padct} states the round loop in the \texttt{select}/\texttt{update} contract; if $\mathcal{A}_t$ is empty, the layer stops the episode before invoking the policy.
 
-\begin{algorithm}[H]
+\begin{algorithm}[!t]
 \caption{PA-DCT policy loop.}
 \label{alg:padct}
 \begin{algorithmic}[1]
