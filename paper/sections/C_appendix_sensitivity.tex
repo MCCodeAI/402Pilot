@@ -50,7 +50,11 @@ holds in every cell. The two perturbations that matter are the two that
 the algorithm exposes as scheduling levers: $\gamma$ (memory horizon)
 and $\alpha$ (budget-pressure sharpness); $\nu$ and $c_{\max}$ move
 $\textsc{PA-gap}/T$ by less than one third of $\gamma$'s effect within
-the tested range. $\gamma_{\mathrm{low}}{=}0.99$ doubles
+the tested range. The $c_{\max}$ cells also confirm that fixing
+$c_{\max}=\$0.01$ to the highest spec price in Table~\ref{tab:providers}
+is not decisive: halving or doubling it moves Budget\% by $\pm 8$pp but
+leaves $\bar q_T$ within $1.5$pp of default. The
+$\gamma_{\mathrm{low}}{=}0.99$ cell doubles
 $\textsc{PA-gap}/T$ on S1, which is the ``cost'' half of the
 short-memory--fast-recovery trade-off whose ``recovery'' half appears in
 Table~\ref{tab:gamma-sensitivity} and the $-D$ ablation in
@@ -174,11 +178,7 @@ sub-experiment of running longer. $B = \$50$ is calibrated against the
 strongest non-adaptive baseline (Always-P-premium exhausts at $\approx
 5{,}000$ rounds), so the budget cliff falls in the second half of every
 run --- changing $B$ would shift this cliff and re-calibrate every
-baseline along with PA-DCT. $c_{\max} = \$0.01$ is the highest spec price
-in the provider set, fixed by Table~\ref{tab:providers}; the sweep in
-Table~\ref{tab:s1-sensitivity} (cmax\_low / cmax\_high) additionally
-shows that halving or doubling $c_{\max}$ moves Budget\% by $\pm 8$pp
-but leaves $\bar q_T$ within $1.5$pp of default.
+baseline along with PA-DCT.
 A sweep over $(T, B)$ that preserves the budget-cliff timing is mechanically
 equivalent to scaling time, and hence does not generate new information
 about PA-DCT itself.
