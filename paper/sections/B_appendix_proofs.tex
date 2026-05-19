@@ -10,24 +10,13 @@ an abrupt change (Thm.~\ref{thm:adaptation}). The regret theorem is intentionall
 stated for a clean version of the score; \S\ref{app:proof-limitations} records
 the gap to the full empirical setting.
 
-\subsection{Notation and assumptions (recap)}
+\subsection{Shared assumptions for the proofs}
 \label{app:proof-setup}
 
-We use the notation of \S\ref{sec:problem} and \S\ref{sec:method}: $K$ arms,
-$K_b$ context buckets, round $t \in \{0,\ldots,T-1\}$, bucket
-$k_t=k(\mathbf{x}_t)$, observed quality $q_t \in [0,1]$, failure flag
-$f_t\in\{0,1\}$, realized cost $c_t\geq0$, utility
-$\ut=q_t-\nu f_t$ with $\nu=0.5$, normalized cost
-$\ctilde=\mathrm{clip}(c_t/c_{\max},0,1)$, wallet-pressure weight
-$\lamn=\lambda_t/(1+\lambda_t)\in(0,1)$, and payment-aware reward
-$\rt=(1-\lamn)\ut-\lamn\ctilde$.
-All regret sums below are over served rounds with nonempty affordable set; if a
-wallet exhausts early, replace $T$ by the served horizon $\tau$ of
-\S\ref{sec:problem}.
-
-For each cell $(a,k)$, PA-DCT keeps discounted sufficient statistics
-$(n^{a,k}_t,S^{a,k}_t,{S_c}^{a,k}_t)$ and Normal--Normal Q/C posteriors.
-It is useful to write the posterior means as
+We use the notation of \S\ref{sec:problem} and \S\ref{sec:method}. All regret
+sums below are over served rounds with nonempty affordable set; if a wallet
+exhausts early, replace $T$ by the served horizon $\tau$. The posterior
+arguments use the Normal--Normal mean identities
 \begin{equation}
 \label{eq:posterior-mean-compact}
 \thetaq{a}{k}
@@ -38,12 +27,11 @@ It is useful to write the posterior means as
 \end{equation}
 where $\kappa_q=\sigma_q^2/\sigma_{0,q}^2$ and
 $\kappa_c=\sigma_c^2/\sigma_{0,c}^2$.
-We write a single $n^{a,k}_t$ and $\gamma$ because the locked experiments use
-$\gamma_c=\gamma$ and each selected call supplies one utility and one cost
-observation. If quality and cost discounts are split, the same formulas apply to
-the two posteriors with their own effective counts.
+We write a single $n^{a,k}_t$ because each selected call supplies one utility
+and one cost observation. If quality and cost discounts are split, the same
+formulas apply to the two posteriors with their own effective counts.
 
-Throughout this appendix we use:
+The formal claims use the following assumptions.
 \begin{description}
 \item[(A1)] \emph{Stationary or piecewise-stationary cells.} Conditional on the
 chosen arm $a$ and bucket $k$, and averaging over the exogenous task draw within
@@ -58,7 +46,8 @@ true variances.
 $\mu_c^{a,k}\in[0,c_{\max}]$ for every $(a,k)$.
 \end{description}
 
-The stationary regret reduction further uses:
+The stationary regret reduction further uses two restrictions that are not
+needed by the boundedness, consistency, or adaptation claims:
 \begin{description}
 \item[(A2$^\prime$)] \emph{Well-specified product model.} The policy's
 proxy likelihoods are the true likelihoods: utility and cost observations are
