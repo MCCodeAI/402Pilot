@@ -22,7 +22,7 @@ $t,T$ & Round index and horizon & $t\in\{0,\ldots,T-1\}$; $T=10{,}000$ \\
 $a,K$ & Provider arm and number of arms & $K=5$: P-cheap, P-mid, P-premium, P-adv, P-flaky \\
 $a_t$ & Arm selected at round $t$ & $a_t\in\mathcal{A}_t$ \\
 $\mathbf{x}_t$ & Task context vector & $\mathbf{x}_t\in\mathbb{R}^d$, $d=7$ in the released encoder \\
-$k(\mathbf{x}_t),K_b$ & Context bucket map and number of buckets & T1/T2/T3a/T3b; $K_b=4$ by default, $K_b=1$ under $-C$ \\
+$k(\mathbf{x}_t),K_b$ & Context bucket map and number of buckets & T1/T2/T3a/T3b; $K_b=4$ by default \\
 \addlinespace[2pt]
 \multicolumn{3}{@{}l}{\textbf{Payment loop and feedback}} \\
 $\mathcal{Q}_t$ & Quoted candidate set from discovery/pricing & Provider-price pairs before selection \\
@@ -35,7 +35,7 @@ $B,B_t,\tau$ & Initial budget, remaining budget, served horizon & $B=\$50$; $B_{
 \addlinespace[2pt]
 \multicolumn{3}{@{}l}{\textbf{Reward and wallet pressure}} \\
 $\nu$ & Failure penalty in utility & $\nu=0.5$ \\
-$\ut$ & Utility used to update the Q-posterior & $\ut=q_t-\nu f_t$ \\
+$\ut$ & Utility: failure-penalized quality used to update the Q-posterior & $\ut=q_t-\nu f_t$ \\
 $c_{\max},\ctilde$ & Cost normalizer and normalized cost & $c_{\max}=\$0.01$; $\ctilde=\mathrm{clip}(c_t/c_{\max},0,1)$ \\
 $\alpha,\lambda_0$ & Budget-pressure schedule constants & $\alpha=2.0$, $\lambda_0=1$ \\
 $\bdev_t$ & Normalized burn-rate deviation & Deviation from the linear spend plan $1/T$ \\
@@ -44,12 +44,14 @@ $\rt$ & Payment-aware reward & $\rt=(1-\lamn)\ut-\lamn\ctilde$ \\
 \addlinespace[2pt]
 \multicolumn{3}{@{}l}{\textbf{PA-DCT posteriors and selection}} \\
 $\bar c_a$ & Listed/spec cost for arm $a$ & Prior mean for the C-posterior \\
+$\mu_{0,q},\sigma^2_{0,q},\sigma^2_q$ & Q-prior mean, prior variance, and likelihood variance & $0.5$, $1.0$, $0.09$ \\
+$\sigma^2_{0,c},\sigma^2_c$ & C-prior variance and likelihood variance & $10^{-4}$, $10^{-6}$ \\
 $n^{a,k}_t$ & Discounted effective count for cell $(a,k)$ & Shared by Q- and C-posteriors \\
 $S^{a,k}_t,{S_c}^{a,k}_t$ & Discounted utility and cost sums & Updated only for the chosen arm-bucket cell \\
-$\gamma,\gamma_c$ & Quality and cost discount factors & Both $0.999$ in main results; both $1$ under $-D$ \\
+$\gamma,\gamma_c$ & Quality and cost discount factors & Both $0.999$ in main results \\
 $\thetaq{a}{k},\Sigmaq{a}{k}$ & Q-posterior mean and variance & Normal--Normal posterior over utility \\
 $\thetac{a}{k},\Sigmac{a}{k}$ & C-posterior mean and variance & Normal--Normal posterior over realized cost \\
-$\hatu{a}{k},\hatc{a}{k}$ & Thompson samples from Q and C posteriors & Replaced by posterior means under $-TS$ \\
+$\hatu{a}{k},\hatc{a}{k}$ & Thompson samples from Q and C posteriors & Drawn from the Q- and C-posteriors at decision time \\
 $s_a$ & Decision-time sampled score & Mirrors $\rt$ with sampled utility and sampled normalized cost \\
 \addlinespace[2pt]
 \multicolumn{3}{@{}l}{\textbf{Reported evaluation quantities}} \\
