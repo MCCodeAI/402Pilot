@@ -306,31 +306,17 @@ duplicating notation; this is the algebra used for S3-style price changes once
 the changed arm is pulled again.
 \end{remark}
 
-\subsection{What the analysis does not cover}
+\subsection{Scope of the formal analysis}
 \label{app:proof-limitations}
 
-The stationary regret reduction requires $\gamma=1$, stationarity, a
-well-specified product-Gaussian model, and the clean score in (A3$^\prime$). It
-does not prove cumulative regret for piecewise-stationary wallet trajectories.
-Theorem~\ref{thm:adaptation} gives a fixed-schedule per-arm adaptation rate; an
-unconditional adaptation theorem would also need a lower bound on how often
-Thompson sampling revisits the changed arm after the shock. The $-TS$ ablation
-in \S\ref{sec:eval-ablations} provides empirical evidence that exploration is
-what drives recovery, but we do not prove that pull-frequency bound here.
-
-The bound also does not cover the exact misspecified proxy variances used in the
-benchmark. In particular, the locked $\sigma_c^2=10^{-6}$ makes cost-side
-Thompson samples concentrate tightly around the C-posterior mean, so empirical
-cost adaptation is mostly posterior-mean tracking rather than cost-side random
-exploration. This is compatible with the clean well-specified theorem, whose
-constant may depend on the likelihood variances, but it is not a separate
-misspecified-TS regret guarantee.
-
-Finally, the clean-score theorem is not a bound on every execution of the
-implemented clipped scorer in Eq.~\eqref{eq:padct-score}; it coincides with the
-implementation only when the cost-sample clip is inactive along the trajectory.
-Nor is it a regret bound against the replay \emph{True Oracle} in
-\S\ref{sec:eval-setup}: the theorem's comparator uses the policy's own wallet
-pressure and affordable set at each round, while the replay oracle owns a
-different wallet trajectory and is used only as an empirical upper-bound
-reference.
+The results above are intended as component-level formal support rather than a
+complete regret theorem for the full replay system. The stationary regret
+reduction assumes a well-specified product-Gaussian model, $\gamma=1$, and the
+clean score with inactive cost-sample clipping; the implemented clipped scorer
+coincides with this policy on trajectories where the clip is inactive. The
+adaptation result is conditional on a fixed post-shock pull schedule, so it
+explains how discounted posteriors forget stale evidence after a changed arm is
+revisited, but does not prove an unconditional Thompson-sampling revisit rate or
+a cumulative piecewise-stationary regret bound. Finally, the theorem's comparator
+uses the policy's own wallet pressure and affordable set, whereas the empirical
+\emph{True Oracle} has its own wallet trajectory.

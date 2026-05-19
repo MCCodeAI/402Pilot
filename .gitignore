@@ -63,3 +63,4 @@ paper/*.pdf
 paper/*.synctex.gz
 paper/*.fls
 paper/*.fdb_latexmk
+paper/skills/
