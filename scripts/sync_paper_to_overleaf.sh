@@ -126,12 +126,13 @@ EOF
 fi
 
 # --- Step 2: rsync paper/ → sibling ---------------------------------------
-# Excludes: .git (sibling has its own), .DS_Store (macOS clutter), and LaTeX
-# build artifacts (Overleaf regenerates on its own).
+# Excludes: .git (sibling has its own), .DS_Store (macOS clutter), local
+# Codex skill files, and LaTeX build artifacts (Overleaf regenerates on its own).
 RSYNC_FLAGS=(
   -av --delete
   --exclude='.git'
   --exclude='.DS_Store'
+  --exclude='skills/'
   --exclude='*.aux'
   --exclude='*.bbl'
   --exclude='*.blg'
