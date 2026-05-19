@@ -53,7 +53,7 @@ implementations.
 - **Output.** A fixed-dimension feature vector \(x_t \in \mathbb{R}^d\).
 - **Initial feature set.**
   - Task type (one-hot over 4 sub-types: T1 coding, T2 multi-hop QA,
-    T3a web-search closed-form, T3b web-search open-ended). T3a/T3b are
+    T3a web-search closed-form, T3b OpenAssistant open-ended QA). T3a/T3b are
     treated as separate types because they use different evaluators
     (deterministic EM/F1 vs. LLM-as-judge); see §2.5.
   - Difficulty estimate (scalar, [0,1]).
@@ -124,7 +124,7 @@ implementations.
   - **Multi-hop QA (T2):** normalized Exact Match + token-level F1; score =
     max(EM, F1). Deterministic given the gold answer string.
   - **Web search — closed-form (T3a):** same EM/F1 protocol as T2.
-  - **Web search — open-ended (T3b):** LLM-as-judge with a structured rubric
+  - **Open-ended QA (T3b, OpenAssistant oasst1):** LLM-as-judge with a structured rubric
     (factual accuracy, completeness, absence of hallucination).
     Non-deterministic; judge model ID and seed are logged per call.
 - **Determinism contract.** Deterministic backends (T1, T2, T3a) store scores

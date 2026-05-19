@@ -7,7 +7,7 @@ Agent-native payment decision-making is a new evaluation setting: an agent repea
 \label{sec:eval-setup}
 
 \paragraph{Benchmark.}
-\emph{402Pilot-Bench} contains $823$ tasks across coding (HumanEval pass@1), multi-hop QA (HotpotQA max EM/F1), and web search. Web search is split into closed-form T3a (deterministic max EM/F1) and open-ended T3b (cached LLM-as-judge), yielding the four task buckets T1/T2/T3a/T3b used by PA-DCT ($K_b=4$). The cache stores $V=5$ response versions for each (task, provider) pair, yielding $823\times5\times5=20{,}575$ scored responses. During evaluation, scenario changes modify realized failures or effective prices, not the underlying task pool.
+\emph{402Pilot-Bench} contains $823$ tasks across coding (HumanEval pass@1), multi-hop QA (HotpotQA max EM/F1), closed-form web search (TriviaQA-web max EM/F1), and open-ended QA (OpenAssistant oasst1 with cached LLM-as-judge). The latter two form T3a and T3b, yielding the four task buckets T1/T2/T3a/T3b used by PA-DCT ($K_b=4$). The cache stores $V=5$ response versions for each (task, provider) pair, yielding $823\times5\times5=20{,}575$ scored responses. During evaluation, scenario changes modify realized failures or effective prices, not the underlying task pool.
 Appendix~\ref{appendix:dataset} documents the benchmark composition, evaluation cache, intended use, and benchmark-level limitations.
 
 \paragraph{Providers.}

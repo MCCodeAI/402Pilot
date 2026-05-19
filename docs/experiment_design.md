@@ -119,7 +119,7 @@ the gold answer string. Score = max(EM, F1) after standard normalization
 occasional plausible-sounding wrong answers may achieve partial F1 overlap,
 moderating detection speed relative to T1.
 
-#### T3 — Web Search (TriviaQA-web + custom open-ended)
+#### T3 — Closed/Open QA (TriviaQA-web + OpenAssistant oasst1 filtered)
 
 The web search task is split into two sub-pools to create a controllable
 evaluator-difficulty gradient:
@@ -160,7 +160,7 @@ difficulty-sampling distribution is needed.
 | Coding              | HumanEval    | 164       | 5         | 5        | 4,100        |
 | Multi-hop QA        | HotpotQA val | 220       | 5         | 5        | 5,500        |
 | Web search — closed | TriviaQA-web | 219 effective (220 raw, 1 filtered) | 5 | 5 | 5,475 |
-| Web search — open   | OpenAssistant filt. | 220 | 5         | 5        | 5,500        |
+| Open-ended QA       | OpenAssistant filt. | 220 | 5         | 5        | 5,500        |
 | **Total**           |              | **823 effective** |      |          | **20,575** |
 
 The 164 for coding is the full HumanEval test split (no sampling). The

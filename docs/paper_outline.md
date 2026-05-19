@@ -199,7 +199,7 @@ Full design in `docs/experiment_design.md`.
   - T2 — Multi-hop QA (HotpotQA), max(EM, F1). Deterministic given gold.
   - T3a — Web search, closed-form (TriviaQA-web), max(EM, F1).
     Deterministic given gold.
-  - T3b — Web search, open-ended (custom), LLM-as-judge with structured
+  - T3b — Open-ended QA (OpenAssistant oasst1 filtered subset), LLM-as-judge with structured
     rubric (factual accuracy, completeness, absence of hallucination).
     Cached at pre-generation time and replayed.
   T3 is split into T3a vs. T3b throughout the paper because their

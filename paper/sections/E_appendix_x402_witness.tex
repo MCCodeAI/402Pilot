@@ -6,24 +6,11 @@ The released artifact includes a local x402 integration witness for the
 witness is not part of 402Pilot-Bench and does not produce any reported
 measurement. Its purpose is narrower: to show that the selected-arm payment
 operation can be instantiated as a real HTTP 402 quote--pay--receipt loop.
-
-\begin{table}[h]
-\centering
-\caption{Local components used by the x402 integration witness.}
-\label{tab:x402-witness-components}
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabularx}{\linewidth}{@{}lX@{}}
-\toprule
-Component & Role \\
-\midrule
-Anvil fork & Local EVM fork carrying USDC contract state. \\
-Python x402 facilitator & Verifies and settles exact EVM payments. \\
-FastAPI resource server & Exposes paid provider endpoints protected by x402 middleware. \\
-\texttt{X402PaymentExecutor} & Maps the HTTP 402 round trip into a 402Pilot \texttt{Outcome}. \\
-\bottomrule
-\end{tabularx}
-\end{table}
+The witness consists of four local components: an Anvil fork carrying USDC
+contract state, a Python x402 facilitator that verifies and settles exact
+EVM payments, a FastAPI resource server with x402-protected provider
+endpoints, and an \texttt{X402PaymentExecutor} adapter that maps the HTTP
+402 round trip into a 402Pilot \texttt{Outcome}.
 
 The witness can be run with \texttt{bash scripts/witness\_smoke.sh}. A
 successful run first receives HTTP 402 from an unpaid provider endpoint,

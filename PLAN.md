@@ -69,7 +69,8 @@ regret guarantees and noting which conditions transfer.
   P-adv / P-flaky share cost tier and base model — only reward feedback
   distinguishes them.
 - **M = 3 task types:** T1 Coding (HumanEval, pass@1), T2 Multi-hop QA
-  (HotpotQA, EM/F1), T3 Web Search (TriviaQA-web closed + custom open-ended).
+  (HotpotQA, EM/F1), T3 closed/open QA (TriviaQA-web closed + OpenAssistant
+  oasst1 filtered open-ended).
 - **T = 10,000** rounds per run.
 - **N = 30** seeds per (policy × scenario) cell.
 - **Budget B** sized so *Always-P-premium* exhausts wallet near round ~5,000.

@@ -14,35 +14,18 @@ and produce numbers comparable to ours.
 \label{app:dataset-composition}
 
 \paragraph{Tasks.}
-402Pilot-Bench contains $823$ unique tasks drawn from three public
-sources plus one custom subset, partitioned into four evaluation
-buckets used by PA-DCT's contextual structure ($K_b = 4$). Counts and
-sources are reported in Table~\ref{tab:dataset-card}.
-
-\begin{table*}[t]
-\centering
-\small
-\caption{Per-bucket composition of 402Pilot-Bench. The web-search domain
-splits into closed-form (T3a) and open-ended (T3b) sub-buckets because
-the two use different evaluators (deterministic max EM/F1 vs.\ cached
-LLM-as-judge). One TriviaQA item is excluded across all providers due
-to a deterministic content-filter rejection on the cheapest provider's
-API; excluding it for every provider keeps quality comparisons
-apples-to-apples.}
-\label{tab:dataset-card}
-\begin{tabularx}{\linewidth}{@{}llXrl@{}}
-\toprule
-Bucket & Domain & Source & Tasks & License \\
-\midrule
-T1  & Coding             & HumanEval~\citep{chen2021humaneval}             & $164$ & MIT \\
-T2  & Multi-hop QA       & HotpotQA~\citep{yang2018hotpotqa}               & $220$ & CC BY-SA 4.0 \\
-T3a & Web search (closed)& TriviaQA web split~\citep{joshi2017triviaqa}    & $219$ & Apache-2.0 \\
-T3b & Web search (open)  & Custom open-ended subset (this work)            & $220$ & Same as artifact \\
-\midrule
-\multicolumn{3}{l}{\textbf{Total}} & $\mathbf{823}$ & \\
-\bottomrule
-\end{tabularx}
-\end{table*}
+402Pilot-Bench contains $823$ unique tasks drawn from four public
+sources, partitioned into four evaluation buckets used by PA-DCT's
+contextual structure ($K_b = 4$). The buckets are T1 coding (all $164$
+HumanEval tasks~\citep{chen2021humaneval}), T2 multi-hop QA ($220$
+HotpotQA validation tasks~\citep{yang2018hotpotqa}), T3a closed-form web
+search ($219$ effective TriviaQA-web tasks after one global
+exclusion~\citep{joshi2017triviaqa}), and T3b open-ended QA ($220$
+prompts filtered from OpenAssistant oasst1~\citep{kopf2023openassistant}).
+We split closed-form (T3a) and open-ended (T3b) buckets because they use
+different evaluators. The TriviaQA item is excluded for every provider
+after a deterministic content-filter rejection by the cheapest provider,
+keeping quality comparisons apples-to-apples.
 
 \paragraph{Pre-generated responses.}
 For each (task, provider) pair we pre-generate $V = 5$ response versions,
@@ -56,7 +39,7 @@ are deterministic given the seed.
 
 \paragraph{Sampling.}
 HumanEval includes all $164$ canonical tasks. The HotpotQA, TriviaQA, and
-open-ended subsets are sampled from their source datasets using
+OpenAssistant oasst1 subsets are sampled from their source datasets using
 NumPy-default RNG with a fixed seed (constant in the loader source);
 sampled indices are sorted and recorded in the per-source cache file so
 the sample is reproducible from the cache regardless of upstream
@@ -94,7 +77,7 @@ Each bucket carries its own evaluator, fixed at pre-generation time.
 \item \textbf{T3a Web search closed-form (TriviaQA-web).} Maximum of EM
   and F1 against the canonical answer plus the alias set provided by
   TriviaQA. Deterministic; quality $q_t \in [0, 1]$.
-\item \textbf{T3b Web search open-ended.} LLM-as-judge with a fixed
+\item \textbf{T3b Open-ended QA (OpenAssistant oasst1).} LLM-as-judge with a fixed
   rubric (criteria: factual correctness, completeness, conciseness),
   prompted against a strong reference judge model. The judge is queried
   once at pre-generation per (task, provider, version) tuple and the
