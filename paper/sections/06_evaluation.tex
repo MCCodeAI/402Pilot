@@ -1,9 +1,7 @@
 \section{Evaluation}
 \label{sec:eval}
 
-Agent-native payment decision-making is a new evaluation setting: an agent repeatedly chooses among paid providers, spends from a finite wallet, and learns only from post-payment outcomes. Existing LLM benchmarks do not capture this full loop, so we construct 402Pilot-Bench on top of public task datasets that provide recognizable workloads and established scorers. We instantiate this loop by pre-generating and scoring multiple responses for each task--provider pair, then replaying the cached outcomes under shared seeds, provider menus, wallet budgets, and market scenarios. This frozen-replay design preserves real LLM output variation while avoiding repeated live provider calls, which would add cost and confound policy effects with API drift and sampling noise.
-
-All reported quantitative results derive from frozen replay; the local x402 witness exercises the same execution interface against a real protocol but contributes no measurement to any table or figure.
+Agent-native payment decision-making is a new evaluation setting: an agent repeatedly chooses among paid providers, spends from a finite wallet, and learns only from post-payment outcomes. Existing LLM benchmarks do not capture this full loop, so we construct 402Pilot-Bench on top of public task datasets that provide recognizable workloads and established scorers. We instantiate this loop by pre-generating and scoring multiple responses for each task--provider pair, then replaying the cached outcomes under shared seeds, provider menus, wallet budgets, and market scenarios. This frozen-replay design preserves real LLM output variation while avoiding repeated live provider calls, which would add cost and confound policy effects with API drift and sampling noise. A local x402 witness is included for interface compatibility, but it contributes no measurements to any table or figure.
 
 \subsection{Experimental Setup}
 \label{sec:eval-setup}

@@ -19,8 +19,6 @@ On the payment side, 402Pilot conceptually consumes a quoted candidate set $\mat
 \end{align*}
 The receipt supplies the realized charge $c_t$, which the layer records with the wallet; a task scorer maps the response to $(q_t,f_t)$. In our frozen-replay benchmark, 402Pilot-Bench, both are read from cached evaluation records. If no action is affordable, the layer stops the run; paid non-delivery is feedback with $f_t=1$ and realized charge $c_t$. Discovery, quote formation, retry, settlement faults, and observability remain outside the layer.
 
-As an integration witness, the released artifact additionally provides an x402 \texttt{PaymentExecutor}: a concrete instance of the wallet/payment interface above that drives a real HTTP 402 quote--pay--receipt round trip against a local x402 stack backed by an Anvil fork. It demonstrates that the substrate boundary in Figure~\ref{fig:architecture} can be instantiated on a live payment protocol, while remaining separate from the benchmark loop.
-
 On the policy side, a policy exposes two methods:
 \begin{align*}
 &\mathtt{select}(\mathbf{x}_t,\, \mathcal{A}_t) \to a_t \in \mathcal{A}_t, \\
