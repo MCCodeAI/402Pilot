@@ -112,42 +112,6 @@ training-time decisions or for studies that need within-trial
 counterfactual access to non-chosen arms; both are outside the
 single-call replay model.
 
-\subsection{Limitations and known issues}
-\label{app:dataset-limitations}
-
-\paragraph{Frozen responses.} Pre-generation captures provider behavior
-at calibration time. Real LLM markets evolve on timescales shorter than
-a research cycle; live deployment should be preceded by re-pre-generation
-against the deployment-time model versions. The discount $\gamma$ helps
-the policy adapt within a fixed dataset, but it is not a substitute for
-refreshing the dataset.
-
-\paragraph{Evaluator-bounded P-adv detection on T3b.} The LLM-as-judge
-on the open-ended sub-bucket occasionally accepts fluent-but-wrong
-answers from P-adv. PA-DCT therefore identifies P-adv on T3b more slowly
-and less completely than on the deterministic-evaluator buckets
-(\S\ref{sec:eval-main}). This is an evaluator limit, not a policy
-limit; with a tighter judge, a verifier in the loop, or human spot
-checks the gap should close.
-
-\paragraph{Single content-filter exclusion.} The DashScope API used by
-P-cheap rejects one TriviaQA question outright; we exclude that
-question from \emph{every} provider's task set so the comparison stays
-apples-to-apples. The total task count after exclusion is $823$ (i.e.\
-$220 \to 219$ in T3a). The skip list and the rationale for each entry
-are documented in the loader source.
-
-\paragraph{Provider heterogeneity is calibrated, not real.} The five
-providers are designed to expose specific phenomena (same-tier
-quality differences, adversarial fluency, flakiness, price shocks) in a
-controlled and reproducible way. Real-world provider mixes will differ;
-we do not claim the calibrated set spans the deployment-time provider
-distribution.
-
-\paragraph{Single-language, single-modality.} All tasks are
-English-language text-in / text-out. Multi-lingual, code-execution
-sandboxed, and multi-modal extensions are natural follow-up benchmarks.
-
 \subsection{Reproducing tables}
 \label{app:dataset-reproducing-tables}
 
