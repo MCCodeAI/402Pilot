@@ -63,4 +63,9 @@ paper/*.pdf
 paper/*.synctex.gz
 paper/*.fls
 paper/*.fdb_latexmk
+
+# Local Codex skills: project-scoped, not published to GitHub or Overleaf.
+skills/
+# Legacy location, kept ignored so skills are not accidentally reintroduced
+# under paper/.
 paper/skills/
