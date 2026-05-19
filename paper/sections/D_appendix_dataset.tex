@@ -1,116 +1,42 @@
-\section{402Pilot-Bench Benchmark Card}
+\section{402Pilot-Bench Artifact Details}
 \label{appendix:dataset}
 
-402Pilot-Bench is the replay benchmark introduced as Contribution C3
-(\S\ref{sec:intro}); it is the artifact every empirical claim in this
-paper is computed against. This appendix provides datasheet-inspired
-benchmark documentation in the spirit of \citet{gebru2021datasheets},
-covering composition, collection, evaluation, intended use, and
-limitations. The release ships with deterministic seed and split
-protocols so that other policies can be dropped into the same harness
-and produce numbers comparable to ours.
+The main text defines the benchmark task buckets, providers, market
+scenarios, metrics, and limitations. This appendix records only the
+artifact-level details needed to inspect or rerun 402Pilot-Bench:
+source sampling, cache layout, score persistence, and maintenance
+conventions.
 
-\subsection{Composition}
-\label{app:dataset-composition}
+\subsection{Source sampling and cache layout}
+\label{app:dataset-sampling}
 
-\paragraph{Tasks.}
-402Pilot-Bench contains $823$ unique tasks drawn from four public
-sources, partitioned into four evaluation buckets used by PA-DCT's
-contextual structure ($K_b = 4$). The buckets are T1 coding (all $164$
-HumanEval tasks~\citep{chen2021humaneval}), T2 multi-hop QA ($220$
-HotpotQA validation tasks~\citep{yang2018hotpotqa}), T3a closed-form web
-search ($219$ effective TriviaQA-web tasks after one global
-exclusion~\citep{joshi2017triviaqa}), and T3b open-ended QA ($220$
-prompts filtered from OpenAssistant oasst1~\citep{kopf2023openassistant}).
-We split closed-form (T3a) and open-ended (T3b) buckets because they use
-different evaluators. The TriviaQA item is excluded for every provider
-after a deterministic content-filter rejection by the cheapest provider,
-keeping quality comparisons apples-to-apples.
+402Pilot-Bench draws tasks from four public sources. HumanEval contributes
+all $164$ canonical tasks~\citep{chen2021humaneval}. The HotpotQA
+validation split~\citep{yang2018hotpotqa},
+TriviaQA-web~\citep{joshi2017triviaqa}, and OpenAssistant
+oasst1~\citep{kopf2023openassistant} subsets are sampled with
+NumPy-default RNG using loader-level constants. The sampled indices are
+sorted and recorded in per-source cache files so the task pool can be
+reconstructed without depending on upstream dataset order. T3b prompts in
+\texttt{data/tasks/openweb.jsonl} retain their \texttt{OpenAssistant/oasst1}
+source tag and original oasst1 \texttt{message\_id}. For T3a, one
+TriviaQA-web item is removed at load time by a global content-filter
+skip-list; the on-disk cache keeps the raw $220$-task sample, and removing
+the skip-list entry restores it without rebuilding the cache.
 
-\paragraph{Pre-generated responses.}
 For each (task, provider) pair we pre-generate $V = 5$ response versions,
-yielding $823 \times 5 \times 5 = 20{,}575$ total responses. Each response
-is stored on disk with the schema \texttt{(schema\_version, task\_id,
-task\_type, provider\_id, version, response, cost\_usdc, latency\_s,
-failure\_flag, failure\_code, quality\_score, generated\_at, temperature)}
-in JSONL, with one file per (provider, bucket) pair. Quality scores are
-computed once at pre-generation time and cached, so all bandit results
-are deterministic given the seed.
-
-\paragraph{Sampling.}
-HumanEval includes all $164$ canonical tasks. The HotpotQA, TriviaQA, and
-OpenAssistant oasst1 subsets are sampled from their source datasets using
-NumPy-default RNG with a fixed seed (constant in the loader source);
-sampled indices are sorted and recorded in the per-source cache file so
-the sample is reproducible from the cache regardless of upstream
-dataset changes. The TriviaQA exclusion is a single-task content-filter
-skip-list applied at load time across all providers; the on-disk cache
-retains the full $220$-task sample, and removing the entry from the
-skip list restores it without rebuilding.
-
-\subsection{Provider configuration}
-\label{app:dataset-providers}
-
-The five providers are summarized in Table~\ref{tab:providers} of the
-main text and instantiated in \texttt{experiments/main.yaml}. The
-reproduction-relevant details are the behavioral wrappers: P-mid, P-adv,
-and P-flaky share the same base price (\$0.002/call) and base model, but
-P-adv is implemented by a system-prompt modification and P-flaky by a
-probabilistic timeout wrapper. Both wrappers are deterministic given the
-per-call seed. Thus this same-price decoy set differs only in paid
-outcomes, not static metadata. P-cheap and P-premium anchor the
-cost--quality frontier, and in S3 P-premium's effective price drops from
-\$0.01 to \$0.002 at round $1{,}000$ to create the promotional
-opportunity.
-
-\subsection{Evaluation protocol}
-\label{app:dataset-eval}
-
-Each bucket carries its own evaluator, fixed at pre-generation time.
-
-\begin{itemize}
-\item \textbf{T1 Coding (HumanEval).} pass@1 over the canonical test
-  cases. Deterministic; quality $q_t \in \{0, 1\}$.
-\item \textbf{T2 Multi-hop QA (HotpotQA).} Maximum of EM and F1 against
-  the gold answer string. Deterministic given the gold answer; quality
-  $q_t \in [0, 1]$.
-\item \textbf{T3a Web search closed-form (TriviaQA-web).} Maximum of EM
-  and F1 against the canonical answer plus the alias set provided by
-  TriviaQA. Deterministic; quality $q_t \in [0, 1]$.
-\item \textbf{T3b Open-ended QA (OpenAssistant oasst1).} LLM-as-judge with a fixed
-  rubric (criteria: factual correctness, completeness, conciseness),
-  prompted against a strong reference judge model. The judge is queried
-  once at pre-generation per (task, provider, version) tuple and the
-  resulting quality score is cached on disk; bandit replays read from
-  the cache and never re-query the judge. Cached quality scores
-  $q_t \in [0, 1]$ are persisted in a separate \texttt{judge\_cache.jsonl}
-  file alongside the per-provider response files.
-\end{itemize}
-
-\paragraph{Failure flag.} Independently of the quality score, every
-response carries a binary \texttt{failure\_flag}. The flag is set when
-the provider call times out, the response cannot be parsed, or the
-upstream API rejects the request. For P-flaky the flag fires
-probabilistically by design; for the other providers it surfaces only
-genuine API-side failures. Utility is $\ut = q_t - \nu f_t$ with
-$\nu = 0.5$ (\S\ref{sec:problem}); the bandit treats failures as a
-distinct signal from low quality.
-
-\subsection{Intended use}
-\label{app:dataset-intended-use}
-
-402Pilot-Bench is intended for benchmarking buyer-side decision policies
-in the agent-native payment decision-making setting: budget-aware, non-stationary,
-contextual provider selection over a small set of paid LLM endpoints.
-The release decouples bandit evaluation from inference noise (responses
-are frozen) and lets a new policy be compared against ours on identical
-seed paths in a few CPU-hours. Out of scope: protocol-level questions
-(settlement, dispute resolution), strategic-provider mechanism design
-(\S\ref{sec:discuss}), and any setting that requires live LLM calls
-during the bandit loop. We do not recommend this benchmark for
-training-time decisions or for studies that need within-trial
-counterfactual access to non-chosen arms; both are outside the
-single-call replay model.
+stored as JSONL files, one file per (provider, bucket) pair. Each record
+stores the schema version, task identifier and bucket, provider identifier,
+response-version index, frozen response text, realized cost and latency,
+failure flag and code, quality score, generation timestamp, and sampling
+temperature. Quality is materialized at pre-generation time: deterministic
+scorers write their scores directly, while T3b stores cached LLM-as-judge
+outputs in \texttt{judge\_cache.jsonl} with the fixed rubric and provenance
+needed to audit the judge call.
+The run configuration file lists provider menus, behavioral wrappers, and
+scenario schedules; in the artifact, this file is
+\path{experiments/main.yaml}. Wrapper randomness is keyed by the per-call
+seed so replay results are deterministic.
 
 \subsection{Reproducing tables}
 \label{app:dataset-reproducing-tables}
