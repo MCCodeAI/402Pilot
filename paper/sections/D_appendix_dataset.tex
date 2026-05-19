@@ -1,14 +1,14 @@
-\section{402Pilot-Bench Dataset Card}
+\section{402Pilot-Bench Benchmark Card}
 \label{appendix:dataset}
 
 402Pilot-Bench is the replay benchmark introduced as Contribution C3
 (\S\ref{sec:intro}); it is the artifact every empirical claim in this
-paper is computed against. This appendix is a datasheet
-in the spirit of \citet{gebru2021datasheets}, covering composition,
-collection, evaluation, intended use, and limitations. We treat the
-benchmark as a first-class deliverable: the release ships with
-deterministic seed and split protocols so that other policies can be
-dropped into the same harness and produce numbers comparable to ours.
+paper is computed against. This appendix provides datasheet-inspired
+benchmark documentation in the spirit of \citet{gebru2021datasheets},
+covering composition, collection, evaluation, intended use, and
+limitations. The release ships with deterministic seed and split
+protocols so that other policies can be dropped into the same harness
+and produce numbers comparable to ours.
 
 \subsection{Composition}
 \label{app:dataset-composition}
@@ -69,24 +69,16 @@ skip list restores it without rebuilding.
 \label{app:dataset-providers}
 
 The five providers are summarized in Table~\ref{tab:providers} of the
-main text and instantiated in \texttt{experiments/main.yaml}. We
-emphasize three design points:
-
-\begin{itemize}
-\item P-mid, P-adv, and P-flaky share the same base price (\$0.002/call)
-  and base model. They are distinguishable only by behavior --- correct
-  answers (P-mid), fluent-but-wrong answers (P-adv), and a $40\%$
-  timeout-injection rate (P-flaky) --- and not by any static metadata. A
-  policy that ranks providers by spec sheet alone cannot tell them apart.
-\item P-cheap (\$0.0005/call, weakest model) and P-premium (\$0.01/call,
-  strongest model) anchor the cost--quality frontier and
-  participate in S3, where P-premium's effective price drops to \$0.002
-  at round $1{,}000$ to create the promotional opportunity.
-\item Adversarial behavior (P-adv) is implemented through a system-prompt
-  modification, not by changing the underlying model; flaky behavior
-  (P-flaky) is implemented through a probabilistic timeout wrapper. Both
-  are deterministic given the per-call seed.
-\end{itemize}
+main text and instantiated in \texttt{experiments/main.yaml}. The
+reproduction-relevant details are the behavioral wrappers: P-mid, P-adv,
+and P-flaky share the same base price (\$0.002/call) and base model, but
+P-adv is implemented by a system-prompt modification and P-flaky by a
+probabilistic timeout wrapper. Both wrappers are deterministic given the
+per-call seed. Thus this same-price decoy set differs only in paid
+outcomes, not static metadata. P-cheap and P-premium anchor the
+cost--quality frontier, and in S3 P-premium's effective price drops from
+\$0.01 to \$0.002 at round $1{,}000$ to create the promotional
+opportunity.
 
 \subsection{Evaluation protocol}
 \label{app:dataset-eval}
@@ -181,23 +173,10 @@ aggregation. Recomputing tables from existing JSONL logs requires no live
 LLM calls and usually takes minutes on a laptop; rerunning the full
 $30$-seed, $10{,}000$-round sweeps can take several CPU-hours and is
 dominated by local JSONL I/O.
-
-Run the following scripts with \texttt{python -m scripts.<name>}:
-\begin{itemize}
-\item \texttt{compute\_main\_table} recomputes Table~\ref{tab:main}.
-\item \texttt{compute\_significance} recomputes the paired checks in
-  \S\ref{sec:eval-main}.
-\item \texttt{compute\_ablation\_metrics} recomputes
-  Table~\ref{tab:ablations}, including the S3 cost-posterior diagnostic.
-\end{itemize}
-
-To regenerate the JSONL logs before aggregation, use:
-\begin{itemize}
-\item \texttt{run\_scenario\_sweep} for the main table;
-\item \texttt{run\_ablation\_matrix} for the four core ablation toggles;
-\item \texttt{run\_s3\_promo\_ablation} for the S3 cost-posterior
-  diagnostic, with the \texttt{padct} policy and existing S3 oracle logs.
-\end{itemize}
+The artifact README documents the one-shot commands for recomputing
+Table~\ref{tab:main}, the paired significance checks, Table~\ref{tab:ablations},
+and the S3 cost-posterior diagnostic from either cached logs or regenerated
+replay runs.
 
 \subsection{Distribution and maintenance}
 \label{app:dataset-distribution}
@@ -206,7 +185,5 @@ The pre-generated responses, the loader code, the scenario classes, the
 configuration YAML, and the scripts that regenerate every table and
 figure in the paper are released as the supplemental artifact. Bug fixes
 that change the on-disk cache will bump a \texttt{schema\_version} field;
-fixes that change only the load-time filter (such as the content-filter
-skip list) leave the cache file untouched. The artifact is anonymized for
-review; the post-acceptance repository will track issues and pull
-requests for new tasks, providers, and scenarios.
+fixes that change only load-time filters, such as the content-filter skip
+list, leave the cache file untouched.
