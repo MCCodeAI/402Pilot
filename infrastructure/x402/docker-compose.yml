@@ -1,0 +1,89 @@
+# Local x402 stack for the 402Pilot integration witness.
+#
+# Brings up three services on a private bridge network:
+#   * anvil          — local EVM fork (Foundry); supplies USDC + mainnet state
+#   * facilitator    — local x402 SDK facilitator; verifies + settles payments
+#   * resource-server — FastAPI app with x402 middleware; the provider stand-in
+#
+# This stack is NOT used by the benchmark. The benchmark loop in
+# pilot402/runtime/loop.py reads cached PregenRecord rows; no live
+# x402 traffic. The stack is only consumed by:
+#   * scripts/run_x402_witness.py
+#   * tests/integration/test_x402_roundtrip.py
+#
+# Bring up: docker compose up -d
+# Tear down: docker compose down -v
+#
+# Runtime image choices are documented in infrastructure/x402/README.md.
+
+services:
+
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    container_name: x402_witness_anvil
+    # Fork mainnet at a fixed block so USDC contract state is stable.
+    # The fork URL is supplied via env so reviewers don't have to bake
+    # a public RPC into the repo. See .env.example for guidance.
+    entrypoint:
+      - anvil
+      - --host=0.0.0.0
+      - --port=8545
+      - --chain-id=31337
+      - --fork-url=${MAINNET_FORK_RPC_URL}
+      - --fork-block-number=${MAINNET_FORK_BLOCK:-19500000}
+    ports:
+      - "127.0.0.1:8545:8545"
+    # Foundry images ship `cast` but not `wget`/`curl`, so use cast for the
+    # health probe. Suppress output so `docker compose ps` stays clean.
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "cast block-number --rpc-url http://localhost:8545 >/dev/null 2>&1"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  facilitator:
+    build:
+      context: .
+      dockerfile: Dockerfile.resource-server
+    container_name: x402_witness_facilitator
+    depends_on:
+      anvil:
+        condition: service_healthy
+    command:
+      - uvicorn
+      - facilitator_server:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "4021"
+    environment:
+      ANVIL_RPC_URL: http://anvil:8545
+      FACILITATOR_PRIVATE_KEY: ${FACILITATOR_PRIVATE_KEY}
+      X402_NETWORK: eip155:31337
+    ports:
+      - "127.0.0.1:4021:4021"
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:4021/supported', timeout=2).read()\""
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  resource-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.resource-server
+    container_name: x402_witness_resource_server
+    depends_on:
+      facilitator:
+        condition: service_healthy
+    environment:
+      X402_FACILITATOR_URL: http://facilitator:4021
+      X402_PAY_TO_ADDRESS: ${PAY_TO_ADDRESS}
+      # CAIP-2 identifier for the local Anvil chain.
+      X402_NETWORK: eip155:31337
+    ports:
+      - "127.0.0.1:8000:8000"

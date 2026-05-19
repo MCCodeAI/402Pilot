@@ -1,0 +1,23 @@
+# Dependencies for the x402 integration-witness stack.
+#
+# NOT a dependency of the 402Pilot benchmark itself — kept separate from
+# the main pyproject.toml so reviewers running only the benchmark do not
+# pull these packages. The witness script (scripts/run_x402_witness.py),
+# the integration test (tests/integration/test_x402_roundtrip.py), and
+# the resource-server container all install from this file.
+#
+# Versions are pinned tightly because this file is for a reproducibility
+# witness, not the main benchmark dependency set. In particular, x402 and
+# web3 both move quickly; broad compatible-release ranges make pip backtrack
+# through many mutually incompatible eth-* dependency combinations.
+
+x402[requests,fastapi]==2.10.0
+fastapi==0.136.1
+uvicorn[standard]==0.47.0
+eth-account==0.13.7
+eth-utils>=5.0,<6.0
+httpx==0.28.1
+# web3 is only used by fund_buyer.py and the integration test (to query
+# USDC balanceOf and to call anvil_setStorageAt). Not imported by the
+# witness round-trip itself.
+web3==7.16.0

@@ -1,0 +1,37 @@
+\section{x402 Integration Witness}
+\label{appendix:x402-witness}
+
+The released artifact includes a local x402 integration witness for the
+\texttt{PaymentExecutor} boundary described in \S\ref{sec:layer}. The
+witness is not part of 402Pilot-Bench and does not produce any reported
+measurement. Its purpose is narrower: to show that the selected-arm payment
+operation can be instantiated as a real HTTP 402 quote--pay--receipt loop.
+
+\begin{table}[h]
+\centering
+\caption{Local components used by the x402 integration witness.}
+\label{tab:x402-witness-components}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Component & Role \\
+\midrule
+Anvil fork & Local EVM fork carrying USDC contract state. \\
+Python x402 facilitator & Verifies and settles exact EVM payments. \\
+FastAPI resource server & Exposes paid provider endpoints protected by x402 middleware. \\
+\texttt{X402PaymentExecutor} & Maps the HTTP 402 round trip into a 402Pilot \texttt{Outcome}. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The witness can be run with \texttt{bash scripts/witness\_smoke.sh}. A
+successful run first receives HTTP 402 from an unpaid provider endpoint,
+then completes one paid call with a positive receipt amount and transaction
+hash. The live integration test additionally checks that the buyer's local
+USDC balance on Anvil decreases by the settled amount:
+\begin{quote}
+\footnotesize
+\texttt{X402\_INTEGRATION\_TEST=1}\\
+\texttt{pytest tests/integration/test\_x402\_roundtrip.py -v -s}
+\end{quote}

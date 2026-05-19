@@ -1,0 +1,18 @@
+# Build a minimal FastAPI + x402 runtime image.
+# Used by infrastructure/x402/docker-compose.yml.
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install runtime dependencies (x402 SDK + FastAPI + uvicorn).
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# The local x402 services.
+COPY resource_server.py /app/resource_server.py
+COPY facilitator_server.py /app/facilitator_server.py
+
+EXPOSE 8000
+
+CMD ["uvicorn", "resource_server:app", "--host", "0.0.0.0", "--port", "8000"]
