@@ -104,7 +104,7 @@ The policy chooses $a_t=\arg\max_{a\in\mathcal{A}_t}s_a$, with deterministic tie
 \subsection{Locked Settings}
 \label{sec:method-hyperparams}
 
-All experiments use one locked configuration. For the Q-posterior, we set $\mu_{0,q}=0.5$, $\sigma^2_{0,q}=1.0$, and $\sigma^2_q=0.09$. For the C-posterior, we set prior mean $\bar c_a$, $\sigma^2_{0,c}=10^{-4}$, and $\sigma^2_c=10^{-6}$. The remaining constants are $\gamma=0.999$, $\nu=0.5$, $\alpha=2.0$ in the wallet-pressure schedule, and $c_{\max}=\$0.01$, the highest listed provider price. The default bucket map uses task type only ($K_b=4$), while budget pressure enters through $\lambda_t$ rather than through the bucket index. These values are fixed before evaluation and are not tuned per scenario or seed; Appendix~\ref{appendix:sensitivity} records the sensitivity evidence and unswept constants.
+All experiments use one locked configuration. For the Q-posterior, we set $\mu_{0,q}=0.5$, $\sigma^2_{0,q}=1.0$, and $\sigma^2_q=0.09$. For the C-posterior, we set prior mean $\bar c_a$, $\sigma^2_{0,c}=10^{-4}$, and $\sigma^2_c=10^{-6}$. The remaining constants are $\gamma=0.999$, $\nu=0.5$, $\alpha=2.0$ in the wallet-pressure schedule, and $c_{\max}=\$0.01$, the highest listed provider price. The default bucket map uses task type only ($K_b=4$), while budget pressure enters through $\lambda_t$ rather than through the bucket index. These values are fixed before evaluation and are not tuned per scenario or seed; Appendix~\ref{appendix:sensitivity} reports a targeted one-at-a-time S1 sweep over $\gamma$, $\nu$, $\alpha$, and $c_{\max}$.
 
 \subsection{Scope and Computation}
 \label{sec:method-theory}
