@@ -1,32 +1,29 @@
 \section{Hyperparameter Sensitivity}
 \label{appendix:sensitivity}
 
-PA-DCT exposes seven scalar hyperparameters, all locked across every
-experiment in the paper (\S\ref{sec:method-hyperparams}, \S\ref{sec:problem}).
-This appendix collects what we know about robustness to each, separates
-calibration-derived values from convention-derived values, and is honest
-about which sweeps were run and which were not.
+This appendix reports the limited sensitivity checks behind the locked
+configuration in \S\ref{sec:method-hyperparams}. We sweep the four exposed
+selection scalars one at a time on S1 and use the ablation panel for the
+cross-scenario discount check; posterior variances, $T$, and $B$ are fixed
+calibration constants rather than tuned per scenario.
 
 \subsection{Targeted S1 sensitivity sweep}
 \label{app:s1-sensitivity}
 
-To check that the locked defaults are calibrated rather than tuned, we run
-a one-at-a-time perturbation of each scalar that PA-DCT exposes
-($\gamma, \nu, \alpha, c_{\max}$), $10$ seeds per cell at $T = 10{,}000$
-on S1, with a matching True Oracle in every cell so $\textsc{PA-gap}/T$
-remains comparable across perturbations (the oracle's objective uses the
-same $\nu$ and $c_{\max}$ as the PA-DCT cell under test).
+Each non-default row in Table~\ref{tab:s1-sensitivity} changes one scalar while
+holding the others fixed, using $10$ seeds at $T=10{,}000$. The True Oracle is
+recomputed for each cell with the same $\nu$ and $c_{\max}$ as the tested
+policy, so $\textsc{PA-gap}/T$ remains comparable within the sweep.
 
 \begin{table}[H]
 \centering
-\scriptsize
-\setlength{\tabcolsep}{2.2pt}
+\footnotesize
+\setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.98}
 \caption{One-at-a-time S1 sensitivity of PA-DCT. Means $\pm$ SE over $10$
-seeds; each non-default row perturbs a single scalar, the rest stay at
-their default values.}
+seeds; each non-default row perturbs a single scalar.}
 \label{tab:s1-sensitivity}
-\begin{tabular}{@{}lrrrr@{}}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrr@{}}
 \toprule
 Setting & $\bar q_T$ & Budget \% & ROI & $\textsc{PA-gap}/T$ \\
 \midrule
@@ -41,144 +38,68 @@ $\alpha=4.0$       & $0.802{\pm}0.001$ & $54.7{\pm}0.4$ & $293.5{\pm}2.0$ & $+0.
 $c_{\max}=0.005$   & $0.787{\pm}0.001$ & $41.9{\pm}0.4$ & $375.9{\pm}3.0$ & $+0.1567{\pm}0.0028$ \\
 $c_{\max}=0.02$    & $0.800{\pm}0.001$ & $50.5{\pm}0.3$ & $316.8{\pm}1.9$ & $+0.1490{\pm}0.0021$ \\
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}
 
-No cell bankrupts the wallet, and $\bar q_T$ stays inside the narrow
-band $[0.753, 0.802]$; the relative ordering $\textsc{PA-gap}/T > 0$
-holds in every cell. The two perturbations that matter are the two that
-the algorithm exposes as scheduling levers: $\gamma$ (memory horizon)
-and $\alpha$ (budget-pressure sharpness); $\nu$ and $c_{\max}$ move
-$\textsc{PA-gap}/T$ by less than one third of $\gamma$'s effect within
-the tested range. The $c_{\max}$ cells also confirm that fixing
-$c_{\max}=\$0.01$ to the highest spec price in Table~\ref{tab:providers}
-is not decisive: halving or doubling it moves Budget\% by $\pm 8$pp but
-leaves $\bar q_T$ within $1.5$pp of default. The
-$\gamma_{\mathrm{low}}{=}0.99$ cell doubles
-$\textsc{PA-gap}/T$ on S1, which is the ``cost'' half of the
-short-memory--fast-recovery trade-off whose ``recovery'' half appears in
-Table~\ref{tab:gamma-sensitivity} and the $-D$ ablation in
-Table~\ref{tab:ablations}.
+The sweep supports two narrow claims. First, the locked policy is not brittle:
+no cell bankrupts the wallet, $\bar q_T$ stays within $[0.753,0.802]$, and
+$\textsc{PA-gap}/T$ remains in the same order of magnitude. Second, the visible
+levers are the intended ones: shorter memory worsens stationary performance,
+and larger $\alpha$ spends more aggressively; $\nu$ and $c_{\max}$ have smaller
+effects in the tested range.
 
 \subsection{\texorpdfstring{Discount factor $\gamma$}{Discount factor gamma}}
 \label{app:sens-gamma}
 
-Table~\ref{tab:s1-sensitivity} gives the targeted S1 sweep around the
-locked default. For cross-scenario evidence, we also compare full PA-DCT
-($\gamma = 0.999$) against the $-D$ ablation ($\gamma = 1$) across all
-three scenarios (Table~\ref{tab:gamma-sensitivity}, drawn from
-Table~\ref{tab:ablations}).
+Table~\ref{tab:gamma-sensitivity} gives the cross-scenario endpoint comparison
+from the $-D$ ablation: full PA-DCT uses $\gamma=0.999$, while $-D$ sets
+$\gamma=1$. The default corresponds to an effective horizon of
+$1/(1-\gamma)=10^3$ rounds, chosen to retain S1 evidence while still reacting
+inside the S2 outage window.
 
-\begin{table*}[t]
+\begin{table}[H]
 \centering
-\small
-\caption{Two-point sensitivity to the discount factor $\gamma$ from the
-$-D$ ablation. Means over $30$ seeds. The pattern
-across scenarios is consistent with the analytical view in
-Cor.~\ref{cor:recovery}: $\gamma < 1$ pays a small cost in stationary
-settings and earns it back via faster recovery under shocks.}
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.98}
+\caption{Two-point sensitivity to the discount factor $\gamma$ from the $-D$
+ablation. Means over $30$ seeds.}
 \label{tab:gamma-sensitivity}
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{l|cccc|cccc|cccc}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}llrrrr@{}}
 \toprule
-& \multicolumn{4}{c|}{S1 Stationary} & \multicolumn{4}{c|}{S2 Mid Outage} & \multicolumn{4}{c}{S3 Premium Promo} \\
-$\gamma$ & PA-gap/$T$ & ROI & $\bar q_T$ & AdaptT & PA-gap/$T$ & ROI & $\bar q_T$ & AdaptT & PA-gap/$T$ & ROI & $\bar q_T$ & AdaptT \\
+Scenario & $\gamma$ & PA-gap/$T$ & ROI & $\bar q_T$ & AdaptT \\
 \midrule
-$0.999$ & $0.133$ & $378$ & $0.797$ & \texttt{n/a} & $0.166$ & $357$ & $0.761$ & $1467$ & $0.121$ & $429$ & $0.831$ & $200$ \\
-$1.000$ & $0.109$ & $412$ & $0.810$ & \texttt{n/a} & $0.170$ & $399$ & $0.745$ & $2249$ & $0.114$ & $426$ & $0.838$ & $279$ \\
+S1 & $0.999$ & $0.133$ & $378$ & $0.797$ & \texttt{n/a} \\
+S1 & $1.000$ & $0.109$ & $412$ & $0.810$ & \texttt{n/a} \\
+S2 & $0.999$ & $0.166$ & $357$ & $0.761$ & $1467$ \\
+S2 & $1.000$ & $0.170$ & $399$ & $0.745$ & $2249$ \\
+S3 & $0.999$ & $0.121$ & $429$ & $0.831$ & $200$ \\
+S3 & $1.000$ & $0.114$ & $426$ & $0.838$ & $279$ \\
 \bottomrule
-\end{tabular}%
-}
-\end{table*}
+\end{tabular*}
+\end{table}
 
-The cross-scenario endpoints sandwich the regimes that matter for our analysis:
-$\gamma = 1$ is the no-discount fallback that recovers a vanilla contextual
-TS, and $\gamma = 0.999$ is the value chosen so the effective horizon
-$1/(1-\gamma) = 10^3$ rounds is short enough to react inside the S2 outage
-window ($2{,}500$ rounds) yet long enough to retain useful evidence in S1.
-The S1 sweep adds a local check at $\gamma=0.99$ and $\gamma=0.9995$:
-short memory sharply worsens stationary PA-gap/$T$, while longer memory
-improves S1 slightly. Adaptive-$\gamma$ strategies are flagged as future
-work in \S\ref{sec:discuss}. Cor.~\ref{cor:recovery} provides the
-analytical counterpart: in the data-dominated regime, the bias decays as
-$\Delta\,\gamma^{\tau}$, so smaller $\gamma$ buys faster recovery at fixed
-$\tau$ at the cost of higher steady-state variance --- a tradeoff visible
-in the table above (S2 AdaptT improves $35\%$ at the cost of a larger S1
-PA-gap/$T$).
+The endpoint pattern matches the intended trade-off: no discount is slightly
+better in the stationary S1 setting, while discounting improves recovery after
+the S2/S3 shocks. This is the empirical counterpart of
+Cor.~\ref{cor:recovery}, where stale evidence decays as $\gamma^\tau$ after a
+changed arm is revisited.
 
-\subsection{\texorpdfstring{Failure penalty $\nu$}{Failure penalty nu}}
-\label{app:sens-nu}
+\subsection{Other locked scalars}
+\label{app:sens-other}
 
-We use $\nu = 0.5$, chosen to abstract the structural cost of timeouts ---
-retry overhead, broken downstream call chains, and agent stalling --- beyond
-the trivial fact that the quality score $q_t$ is already $0$ on a parse
-failure. The role of this penalty is concentrated entirely on P-flaky,
-whose only difference from P-mid is its timeout rate; without a non-zero
-$\nu$, P-flaky is indistinguishable from P-mid on the failure-free subset
-of rounds, and the policy has no signal that would let it migrate spend
-away once flakiness is observed. Table~\ref{tab:s1-sensitivity} (the
-$\nu=0.25$ and $\nu=1.0$ cells) confirms that
-$\nu \in \{0.25, 1.0\}$ moves $\bar q_T$ and $\textsc{PA-gap}/T$ by under
-$0.5\%$ on S1, where P-flaky failures are infrequent and bounded. A
-natural direction for follow-up work is to learn $\nu$ per provider from
-observed downstream stalls rather than treat it as a global constant.
+The failure penalty is fixed at $\nu=0.5$ to give billed timeouts a cost beyond
+their zero quality score; the S1 sweep shows that doubling or halving it barely
+moves the reported metrics. The budget-pressure sharpness is fixed at
+$\alpha=2$ with $\lambda_0=1$, so $\lamn=0.5$ when spending is on plan and rises
+smoothly under sustained overshoot; the sweep confirms the expected spend
+trade-off between $\alpha=1$ and $\alpha=4$. We set
+$c_{\max}=\$0.01$, the highest listed provider price, and the half/double sweep
+does not change the qualitative conclusion.
 
-\subsection{\texorpdfstring{Budget-pressure sharpness $\alpha$}{Budget-pressure sharpness alpha}}
-\label{app:sens-alpha}
-
-The budget-pressure schedule
-$\lambda_t = \lambda_0\exp(\alpha\cdot \bdev_t)$ is parameterized by $\alpha = 2$ with $\lambda_0=1$.
-With $\alpha$ smaller, $\lambda_t$ rises slowly even when the agent is
-spending well over plan, and the cost penalty in $\rt$ kicks in too late
-to alter behavior; with $\alpha$ larger, $\lambda_t$ saturates the sigmoid
-weight $\lamn$ at the first hint of overshoot and the policy collapses
-onto the cheapest arm regardless of utility. The chosen value is the
-midpoint of an order-of-magnitude calibration band, and is paired with
-$\mathrm{target\_rate} = 1/T = 10^{-4}$ (the spend fraction per round
-that exhausts $B$ exactly at $T$); this calibration locks $\lamn = 0.5$
-when on plan and pushes $\lamn \to 1$ smoothly under sustained
-overshoot. Table~\ref{tab:s1-sensitivity} quantifies the two-sided
-trade-off: $\alpha{=}1$ underspends the wallet (Budget\% drops from $42$
-to $37$) and yields a smaller PA-gap, while $\alpha{=}4$ pays $13$pp
-more budget for a $34\%$ larger PA-gap. The $-P$ ablation
-($\lamn \equiv 0$, equivalent to $\alpha \to 0$) is the one-sided
-endpoint that disables budget pressure entirely; see Table~\ref{tab:ablations}.
-
-\subsection{Posterior priors and likelihood variances}
-\label{app:sens-priors}
-
-The Q-posterior uses prior $\mathcal{N}(\mu_{0,q}, \sigma^2_{0,q}) =
-\mathcal{N}(0.5, 1.0)$ and likelihood variance $\sigma^2_q = 0.09$; the
-C-posterior uses prior $\mathcal{N}(\bar c_a, \sigma^2_{0,c}) =
-\mathcal{N}(\bar c_a, 10^{-4})$ and likelihood $\sigma^2_c = 10^{-6}$.
-The Q-posterior values are the standard ``broad mid-range prior, moderate
-proxy noise'' choice for a $[0,1]$-bounded reward (cf.\
-\citealp{lattimore2020bandit}, Ch.~36); in our setting they are wide
-enough that the Bayesian model is mildly conservative relative to the
-formal-analysis scope in App.~\ref{app:proof-limitations}, and the policy explores
-adequately in the early rounds of every scenario. The C-posterior values
-reflect the empirical structure of the cost channel: realized $c_t$ is
-nearly deterministic given the provider and the round (only the S3
-premium-drop transition, the only price shock in our benchmark, makes it
-non-degenerate), so a tight prior plus tighter likelihood lets the
-posterior follow the spec sheet at calibration time and migrate quickly
-once the shock arrives. We did not sweep these four scalars; the
-$-TS$ ablation rules out the qualitative role of variance entirely
-(replacing samples by means; see Table~\ref{tab:ablations} for the
-$5$--$9\times$ seed-variance penalty), so the residual question is one
-of quantitative tuning rather than structural design.
-
-\subsection{Constants we explicitly do not sweep, and why}
-\label{app:sens-not-swept}
-
-We deliberately do not sweep the locked constants of \S\ref{sec:problem}
-($T$, $B$). $T = 10{,}000$ is the run length built into every
-seeded trajectory in the released artifact; running shorter is a strict
-sub-experiment of running longer. $B = \$50$ is calibrated against the
-strongest non-adaptive baseline (Always-P-premium exhausts at $\approx
-5{,}000$ rounds), so the budget cliff falls in the second half of every
-run --- changing $B$ would shift this cliff and re-calibrate every
-baseline along with PA-DCT.
-A sweep over $(T, B)$ that preserves the budget-cliff timing is mechanically
-equivalent to scaling time, and hence does not generate new information
-about PA-DCT itself.
+The posterior prior and likelihood variances are not swept. The Q-posterior
+uses a broad mid-range prior with moderate proxy noise, while the C-posterior
+uses a tight prior/likelihood because realized cost is nearly deterministic
+except at the S3 price shock. We also do not sweep $T$ and $B$: the released
+benchmark fixes $T=10{,}000$, and $B=\$50$ is calibrated so the premium-only
+policy hits the budget cliff in the second half of the run.
