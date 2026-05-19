@@ -1,89 +1,117 @@
 \section{Proofs}
 \label{appendix:proofs}
 
-This appendix gives full proofs of the four results stated in \S\ref{sec:method-theory}: reward boundedness (Prop.~\ref{prop:reward-bounded}), posterior consistency in the stationary no-discount regime (Prop.~\ref{prop:consistency}), the stationary Bayesian regret bound (Thm.~\ref{thm:stationary-regret}), and the per-arm adaptation rate after an abrupt change (Thm.~\ref{thm:adaptation}). We restate the assumptions for self-containedness, and add one supporting lemma on the discounted effective sample size.
+This appendix gives the formal support for the four claims summarized in
+\S\ref{sec:method-theory}: reward boundedness (Prop.~\ref{prop:reward-bounded}),
+posterior consistency in the stationary no-discount regime
+(Prop.~\ref{prop:consistency}), a stationary well-specified regret reduction
+(Thm.~\ref{thm:stationary-regret}), and a fixed-schedule adaptation rate after
+an abrupt change (Thm.~\ref{thm:adaptation}). The regret theorem is intentionally
+stated for a clean version of the score; \S\ref{app:proof-limitations} records
+the gap to the full empirical setting.
 
 \subsection{Notation and assumptions (recap)}
 \label{app:proof-setup}
 
-We use the notation of \S\ref{sec:problem} and \S\ref{sec:method}: $K$ arms, $K_b$ context buckets, round $t \in \{0,\ldots,T-1\}$, context $\mathbf{x}_t$ and bucket $k_t = k(\mathbf{x}_t)$, observed quality $q_t \in [0,1]$, failure flag $f_t \in \{0,1\}$, and realized cost $c_t \geq 0$. The utility is $\ut = q_t - \nu f_t$ with $\nu = 0.5$, the normalized cost is $\ctilde = \mathrm{clip}(c_t/c_{\max},0,1) \in [0,1]$, and the wallet-pressure weight is $\lamn = \lambda_t/(1+\lambda_t) \in (0,1)$. The payment-aware reward is $\rt = (1-\lamn)\,\ut - \lamn\,\ctilde$.
+We use the notation of \S\ref{sec:problem} and \S\ref{sec:method}: $K$ arms,
+$K_b$ context buckets, round $t \in \{0,\ldots,T-1\}$, bucket
+$k_t=k(\mathbf{x}_t)$, observed quality $q_t \in [0,1]$, failure flag
+$f_t\in\{0,1\}$, realized cost $c_t\geq0$, utility
+$\ut=q_t-\nu f_t$ with $\nu=0.5$, normalized cost
+$\ctilde=\mathrm{clip}(c_t/c_{\max},0,1)$, wallet-pressure weight
+$\lamn=\lambda_t/(1+\lambda_t)\in(0,1)$, and payment-aware reward
+$\rt=(1-\lamn)\ut-\lamn\ctilde$.
+All regret sums below are over served rounds with nonempty affordable set; if a
+wallet exhausts early, replace $T$ by the served horizon $\tau$ of
+\S\ref{sec:problem}.
 
-For each cell $(a,k)$ the Q-posterior is Normal-Normal with prior $\mathcal{N}(\mu_{0,q},\sigma^2_{0,q})$ and likelihood variance $\sigma^2_q$; the C-posterior has prior $\mathcal{N}(\bar c_a,\sigma^2_{0,c})$ and likelihood variance $\sigma^2_c$. Discounted sufficient statistics $(n^{a,k}_t, S^{a,k}_t)$ for the Q-posterior, and $(n^{a,k}_t, {S_c}^{a,k}_t)$ for the C-posterior, follow the discount sweep $n_t \leftarrow \gamma\, n_{t-1}$, $S_t \leftarrow \gamma\, S_{t-1}$ at the start of each round, plus $+1$ to $n$ and $+\ut$ (resp.\ $+c_t$) to $S$ (resp.\ $S_c$) for the chosen cell.
+For each cell $(a,k)$, PA-DCT keeps discounted sufficient statistics
+$(n^{a,k}_t,S^{a,k}_t,{S_c}^{a,k}_t)$ and Normal--Normal Q/C posteriors.
+It is useful to write the posterior means as
+\begin{equation}
+\label{eq:posterior-mean-compact}
+\thetaq{a}{k}
+= \frac{\kappa_q\mu_{0,q}+S^{a,k}_t}{\kappa_q+n^{a,k}_t},
+\qquad
+\thetac{a}{k}
+= \frac{\kappa_c\bar c_a+{S_c}^{a,k}_t}{\kappa_c+n^{a,k}_t},
+\end{equation}
+where $\kappa_q=\sigma_q^2/\sigma_{0,q}^2$ and
+$\kappa_c=\sigma_c^2/\sigma_{0,c}^2$.
+We write a single $n^{a,k}_t$ and $\gamma$ because the locked experiments use
+$\gamma_c=\gamma$ and each selected call supplies one utility and one cost
+observation. If quality and cost discounts are split, the same formulas apply to
+the two posteriors with their own effective counts.
 
-Throughout this appendix we use the following assumptions:
+Throughout this appendix we use:
 \begin{description}
-\item[(A1) Stationary or piecewise-stationary cells.] Conditional on the chosen arm $a$ and bucket $k$, the joint distribution of $(q_t, c_t, f_t)$ is identical across rounds within each phase (one phase in S1; two phases separated by a single change-point in S2 and S3).
-\item[(A2) Sub-Gaussian noise.] The utility $\ut$ given cell $(a,k)$ is $\sigma_u$-sub-Gaussian around its true mean $\mu_u^{a,k}$; the realized cost $c_t$ is $\sigma_{c,\mathrm{true}}$-sub-Gaussian around its true mean $\mu_c^{a,k}$. The policy uses fixed proxy variances $\sigma^2_q, \sigma^2_c$ as likelihood variances, possibly different from the true noise variances; this is a proxy-variance Gaussian-TS setting, with the well-specified specialization separated out in (A2$^\prime$) below.
-\item[(A3) Bounded means.] $|\mu_u^{a,k}| \leq 1$ and $\mu_c^{a,k} \in [0, c_{\max}]$ for every $(a,k)$.
+\item[(A1)] \emph{Stationary or piecewise-stationary cells.} Conditional on the
+chosen arm $a$ and bucket $k$, and averaging over the exogenous task draw within
+that bucket, the joint distribution of $(q_t,c_t,f_t)$ is identical within each
+phase.
+\item[(A2)] \emph{Sub-Gaussian noise.} The utility $\ut$ given cell $(a,k)$ is
+$\sigma_u$-sub-Gaussian around mean $\mu_u^{a,k}$; the realized cost $c_t$ is
+$\sigma_{c,\mathrm{true}}$-sub-Gaussian around mean $\mu_c^{a,k}$. The policy
+uses fixed proxy variances $\sigma_q^2,\sigma_c^2$, possibly different from the
+true variances.
+\item[(A3)] \emph{Bounded means.} $|\mu_u^{a,k}|\leq1$ and
+$\mu_c^{a,k}\in[0,c_{\max}]$ for every $(a,k)$.
 \end{description}
 
-Theorem~\ref{thm:stationary-regret} (the regret reduction) further requires two strengthenings used to invoke standard contextual Thompson-sampling bounds:
+The stationary regret reduction further uses:
 \begin{description}
-\item[(A2$^\prime$) Well-specified Gaussian Bayesian model.] The policy's likelihood proxy variances $\sigma^2_q, \sigma^2_c$ match the true noise variances $\sigma_u^2, \sigma_{c,\mathrm{true}}^2$, and the per-cell prior is the Bayesian-correct prior over $(\mu_u^{a,k}, \mu_c^{a,k})$. Misspecification (proxy $\neq$ true) is discussed in \S\ref{app:proof-limitations}.
-\item[(A3$^\prime$) Cost margin.] $\mu_c^{a,k} \in [\delta_c, c_{\max} - \delta_c]$ for some uniform margin $\delta_c > 0$, so the cost-clip event $\{\hat c^{a,k}/c_{\max} \notin [0,1]\}$ has probability vanishing exponentially in the cost-posterior precision (Lemma~\ref{lem:clip}).
+\item[(A2$^\prime$)] \emph{Well-specified product model.} The policy's
+proxy likelihoods are the true likelihoods: utility and cost observations are
+conditionally independent Gaussians around $(\mu_u^{a,k},\mu_c^{a,k})$ with
+variances $\sigma_q^2=\sigma_u^2$ and
+$\sigma_c^2=\sigma_{c,\mathrm{true}}^2$, and the prior factorizes as the
+policy's independent Gaussian Q/C priors.
+\item[(A3$^\prime$)] \emph{Clean score.} The regret reduction is stated for the
+unclipped score
+$(1-\lamn)\hatu{a}{k}-\lamn\hatc{a}{k}/c_{\max}$, or equivalently for
+trajectories on which the implementation's cost-sample clip in
+Eq.~\eqref{eq:padct-score} is inactive.
 \end{description}
-Propositions~\ref{prop:reward-bounded}--\ref{prop:consistency} and Theorem~\ref{thm:adaptation} use only (A1)--(A3); only Theorem~\ref{thm:stationary-regret} requires (A2$^\prime$) and (A3$^\prime$).
+Propositions~\ref{prop:reward-bounded}--\ref{prop:consistency} and
+Theorem~\ref{thm:adaptation} use only (A1)--(A3); only
+Theorem~\ref{thm:stationary-regret} uses (A2$^\prime$)--(A3$^\prime$).
 
 \subsection{Proposition~\ref{prop:reward-bounded}: reward boundedness}
 \label{app:proof-bounded}
 
 \begin{proposition}[Reward boundedness]
 \label{prop:reward-bounded}
-For every round $t$, the payment-aware reward satisfies $\rt \in [-1,+1]$.
+For every round $t$, the payment-aware reward satisfies $\rt\in[-1,+1]$.
 \end{proposition}
 
 \begin{proof}
-By definition $q_t \in [0,1]$ and $f_t \in \{0,1\}$, hence with $\nu = 0.5$ we have $\ut = q_t - 0.5 f_t \in [-0.5, 1] \subset [-1, 1]$. Independently, $\ctilde = \mathrm{clip}(c_t/c_{\max},0,1) \in [0,1]$. The weight $\lamn = \lambda_t/(1+\lambda_t)$ satisfies $\lamn \in (0,1)$ because $\lambda_t>0$.
-
-Fix any round $t$ and write $w = \lamn \in [0,1]$. The reward is $\rt = (1-w)\,\ut - w\,\ctilde$. Applying the triangle inequality:
-\[
-\begin{aligned}
-|\rt|
-&= |(1-w)\,\ut - w\,\ctilde|\\
-&\leq (1-w)|\ut| + w\,|\ctilde|\\
-&\leq (1-w)\cdot 1 + w\cdot 1 = 1.
-\end{aligned}
-\]
-Therefore $\rt \in [-1, 1]$.
+Since $q_t\in[0,1]$, $f_t\in\{0,1\}$, and $\nu=0.5$, we have
+$|\ut|=|q_t-0.5f_t|\leq1$; also $\ctilde\in[0,1]$ and
+$\lamn\in(0,1)$. Hence
+$|\rt|\leq(1-\lamn)|\ut|+\lamn|\ctilde|\leq(1-\lamn)+\lamn=1$.
 \end{proof}
 
-\begin{remark}
-\label{rem:tighter-bound}
-The proof intentionally uses only $\lambda_t>0$. In our budget-pressure schedule, $\bdev_t$ is a normalized burn-rate deviation and can be negative when the buyer is spending below plan, so no one-sided lower bound such as $\lamn \geq 0.5$ is assumed. The $[-1,1]$ bound is the property used by the regret analysis.
-\end{remark}
-
-\subsection{Proposition~\ref{prop:consistency}: posterior consistency, stationary regime}
+\subsection{Proposition~\ref{prop:consistency}: posterior consistency}
 \label{app:proof-consistency}
 
 \begin{proposition}[Posterior consistency, stationary regime]
 \label{prop:consistency}
-Fix $(a,k)$ and assume the utility distribution at $(a,k)$ is stationary with finite variance and mean $\mu_u^{a,k}$. With no discount ($\gamma=1$), the Q-posterior mean $\thetaq{a}{k}$ converges almost surely to $\mu_u^{a,k}$ as the cell's pull count $n^{a,k} \to \infty$. The same holds for the C-posterior and $\mu_c^{a,k}$.
+Fix $(a,k)$ and assume the utility distribution at $(a,k)$ is stationary with
+finite variance and mean $\mu_u^{a,k}$. With no discount ($\gamma=1$), the
+Q-posterior mean $\thetaq{a}{k}$ converges almost surely to $\mu_u^{a,k}$ as the
+cell's pull count $n^{a,k}\to\infty$. The same holds for the C-posterior and
+$\mu_c^{a,k}$.
 \end{proposition}
 
 \begin{proof}
-Fix a cell $(a,k)$ and assume $\gamma = 1$. Let $\{\ut^{(i)}\}_{i=1}^{n}$ denote the sequence of utility observations in this cell after $n$ pulls. Under (A1) these are i.i.d.\ with mean $\mu_u^{a,k}$ and finite variance, so by the strong law of large numbers,
-\[
-\frac{S^{a,k}_t}{n^{a,k}_t}
-\;=\; \frac{1}{n}\sum_{i=1}^{n} \ut^{(i)}
-\;\xrightarrow{\text{a.s.}}\; \mu_u^{a,k}
-\quad \text{as } n \to \infty.
-\]
-The Normal-Normal posterior mean (eq.~\ref{eq:posterior-q}) is
-\[
-\thetaq{a}{k}
-\;=\;
-\frac{\mu_{0,q}/\sigma^2_{0,q} + S^{a,k}_t/\sigma^2_q}
-     {1/\sigma^2_{0,q} + n^{a,k}_t/\sigma^2_q}.
-\]
-Multiplying numerator and denominator by $\sigma^2_q / n^{a,k}_t$,
-\[
-\thetaq{a}{k}
-\;=\;
-\frac{\mu_{0,q}\,\sigma^2_q/(n\,\sigma^2_{0,q})
-      + S^{a,k}_t/n^{a,k}_t}
-     {\sigma^2_q/(n\,\sigma^2_{0,q}) + 1}.
-\]
-As $n \to \infty$, the term $\sigma^2_q/(n\,\sigma^2_{0,q}) \to 0$ and the empirical mean $S^{a,k}_t/n^{a,k}_t \to \mu_u^{a,k}$ a.s., so $\thetaq{a}{k} \to \mu_u^{a,k}$ a.s. The same argument applies to the C-posterior with $\bar c_a$ in place of $\mu_{0,q}$ and the realized costs in place of the utilities.
+Let $\{\ut^{(i)}\}_{i=1}^n$ be the utility observations in cell $(a,k)$ after
+$n$ pulls. By (A1) and the strong law of large numbers,
+$S^{a,k}_t/n^{a,k}_t=n^{-1}\sum_i\ut^{(i)}\to\mu_u^{a,k}$ almost surely.
+Dividing the first expression in~(\ref{eq:posterior-mean-compact}) by
+$n^{a,k}_t$ in numerator and denominator gives
+$\thetaq{a}{k}\to\mu_u^{a,k}$ because $\kappa_q/n^{a,k}_t\to0$. The cost
+posterior is identical with $\bar c_a,{S_c}^{a,k}_t,\kappa_c$ in place of
+$\mu_{0,q},S^{a,k}_t,\kappa_q$.
 \end{proof}
 
 \subsection{Lemma: discounted effective sample size}
@@ -91,36 +119,28 @@ As $n \to \infty$, the term $\sigma^2_q/(n\,\sigma^2_{0,q}) \to 0$ and the empir
 
 \begin{lemma}[Effective sample size]
 \label{lem:ess}
-For any $\gamma \in (0,1)$ and any sequence of pulls of cell $(a,k)$, the discounted effective sample size at round $t$ is bounded by
+For any $\gamma\in(0,1)$ and any sequence of pulls of cell $(a,k)$,
 \[
-n^{a,k}_t
-\;\leq\; \frac{1 - \gamma^{t+1}}{1 - \gamma}
-\;\leq\; \frac{1}{1-\gamma}.
+n^{a,k}_t \leq \frac{1-\gamma^{t+1}}{1-\gamma}\leq\frac{1}{1-\gamma}.
 \]
-The first bound is tight when $(a,k)$ is pulled at every round. For $\gamma \to 1^-$ the bound diverges, recovering an unbounded effective sample size as expected for the no-discount regime.
+The first bound is tight when $(a,k)$ is pulled at every round.
 \end{lemma}
 
 \begin{proof}
-Let $\mathcal{T}^{a,k}_t \subseteq \{0,1,\ldots,t\}$ denote the set of rounds at which $(a,k)$ was pulled. The discount sweep applies $\gamma$ to all stored statistics at the start of every round, including rounds when the cell is not pulled, so the contribution of an observation made at round $s$ to $n^{a,k}_t$ is $\gamma^{t-s}$. Hence
-\[
-\begin{aligned}
-n^{a,k}_t
-&= \sum_{s \in \mathcal{T}^{a,k}_t} \gamma^{t-s}
- \leq \sum_{s=0}^{t} \gamma^{t-s}\\
-&= \sum_{j=0}^{t} \gamma^{j}
- = \frac{1 - \gamma^{t+1}}{1-\gamma}
- \leq \frac{1}{1-\gamma}.
-\end{aligned}
-\]
-Tightness when $\mathcal{T}^{a,k}_t = \{0,1,\ldots,t\}$ is immediate.
+If $\mathcal{T}^{a,k}_t\subseteq\{0,\ldots,t\}$ is the set of pull rounds for
+cell $(a,k)$, the round-based discount rule gives
+$n^{a,k}_t=\sum_{s\in\mathcal{T}^{a,k}_t}\gamma^{t-s}
+\leq\sum_{j=0}^t\gamma^j=(1-\gamma^{t+1})/(1-\gamma)$.
 \end{proof}
 
-\subsection{Theorem~\ref{thm:stationary-regret}: regret reduction to contextual Gaussian Thompson sampling}
+\subsection{Theorem~\ref{thm:stationary-regret}: stationary regret reduction}
 \label{app:proof-stationary}
 
-\begin{theorem}[Regret reduction to contextual Gaussian Thompson sampling]
+\begin{theorem}[Clean-score regret reduction to Gaussian Thompson sampling]
 \label{thm:stationary-regret}
-Under (A1), (A2$^\prime$), (A3$^\prime$), and $\gamma = 1$, define the \emph{policy-state PA-regret} of PA-DCT against the wallet-coupled oracle as
+Under (A1), (A2$^\prime$), (A3$^\prime$), and $\gamma=1$, define the
+\emph{policy-state PA-regret} of clean-score PA-DCT against the wallet-coupled
+oracle as
 \begin{equation}
 \label{eq:policy-state-regret}
 \begin{aligned}
@@ -130,296 +150,187 @@ g_t(a) &:=
 \Reg_T &:= \sum_{t=0}^{T-1}\big(g_t(a^\star_t)-g_t(a_t)\big),
 \end{aligned}
 \end{equation}
-where $a^\star_t \in \arg\max_{a \in \mathcal{A}_t} g_t(a)$ at the policy's wallet pressure $\lamn$, and $a_t$ is PA-DCT's chosen arm. Then PA-DCT reduces, conditional on the bucket-visit sequence, to per-cell K-armed Gaussian Thompson sampling with a one-dimensional time-varying linear-context payoff. Under (A2$^\prime$) the per-cell Bayesian PA-regret obeys the standard bound
+where $a^\star_t\in\arg\max_{a\in\mathcal{A}_t}g_t(a)$ at the policy's wallet
+pressure $\lamn$, and $a_t$ is PA-DCT's chosen arm. Conditional on the
+bucket-visit sequence, clean-score PA-DCT reduces to per-bucket Gaussian
+Thompson sampling with a time-varying linear context. For a bucket visited
+$T_k$ times,
 \begin{equation}
 \label{eq:cell-regret}
 \mathbb{E}\!\left[\Reg^{\mathrm{cell}\,k}_{T_k}\right]
-\;\leq\; C_0 \sqrt{K\,T_k\,\log T_k},
+\leq C_0\sqrt{K\,T_k\,\log T_k},
 \end{equation}
-for a constant $C_0$ depending on the prior and likelihood variances and on $c_{\max}$. The bound is inherited from \citet{russo2014learning} Theorem~1 (and \citealt{lattimore2020bandit} Ch.~36 for the K-armed Gaussian-prior version). Aggregating across $K_b$ buckets via $\sum_k T_k = T$ and Cauchy--Schwarz,
+for a constant $C_0$ depending on the prior and likelihood variances and on
+$c_{\max}$. Aggregating across $K_b$ buckets with $\sum_kT_k=T$ gives
 \begin{equation}
 \label{eq:stationary-regret}
-\mathbb{E}\!\left[\Reg_T\right] \;\leq\; C \cdot \sqrt{K\,K_b\,T \log T},
+\mathbb{E}\!\left[\Reg_T\right]\leq C\sqrt{K\,K_b\,T\log T}.
 \end{equation}
-for a constant $C$ depending on the prior and likelihood variances and the cost margin $\delta_c$ of (A3$^\prime$).
 \end{theorem}
 
-\begin{remark}[Relation to the empirical \emph{True Oracle} of \S\ref{sec:eval-setup}]
-The wallet-aware oracle in Thm.~\ref{thm:stationary-regret} uses the \emph{policy's} wallet pressure $\lamn$ at each round (i.e., it answers ``what is the best arm given the current state of the policy's wallet?''). The \emph{True Oracle} reported in \S\ref{sec:eval-setup} is a different comparator: it owns its own wallet and so its own $\lamn$ trajectory, hence achieves at least as much reward as the wallet-aware oracle. Theorem~\ref{thm:stationary-regret} therefore upper-bounds a regret quantity that is no larger than the empirical regret reported in \S\ref{sec:eval-main}; we did not attempt to bound the True-Oracle regret directly because doing so requires controlling the divergence between the policy's and the oracle's wallet trajectories.
-\end{remark}
-
-The proof reduces PA-DCT in the stationary regime to per-bucket K-armed Gaussian Thompson sampling on a one-dimensional time-varying linear-context payoff, then invokes \citet{russo2014learning}'s Bayesian regret bound for that setting. The reduction has three non-trivial pieces: (Step 1) the dual-posterior independent-sampling rule equals one-shot sampling from the linear combination's posterior; (Step 2) the wallet weight $\lamn$ enters as time-varying \emph{context} that the comparator in~(\ref{eq:policy-state-regret}) shares with the policy by construction; (Step 3) the cost-clipping operation contributes only a lower-order term under (A3$^\prime$). Steps 4 and 5 invoke Russo--Van Roy and aggregate over buckets.
-
-\paragraph{Step 1: equivalence to one-shot sampling on the combined reward.}
-At round $t$ with $k = k_t$ and $w := \lamn$, define $R^{a,k}_w := (1-w)\,\mu_u^{a,k} - w\,\mu_c^{a,k}/c_{\max}$ (the wallet-weighted true mean reward) and $\hat R^{a,k}_w := (1-w)\hatu{a}{k} - w\,\hatc{a}{k}/c_{\max}$ (the wallet-weighted PA-DCT sample, before clipping). Since $\hatu{a}{k}$ and $\hatc{a}{k}$ are independent Gaussians, their linear combination is Gaussian:
-\[
-\begin{aligned}
-\hat R^{a,k}_w \sim \mathcal{N}\!\Big(&
-(1-w)\thetaq{a}{k} - w\,\thetac{a}{k}/c_{\max},\\
-& (1-w)^2 \Sigmaq{a}{k}
- + w^2\,\Sigmac{a}{k}/c_{\max}^2\Big).
-\end{aligned}
-\]
-Under (A2$^\prime$) (well-specified), this distribution is exactly the Bayesian posterior on $R^{a,k}_w$ given the data; equivalently, drawing $(\hatu{a}{k},\hatc{a}{k})$ independently and forming $\hat R^{a,k}_w$ is equivalent in distribution to one Bayesian-correct draw from the posterior on $R^{a,k}_w$. Hence PA-DCT (without clipping) is a textbook Gaussian-prior Gaussian-likelihood Thompson sampler on the 1-D reward $R^{a,k}_w$.
-
-\paragraph{Step 2: wallet weight enters as time-varying context shared with the comparator.}
-Define the round-$t$ feature vector
-\[
-\phi_t := (1-\lamn,\, -\lamn/c_{\max}) \in \mathbb{R}^2,
-\qquad
-\theta^{a,k} := (\mu_u^{a,k}, \mu_c^{a,k}/1).
-\]
-Then $R^{a,k}_{w_t} = \phi_t^\top \theta^{a,k}$. The $1/c_{\max}$ factor is absorbed into $\phi_t$, giving the parametrization on the same scale. The feature $\phi_t$ is observed by PA-DCT before its sample, and is identical for the policy and the comparator in~(\ref{eq:policy-state-regret}) by construction (the comparator uses $\lamn$, the policy's wallet pressure). So per round, both the policy and the comparator face the same $\phi_t$ and the same family of arm parameters $\{\theta^{a,k}\}_a$. The per-round regret is
-\[
-\mathbb{E}\!\big[\phi_t^\top\theta^{a^\star_t, k_t} - \phi_t^\top\theta^{a_t, k_t}\big],
-\]
-the standard contextual-bandit per-round regret with feature $\phi_t$ and per-arm parameter $\theta^{a,k}$. Crucially, $\phi_t$ may depend on past actions through $\lamn$, but this dependence is fully absorbed into the comparator's choice of $a^\star_t$ at round $t$, so the regret is well-defined as a one-step difference rather than a coupled trajectory comparison.
-
-\paragraph{Step 3: cost clipping contributes a lower-order term.}
-PA-DCT actually computes $s_a = (1-w)\hatu{a}{k} - w\,\mathrm{clip}(\hatc{a}{k}/c_{\max},0,1)$; this differs from $\hat R^{a,k}_w$ only on the event $\mathcal{C}_a := \{\hatc{a}{k}/c_{\max} \notin [0,1]\}$. The next lemma shows this event is rare under (A3$^\prime$).
-
-\begin{lemma}[Clip event probability]
-\label{lem:clip}
-Under (A3$^\prime$), suppose at round $t$ the C-posterior for cell $(a,k)$ has mean $\thetac{a}{k} \in [\delta_c/2, c_{\max} - \delta_c/2]$ (which holds w.h.p.\ once the posterior has concentrated to within $\delta_c/2$ of the truth). Then
-\[
-\mathbb{P}[\mathcal{C}_a]
-\;\leq\;
-2\exp\!\Big(-\frac{\delta_c^2}{8\, \Sigmac{a}{k}}\Big).
-\]
-\end{lemma}
-
 \begin{proof}
-Standard Gaussian tail bound: for $\hatc{a}{k} \sim \mathcal{N}(\thetac{a}{k}, \Sigmac{a}{k})$,
+For a visit to bucket $k$, write $w_t=\lamn$ and define the observed feature
+\[
+\phi_t=(1-w_t,\,-w_t/c_{\max}),\qquad
+\theta^{a,k}=(\mu_u^{a,k},\,\mu_c^{a,k}).
+\]
+Then $g_t(a)=\phi_t^\top\theta^{a,k}$. Under (A2$^\prime$), the independent
+Q/C Thompson samples used by PA-DCT imply
 \[
 \begin{aligned}
-\mathbb{P}[\hatc{a}{k} > c_{\max}]
-&\leq
-\exp\!\left(-\frac{(c_{\max}-\thetac{a}{k})^2}
-{2\Sigmac{a}{k}}\right)\\
-&\leq
-\exp\!\left(-\frac{\delta_c^2}{8\Sigmac{a}{k}}\right),
+&(1-w_t)\hatu{a}{k}-w_t\hatc{a}{k}/c_{\max}\\
+&\quad\sim
+\mathcal{N}\!\left(
+\phi_t^\top(\thetaq{a}{k},\thetac{a}{k}),
+(1-w_t)^2\Sigmaq{a}{k}
++w_t^2\Sigmac{a}{k}/c_{\max}^2
+\right),
 \end{aligned}
 \]
-using $c_{\max} - \thetac{a}{k} \geq \delta_c/2$. Symmetric bound for $\hatc{a}{k} < 0$ using $\thetac{a}{k} \geq \delta_c/2$.
+which is exactly the product-Gaussian posterior sample of
+$\phi_t^\top\theta^{a,k}$. Thus the clean-score policy is Gaussian Thompson
+sampling on a linear payoff with a two-dimensional, time-varying feature.
+
+The feature $\phi_t$, bucket $k_t$, and affordable set $\mathcal{A}_t$ are
+observed before sampling. Bucket visits are determined by the exogenous task
+stream in \S\ref{sec:problem}, so conditioning on a bucket subsequence does not
+introduce policy-dependent context selection; the wallet pressure and affordable
+set are predictable state shared by the policy-state comparator in
+(\ref{eq:policy-state-regret}). Therefore the per-round gap is the standard
+contextual Thompson-sampling regret for at most $K$ arms.
+
+Applying the Bayesian regret bound for Gaussian-prior Thompson sampling
+\citep[Theorem~1]{russo2014learning} to each bucket subsequence (equivalently,
+the K-armed Gaussian-prior specialization in \citealt[Ch.~36]{lattimore2020bandit})
+gives~(\ref{eq:cell-regret}). Summing over buckets and using Cauchy--Schwarz,
+$\sum_k\sqrt{T_k\log T_k}\leq\sqrt{K_bT\log T}$, gives
+(\ref{eq:stationary-regret}).
 \end{proof}
 
-Since $\Sigmac{a}{k} \to 0$ at rate $1/n^{a,k}_t$ in the data-dominated regime, $\mathbb{P}[\mathcal{C}_a]$ decays super-polynomially in the per-cell pull count. Summing over $T$ rounds, the expected number of clip events is $O(\log T)$ in worst case, contributing an $O(\log T)$ additive term to the regret. This is dominated by the $\sqrt{T \log T}$ regret bound established in Steps 4--5.
-
-\paragraph{Step 4: per-cell Gaussian-prior contextual TS regret.}
-Conditioning on the bucket-visit subsequence of length $T_k$, PA-DCT in cell $k$ runs K-armed Gaussian-prior contextual Thompson sampling over $T_k$ rounds, with: bounded reward $|R^{a,k}_w| \leq 1$ (Prop.~\ref{prop:reward-bounded}); 2-D feature $\phi_t$ observed before each sample; per-arm Gaussian prior on $\theta^{a,k}$. Theorem~1 of \citet{russo2014learning}, instantiated for this setting (see also \citealt{lattimore2020bandit}, Ch.~36, Thm.~36.2 for the explicit K-armed Gaussian variant), gives the per-cell Bayesian PA-regret bound
-\[
-\mathbb{E}\!\left[\Reg_{T_k}^{\mathrm{cell}\,k}\right]
-\;\leq\; C_1\sqrt{K\,T_k\log T_k},
-\]
-where $C_1$ depends on the prior variances ($\sigma^2_{0,q}, \sigma^2_{0,c}$), the well-specified likelihood variances ($\sigma^2_q = \sigma_u^2$ and $\sigma^2_c = \sigma_{c,\mathrm{true}}^2$ by (A2$^\prime$)), $c_{\max}$, and the cost margin $\delta_c$ (which controls the constant in Step 3). The bound is uniform in the realized sequence $\{w_t\}$ because $|R^{a,k}_w| \leq 1$ uniformly in $w$.
-
-\paragraph{Step 5: aggregation across buckets.}
-\[
-\begin{aligned}
-\mathbb{E}\!\left[\Reg_T\right]
-&= \sum_{k=1}^{K_b}
-\mathbb{E}\!\left[\Reg_{T_k}^{\mathrm{cell}\,k}\right]\\
-&\leq C_1 \sum_{k=1}^{K_b} \sqrt{K\,T_k\log T_k}.
-\end{aligned}
-\]
-By Cauchy--Schwarz, $\sum_{k} \sqrt{T_k\log T_k} \leq \sqrt{K_b}\,\sqrt{\sum_k T_k\log T_k} \leq \sqrt{K_b\,T\log T}$ using $\log T_k \leq \log T$ and $\sum_k T_k = T$. Hence
-\[
-\mathbb{E}\!\left[\Reg_T\right]
-\;\leq\;
-C_1 \sqrt{K}\sqrt{K_b\,T\log T}
-\;=\;
-C\sqrt{K\,K_b\,T\log T}
-\]
-with $C = C_1$. The Step-3 clip residual contributes an additive $O(K K_b \log T)$ that is dominated by the main term for any non-trivial $T$. This is the bound stated in~(\ref{eq:stationary-regret}). \hfill\qedsymbol
-
-\subsection{Theorem~\ref{thm:adaptation}: adaptation rate after an abrupt change}
+\subsection{Theorem~\ref{thm:adaptation}: adaptation after an abrupt change}
 \label{app:proof-adaptation}
 
-\begin{theorem}[Adaptation rate under an abrupt change, exact form]
+\begin{theorem}[Adaptation rate under an abrupt change, fixed schedule]
 \label{thm:adaptation}
-Suppose the true utility mean of arm $a$ in bucket $k$ shifts between round $t^\star-1$ and round $t^\star$, so that $t^\star$ is the first post-shock round; the pre-shock mean is $\mu_{\mathrm{old}}$, the post-shock mean is $\mu_{\mathrm{new}}$, and $\Delta = |\mu_{\mathrm{old}} - \mu_{\mathrm{new}}|$. Define
+Fix $\gamma\in(0,1)$ and cell $(a,k)$. Suppose the true utility mean shifts
+between rounds $t^\star-1$ and $t^\star$, with pre-shock mean
+$\mu_{\mathrm{old}}$, post-shock mean $\mu_{\mathrm{new}}$, and
+$\Delta=|\mu_{\mathrm{old}}-\mu_{\mathrm{new}}|$. Consider any fixed, or
+reward-noise-independent, post-shock pull schedule
+$\{s_1<\cdots<s_m\}\subseteq[t^\star,t]$ for this cell. Define
 \[
-\begin{aligned}
-A &:= \gamma^{t-t^\star+1}\, n^{a,k}_{t^\star-1},\\
-B &:= \sum_{i=1}^{m} \gamma^{t-s_i},\\
-\kappa_q &:= \sigma^2_q / \sigma^2_{0,q},
-\end{aligned}
+A:=\gamma^{t-t^\star+1}n^{a,k}_{t^\star-1},\qquad
+B:=\sum_{i=1}^m\gamma^{t-s_i},\qquad
+\kappa_q:=\sigma_q^2/\sigma_{0,q}^2 .
 \]
-where $\{s_1 < \cdots < s_m\} \subseteq [t^\star, t]$ are the post-shock pulls of $(a,k)$. Then the bias of the Bayesian Q-posterior mean of PA-DCT satisfies the \emph{exact} bound
+Then the Bayesian Q-posterior mean satisfies
 \begin{equation}
 \label{eq:adaptation}
-\begin{aligned}
-&\big|\,\mathbb{E}[\theta^{a,k}_{q,t}
-\mid m,\, s_1,\ldots,s_m] - \mu_{\mathrm{new}}\,\big|\\
-&\qquad\leq
-\frac{A\,\Delta + \kappa_q\,|\mu_{0,q} - \mu_{\mathrm{new}}|}
-{\kappa_q + A + B}.
-\end{aligned}
+\left|\,\mathbb{E}[\theta^{a,k}_{q,t}]-\mu_{\mathrm{new}}\,\right|
+\leq
+\frac{A\Delta+\kappa_q|\mu_{0,q}-\mu_{\mathrm{new}}|}
+{\kappa_q+A+B},
 \end{equation}
+where the expectation is over observation noise for the fixed schedule.
 \end{theorem}
 
 \begin{remark}[Two regimes]
 \label{rem:adapt-regimes}
-The exact bound~(\ref{eq:adaptation}) admits two useful simplifications:
-\begin{itemize}
-\item \textbf{Prior-dominated} ($\kappa_q \gg A + B$, i.e., very few pulls): bias $\to |\mu_{0,q} - \mu_{\mathrm{new}}|$. The posterior is uninformative, and the prior controls the bias.
-\item \textbf{Data-dominated} ($\kappa_q \ll A + B$): bias $\to \Delta\, A/(A+B)$, which is the term we discount through additional pulls.
-\end{itemize}
+The bound~(\ref{eq:adaptation}) separates a prior term from a stale-data term.
+When $\kappa_q\gg A+B$, the prior controls the bias. When
+$\kappa_q\ll A+B$, the leading term is $\Delta A/(A+B)$, which is reduced by
+discounting and by new post-shock pulls.
 \end{remark}
 
 \begin{corollary}[Recovery horizon, data-dominated regime]
 \label{cor:recovery}
-Suppose $(a,k)$ is pulled at every post-shock round, so $m = \tau$ with $\tau := t - t^\star + 1$, and assume the data-dominated regime $\kappa_q \ll A + B$ (well approximated whenever $\tau \gtrsim \kappa_q$, since $A + B \geq B \geq 1$). Then the bound~(\ref{eq:adaptation}) reduces to
+Suppose $(a,k)$ is pulled at every post-shock round, so
+$\tau:=t-t^\star+1=m$, and assume the data-dominated regime
+$\kappa_q\ll A+B$. Then
 \[
-\big|\,\mathbb{E}[\theta^{a,k}_{q,t}]
-- \mu_{\mathrm{new}}\,\big|
-\;\lesssim\;
-\Delta\,\gamma^{\tau}
-\;+\; O\!\big(\kappa_q / (A + B)\big),
+\left|\,\mathbb{E}[\theta^{a,k}_{q,t}]-\mu_{\mathrm{new}}\,\right|
+\lesssim
+\Delta\gamma^\tau+O\!\big(\kappa_q/(A+B)\big),
 \]
-where the data-dominated term $\Delta \gamma^\tau$ shrinks geometrically in $\tau$ and the residual prior term is $O(\kappa_q (1-\gamma))$ in the asymptotic regime $A + B \to 1/(1-\gamma)$. Hence the recovery condition $\Delta \gamma^\tau \leq \delta$ requires
+and the leading stale-data term is at most $\delta$ once
 \[
-\tau
-\;\geq\;
-\frac{\log(\Delta/\delta)}{\log(1/\gamma)}
-\;=\;
-O\!\big(\log(\Delta/\delta)/(1-\gamma)\big).
+\tau\geq\frac{\log(\Delta/\delta)}{\log(1/\gamma)}
+=O\!\big(\log(\Delta/\delta)/(1-\gamma)\big).
 \]
 \end{corollary}
 
 \begin{proof}[Proof of Theorem~\ref{thm:adaptation}]
-Fix cell $(a,k)$. Let $t^\star$ be the first post-shock round, so by assumption (A1, piecewise-stationary case) $\mathbb{E}[\ut \mid \text{round } s] = \mu_{\mathrm{old}}$ for $s \leq t^\star - 1$ and $\mu_{\mathrm{new}}$ for $s \geq t^\star$. Define $\tau := t - t^\star + 1 \geq 1$ (post-shock elapsed rounds).
-
-\paragraph{Step 1: closed-form posterior mean.}
-The Normal-Normal posterior mean (\ref{eq:posterior-q}) is
+For the fixed schedule, conditioning on the pull times does not change the mean
+of the included observations. From~(\ref{eq:posterior-mean-compact}),
 \[
-\theta^{a,k}_{q,t}
-\;=\;
-\frac{\mu_{0,q}/\sigma^2_{0,q} + S^{a,k}_t/\sigma^2_q}
-     {1/\sigma^2_{0,q} + n^{a,k}_t/\sigma^2_q}.
+\theta^{a,k}_{q,t}=\frac{\kappa_q\mu_{0,q}+S^{a,k}_t}
+{\kappa_q+n^{a,k}_t}.
 \]
-Multiplying numerator and denominator by $\sigma^2_q$ and writing $\kappa_q := \sigma^2_q/\sigma^2_{0,q}$,
-\begin{equation}
-\theta^{a,k}_{q,t}
-\;=\;
-\frac{\kappa_q\,\mu_{0,q} + S^{a,k}_t}
-     {\kappa_q + n^{a,k}_t}. \label{eq:posterior-mean-flat}
-\end{equation}
-The prior contributes the term $\kappa_q\,\mu_{0,q}$ in the numerator and $\kappa_q$ in the denominator; this term does \emph{not} vanish when the data is sparse and is the key piece our previous proof sketch elided.
-
-\paragraph{Step 2: decompose data terms.}
-Let $\mathcal{T}_{\mathrm{pre}} = \{s \leq t^\star-1 : (a,k)\,\text{pulled at round}\,s\}$, $\mathcal{T}_{\mathrm{post}} = \{s_1<\cdots<s_m\} \subseteq [t^\star,t]$. Lemma~\ref{lem:ess} gives the contribution rule: a pull at round $s$ contributes $\gamma^{t-s}$ to $n^{a,k}_t$ at round $t$. Hence
-\begin{align}
-n^{a,k}_t
-&= \sum_{s \in \mathcal{T}_{\mathrm{pre}}} \gamma^{t-s}
- + \sum_{i=1}^{m} \gamma^{t-s_i} \notag\\
-&= \gamma^{t-t^\star+1}\, n^{a,k}_{t^\star-1}
- + \sum_{i=1}^{m} \gamma^{t-s_i}
- = A + B, \label{eq:n-decomp}\\
-\mathbb{E}\!\left[S^{a,k}_t \mid m, s_1, \ldots, s_m\right]
-&= \mu_{\mathrm{old}}\,A + \mu_{\mathrm{new}}\,B, \label{eq:s-decomp}
-\end{align}
-where in~(\ref{eq:n-decomp}) we used the identity $\gamma^{t-s} = \gamma^{t-t^\star+1}\,\gamma^{(t^\star-1)-s}$ valid for $s \leq t^\star-1$, together with the definition $n^{a,k}_{t^\star-1} = \sum_{s \in \mathcal{T}_{\mathrm{pre}}} \gamma^{(t^\star-1)-s}$.
-
-\paragraph{Step 3: bias of the posterior mean.}
-Substituting~(\ref{eq:n-decomp}) and~(\ref{eq:s-decomp}) into~(\ref{eq:posterior-mean-flat}),
+Splitting the discounted mass into pre- and post-shock pulls gives
+$n^{a,k}_t=A+B$ and
+$\mathbb{E}[S^{a,k}_t]=A\mu_{\mathrm{old}}+B\mu_{\mathrm{new}}$. Hence
 \[
-\mathbb{E}[\theta^{a,k}_{q,t} \mid \cdot]
-\;=\;
-\frac{\kappa_q\,\mu_{0,q}
-      + A\,\mu_{\mathrm{old}}
-      + B\,\mu_{\mathrm{new}}}
-     {\kappa_q + A + B}.
+\mathbb{E}[\theta^{a,k}_{q,t}]-\mu_{\mathrm{new}}
+=
+\frac{\kappa_q(\mu_{0,q}-\mu_{\mathrm{new}})
++A(\mu_{\mathrm{old}}-\mu_{\mathrm{new}})}
+{\kappa_q+A+B}.
 \]
-Subtracting $\mu_{\mathrm{new}}$ from both sides,
-\[
-\begin{aligned}
-&\mathbb{E}[\theta^{a,k}_{q,t} \mid \cdot] - \mu_{\mathrm{new}}\\
-&\qquad =
-\frac{\kappa_q\,(\mu_{0,q} - \mu_{\mathrm{new}})
-      + A\,(\mu_{\mathrm{old}} - \mu_{\mathrm{new}})}
-     {\kappa_q + A + B}.
-\end{aligned}
-\]
-Applying the triangle inequality on the numerator and using $|\mu_{\mathrm{old}} - \mu_{\mathrm{new}}| = \Delta$,
-\begin{equation}
-\begin{aligned}
-\Big|\,\mathbb{E}[\theta^{a,k}_{q,t} \mid \cdot]
-- \mu_{\mathrm{new}}\,\Big|
-&\leq
-\frac{A\,\Delta + \kappa_q\,|\mu_{0,q} - \mu_{\mathrm{new}}|}
-{\kappa_q + A + B},
-\end{aligned}
-\label{eq:adapt-exact}
-\end{equation}
-which is the bound stated in~(\ref{eq:adaptation}). This is exact---neither term has been dropped or approximated. The bound conditions on the realized post-shock pull schedule $(m, s_1, \ldots, s_m)$; an unconditional adaptation rate would require lower-bounding the pull frequency on the changed arm, which depends on Thompson-sampling exploration. The $-TS$ ablation in \S\ref{sec:eval-ablations} (which fails to detect S3 in $6/30$ seeds when greedy is used in place of TS) provides empirical evidence that exploration drives the unconditional adaptation rate; we do not give a lower-bound theorem on post-shock pull frequency.
+Taking absolute values and using
+$|\mu_{\mathrm{old}}-\mu_{\mathrm{new}}|=\Delta$ gives
+(\ref{eq:adaptation}).
 \end{proof}
 
 \begin{proof}[Proof of Corollary~\ref{cor:recovery}]
-Specialize to $\mathcal{T}_{\mathrm{post}} = \{t^\star, t^\star+1, \ldots, t\}$ so $m = \tau$. The post-shock weights form a geometric sum:
-\begin{equation}
-\begin{aligned}
-B
-&= \sum_{i=1}^{\tau} \gamma^{t-(t^\star+i-1)}
- = \sum_{j=0}^{\tau-1} \gamma^j\\
-&= \frac{1-\gamma^{\tau}}{1-\gamma}.
-\end{aligned}
-\label{eq:B-spec}
-\end{equation}
-By Lemma~\ref{lem:ess}, $n^{a,k}_{t^\star-1} \leq 1/(1-\gamma)$, so
-\[
-\begin{aligned}
-A
-&= \gamma^{\tau}\, n^{a,k}_{t^\star-1}
-\leq \frac{\gamma^{\tau}}{1-\gamma},\\
-A+B
-&\leq \frac{1}{1-\gamma}.
-\end{aligned}
-\]
-Substituting into~(\ref{eq:adapt-exact}),
-\begin{align*}
-\frac{A\,\Delta + \kappa_q\,|\mu_{0,q} - \mu_{\mathrm{new}}|}{\kappa_q + A + B}
-&\leq \frac{A\,\Delta}{A+B}
- + \frac{\kappa_q\,|\mu_{0,q}-\mu_{\mathrm{new}}|}
-        {\kappa_q + A + B} \\
-&\leq \Delta\,\gamma^{\tau}
- + \frac{\kappa_q\,|\mu_{0,q}-\mu_{\mathrm{new}}|}
-        {\kappa_q + (1-\gamma^{\tau})/(1-\gamma)}.
-\end{align*}
-The first term decays geometrically as $\Delta\gamma^{\tau}$, since for any $n^{a,k}_{t^\star-1} \leq 1/(1-\gamma)$,
+If the cell is pulled at every post-shock round, then
+$B=\sum_{j=0}^{\tau-1}\gamma^j=(1-\gamma^\tau)/(1-\gamma)$ and
+$A=\gamma^\tau n^{a,k}_{t^\star-1}$. By Lemma~\ref{lem:ess},
+$n^{a,k}_{t^\star-1}\leq1/(1-\gamma)$, so
 \[
 \frac{A}{A+B}
 \leq
-\frac{\gamma^{\tau} n^{a,k}_{t^\star-1}}
-{\gamma^{\tau} n^{a,k}_{t^\star-1}
- + (1-\gamma^{\tau})/(1-\gamma)}
-\leq \gamma^\tau .
+\frac{\gamma^\tau/(1-\gamma)}
+{\gamma^\tau/(1-\gamma)+(1-\gamma^\tau)/(1-\gamma)}
+=\gamma^\tau .
 \]
-The second term is bounded by
-\[
-\frac{\kappa_q\,|\mu_{0,q}-\mu_{\mathrm{new}}|}
-{(1-\gamma^{\tau})/(1-\gamma)}
-= O\!\left(\frac{\kappa_q(1-\gamma)}{1-\gamma^{\tau}}\right)
-\]
-once $\tau$ is large enough that the post-shock evidence mass $B$ dwarfs $\kappa_q$. With the locked hyperparameters of \S\ref{sec:method-hyperparams} ($\kappa_q = 0.09$, $\gamma = 0.999$, $|\mu_{0,q}-\mu_{\mathrm{new}}| \leq 1$), the residual prior term sits below $10^{-4}$ for $\tau \geq 100$ rounds, well below any practical $\delta$ we report. So the data-dominated bound $\Delta\gamma^{\tau}$ controls the recovery, and $\tau \geq \log(\Delta/\delta)/\log(1/\gamma)$ ensures bias~$\leq \delta$.
+Substituting this into~(\ref{eq:adaptation}) yields the displayed bound; solving
+$\Delta\gamma^\tau\leq\delta$ gives the stated horizon.
 \end{proof}
+
+\begin{remark}[Cost-posterior analogue]
+The same calculation applies to realized-cost shocks by replacing
+$(\mu_{\mathrm{old}},\mu_{\mathrm{new}},\mu_{0,q},\kappa_q,\gamma)$ with
+$(\mu^c_{\mathrm{old}},\mu^c_{\mathrm{new}},\bar c_a,\kappa_c,\gamma_c)$ and
+using the C-posterior statistic. We state the utility version to avoid
+duplicating notation; this is the algebra used for S3-style price changes once
+the changed arm is pulled again.
+\end{remark}
 
 \subsection{What the analysis does not cover}
 \label{app:proof-limitations}
 
-We close with honest disclaimers about the scope of the proofs above.
+The stationary regret reduction requires $\gamma=1$, stationarity, a
+well-specified product-Gaussian model, and the clean score in (A3$^\prime$). It
+does not prove cumulative regret for piecewise-stationary wallet trajectories.
+Theorem~\ref{thm:adaptation} gives a fixed-schedule per-arm adaptation rate; an
+unconditional adaptation theorem would also need a lower bound on how often
+Thompson sampling revisits the changed arm after the shock. The $-TS$ ablation
+in \S\ref{sec:eval-ablations} provides empirical evidence that exploration is
+what drives recovery, but we do not prove that pull-frequency bound here.
 
-\paragraph{Coupled regret in piecewise-stationary regime with budget pressure.}
-Theorem~\ref{thm:stationary-regret} requires $\gamma = 1$ and stationarity; Theorem~\ref{thm:adaptation} gives a per-arm adaptation rate but not a cumulative regret bound that integrates over a piecewise-stationary trajectory. The natural composition---a regret bound of the form $\tilde O(\sqrt{K K_b T} + M\,\Delta_{\max}/(1-\gamma))$ for $M$ change-points of magnitude at most $\Delta_{\max}$, in the spirit of~\citet{garivier2011discounted} for discounted UCB and~\citet{trovo2020sliding} for sliding-window TS---would require additional concentration arguments around the change-points, accounting for the wallet-pressure feedback that ties the policy's $w_t$ trajectory to its own past actions. We do not prove this here.
+The bound also does not cover the exact misspecified proxy variances used in the
+benchmark. In particular, the locked $\sigma_c^2=10^{-6}$ makes cost-side
+Thompson samples concentrate tightly around the C-posterior mean, so empirical
+cost adaptation is mostly posterior-mean tracking rather than cost-side random
+exploration. This is compatible with the clean well-specified theorem, whose
+constant may depend on the likelihood variances, but it is not a separate
+misspecified-TS regret guarantee.
 
-\paragraph{Misspecification of the Bayesian model (relaxing A2$^\prime$).}
-Theorem~\ref{thm:stationary-regret} requires (A2$^\prime$): a well-specified Gaussian Bayesian model with proxy variances matching true noise variances. With our locked hyperparameters ($\sigma^2_q = 0.09$, $\sigma^2_c = 10^{-6}$), this is generally not exactly the case for our calibrated providers; the proxy variances were chosen for empirical robustness rather than to match observed noise. The cited posterior-sampling regret results~\citep{russo2014learning,lattimore2020bandit} therefore justify only the well-specified reduction, not the exact misspecified hyperparameter setting used in the benchmark. We do not claim a separate misspecified-TS regret theorem here.
-
-\paragraph{Cost margin assumption (A3$^\prime$).}
-Lemma~\ref{lem:clip} relies on a strict interior margin $\mu_c^{a,k} \in [\delta_c, c_{\max}-\delta_c]$. In our calibrated benchmark, P-cheap (\$0.0005) and the mid-tier arms (\$0.002) satisfy this margin relative to $c_{\max}=\$0.01$, while P-premium at its listed price lies on the clipping boundary. The stationary regret reduction should therefore be read as an interior-cost reduction, not as a literal benchmark-wide theorem covering boundary-priced arms without an additional clipping argument. This does not affect the empirical evaluation, where clipping is part of the implemented decision rule; it only limits the scope of the clean reduction in Thm.~\ref{thm:stationary-regret}.
-
-\paragraph{True-Oracle regret (relaxing the comparator).}
-Theorem~\ref{thm:stationary-regret} bounds the policy-state pseudo-regret in~(\ref{eq:policy-state-regret}), where the comparator uses the policy's own wallet pressure trajectory. The empirical \emph{True Oracle} of \S\ref{sec:eval-setup} owns its own wallet, so the regret reported in \S\ref{sec:eval-main} is a different (and generally larger) quantity. Bounding True-Oracle regret directly requires controlling the divergence between the policy's and the oracle's $\lamn$ trajectories, which in turn requires a per-round wallet-deviation bound; this is technically tractable for budget-aware policies (e.g., bandits-with-knapsacks~\citealt{badanidiyuru2018bandits}) but does not transfer directly because our budget constraint is soft.
-
-\paragraph{Adaptive $\gamma$ and explicit drift detection.}
-Our analysis uses a fixed discount $\gamma$. Adaptive variants (e.g., CUSUM-driven $\gamma$ resets, change-point detectors that trigger explicit posterior resets) would change the constants in Theorem~\ref{thm:adaptation} and Corollary~\ref{cor:recovery}, and may admit stronger guarantees; \S\ref{sec:discuss} flags this as future work.
+Finally, the clean-score theorem is not a bound on every execution of the
+implemented clipped scorer in Eq.~\eqref{eq:padct-score}; it coincides with the
+implementation only when the cost-sample clip is inactive along the trajectory.
+Nor is it a regret bound against the replay \emph{True Oracle} in
+\S\ref{sec:eval-setup}: the theorem's comparator uses the policy's own wallet
+pressure and affordable set at each round, while the replay oracle owns a
+different wallet trajectory and is used only as an empirical upper-bound
+reference.
