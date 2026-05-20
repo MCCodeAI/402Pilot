@@ -1,6 +1,6 @@
 # Reference Audit
 
-Audit date: 2026-05-19
+Audit date: 2026-05-20
 
 Scope: checked every cited BibTeX entry in `paper/references.bib` against the
 manuscript citation context in `paper/sections/*.tex`. The bibliography contains
@@ -21,6 +21,8 @@ that can confuse naive citation extraction; they are not manuscript citations.
   longer asserts an unverified misspecified-TS regret theorem.
 - Added `agrawal2013contextualts` alongside `russo2014learning` where the method
   text names contextual Thompson sampling.
+- Added dataset citations in the benchmark paragraph for HumanEval, HotpotQA,
+  TriviaQA, and OpenAssistant; removed the unused `gebru2021datasheets` entry.
 
 ## Entry-by-Entry Audit
 
@@ -51,7 +53,7 @@ that can confuse naive citation extraction; they are not manuscript citations.
 | `chen2021humaneval` | https://arxiv.org/abs/2107.03374 and https://github.com/openai/human-eval | Real arXiv paper and OpenAI repository. Metadata corrected to Brooke Chan; HumanEval dataset/repository and MIT license are supported. |
 | `yang2018hotpotqa` | https://aclanthology.org/D18-1259/ and https://github.com/hotpotqa/hotpot | Real ACL/EMNLP paper. Title, authors, pages, DOI, and multi-hop QA dataset framing are supported. Dataset license CC BY-SA 4.0 is supported by official GitHub README. |
 | `joshi2017triviaqa` | https://aclanthology.org/P17-1147/ and https://huggingface.co/datasets/zechen-nlp/triviaqa/blob/main/README.md | Real ACL paper. Title, authors, pages, DOI, and TriviaQA dataset framing are supported. Apache-2.0 license is supported by dataset metadata source checked. |
-| `gebru2021datasheets` | https://www.microsoft.com/en-us/research/publication/datasheets-for-datasets/ and https://doi.org/10.1145/3458723 | Real Communications of the ACM article. Metadata and the dataset-documentation motivation are supported. |
+| `kopf2023openassistant` | https://proceedings.neurips.cc/paper_files/paper/2023/hash/949f0f8f32267d297c2d4e3ee10a2e7e-Abstract-Datasets_and_Benchmarks.html | Real NeurIPS Datasets and Benchmarks paper. Metadata and OpenAssistant conversation dataset framing are supported. |
 | `patra2026reverseauction` | https://arxiv.org/abs/2602.14476 | Real arXiv paper. Title, authors, DOI, and reverse-auction/contextual-MAB framing are supported. Caveat: no peer-reviewed venue found as of this audit. |
 
 ## Remaining Caveats

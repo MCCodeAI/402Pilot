@@ -4,8 +4,13 @@
 This appendix is a compact legend for the symbols that recur across
 \S\ref{sec:problem}, \S\ref{sec:method}, \S\ref{sec:eval}, and the proofs in
 Appendix~\ref{appendix:proofs}. Definitions and derivations remain in the main
-text; the table records the convention and locked value used in the released
-artifact.
+text; Table~\ref{tab:notation-compact} records the convention and locked value
+used in the released artifact.
+
+The paper writes a single discount $\gamma$ because the released experiments set
+the utility and cost discounts equal. The implementation exposes a separate
+cost-discount parameter $\gamma_c$ for future variants, but it is not varied in
+the reported results.
 
 \begin{table}[t]
 \centering
@@ -48,7 +53,7 @@ $\mu_{0,q},\sigma^2_{0,q},\sigma^2_q$ & Q-prior mean, prior variance, and likeli
 $\sigma^2_{0,c},\sigma^2_c$ & C-prior variance and likelihood variance & $10^{-4}$, $10^{-6}$ \\
 $n^{a,k}_t$ & Discounted effective count for cell $(a,k)$ & Shared by Q- and C-posteriors \\
 $S^{a,k}_t,{S_c}^{a,k}_t$ & Discounted utility and cost sums & Updated only for the chosen arm-bucket cell \\
-$\gamma,\gamma_c$ & Quality and cost discount factors & Both $0.999$ in main results \\
+$\gamma$ & Discount factor for both Q- and C-posteriors & $0.999$ in main results \\
 $\thetaq{a}{k},\Sigmaq{a}{k}$ & Q-posterior mean and variance & Normal--Normal posterior over utility \\
 $\thetac{a}{k},\Sigmac{a}{k}$ & C-posterior mean and variance & Normal--Normal posterior over realized cost \\
 $\hatu{a}{k},\hatc{a}{k}$ & Thompson samples from Q and C posteriors & Drawn from the Q- and C-posteriors at decision time \\

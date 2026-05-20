@@ -8,7 +8,7 @@ For PA_gap_advantage, positive Δ means PA-DCT has a lower PA-gap; the True Orac
 CI is 95% bootstrap; p-value is two-sided paired-z (n=30, normal ≈ t_29).
 `d_z` is Cohen's standardised paired effect size.
 
-**Significance markers** (for paper Table 1):
+**Significance markers** (for the paper's main-results table):
 `****` p<10⁻⁴ &nbsp; `***` p<10⁻³ &nbsp; `**` p<0.01 &nbsp; `*` p<0.05 &nbsp; `ns` not significant.
 
 ## S1
@@ -91,7 +91,7 @@ CI is 95% bootstrap; p-value is two-sided paired-z (n=30, normal ≈ t_29).
 
 ---
 
-## Compact Table 1 markers (PA-gap only)
+## Compact main-table markers (PA-gap only)
 
 Use these to annotate PA-gap comparisons in the paper's main table.
 

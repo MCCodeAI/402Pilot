@@ -42,9 +42,8 @@ DEFAULT_TEMPERATURE: float = 0.3
 """Default sampling temperature for all pregen calls.
 
 Moderate sampling diversity so per-version seeds produce different
-responses, while keeping coding pass@1 nearly as high as T=0. See
-``docs/dataset_schema.md`` for the rationale and PregenRecord
-``temperature`` provenance.
+responses, while keeping coding pass@1 nearly as high as T=0. The chosen
+temperature is persisted in each PregenRecord for provenance.
 """
 
 

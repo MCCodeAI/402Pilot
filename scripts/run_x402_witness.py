@@ -68,10 +68,9 @@ _RESOURCE_URLS: dict[ProviderId, str] = {
     ProviderId.P_PREMIUM: "http://127.0.0.1:8000/p-premium",
 }
 
-# Spec prices matching the resource server's PRICES_USDC and the benchmark
-# ProviderSpec.base_price_usdc values. These are PRIOR MEANS for the
-# PADCTPolicy cost posteriors; the policy will learn the actual settled
-# price from observations.
+# Spec prices matching the local resource server's PRICES_USDC. These are
+# witness-only PRIOR MEANS for the PADCTPolicy cost posteriors; benchmark
+# measurements use the frozen replay prices in experiments/main.yaml.
 _PROVIDER_COSTS: dict[ProviderId, float] = {
     ProviderId.P_CHEAP:   0.001,
     ProviderId.P_MID:     0.002,

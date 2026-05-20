@@ -70,9 +70,8 @@ USDC_DECIMALS = 6
 USDC_EIP712_NAME = "USD Coin"
 USDC_EIP712_VERSION = "2"
 
-# Per-provider prices in USDC. Match
-# ``pilot402.core.types.ProviderSpec.base_price_usdc`` values from the
-# benchmark config so the witness exercises realistic price points.
+# Per-provider prices in USDC for the local witness. These are not benchmark
+# measurements; the paper tables use frozen replay prices from experiments/main.yaml.
 PRICES_USDC = {
     "p-cheap":   0.001,
     "p-mid":     0.002,

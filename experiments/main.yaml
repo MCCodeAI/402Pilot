@@ -1,13 +1,13 @@
-# 402Pilot-Bench full sweep — placeholder configuration.
+# 402Pilot-Bench full sweep — locked paper configuration.
 #
 # This file is loaded by `pilot402.core.config.load_config()` and proves that
-# the YAML schema connects end-to-end. Values are calibrated placeholders; the
-# real numbers are produced by `pilot402.budget.sizing` and the calibration
-# pipeline before the M4 full sweep.
+# the YAML schema connects end-to-end. Values below are the locked settings
+# used by the paper experiments.
 #
 # Environment-sourced sub-objects (x402, llm_keys, judge) MUST NOT appear here;
 # they are read from `.env`.
 
+# Retained for reproducible seed derivation in existing paper runs.
 run_id: "main_v0_placeholder"
 seed: 0
 num_rounds: 10000
@@ -40,8 +40,8 @@ scenario:
   kwargs: {}
 
 budget:
-  # Sized so that Always-P-premium exhausts the wallet near round ~5,000
-  # (PLAN §3.5): $50 / $0.01 = 5,000 rounds. The 5x mid:premium ratio mirrors
+  # Sized so that Always-P-premium exhausts the wallet near round ~5,000:
+  # $50 / $0.01 = 5,000 rounds. The 5x mid:premium ratio mirrors
   # GPT-4o-mini → GPT-4o (~17x) and Haiku → Sonnet (~12x); we land at 5x
   # for the experiment so premium has visible economic value on hard tasks
   # without being unconditionally dominated.

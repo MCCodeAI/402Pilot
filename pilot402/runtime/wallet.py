@@ -5,14 +5,13 @@ told how much was charged (``record_spend``); the policy queries
 ``get_lambda()`` between rounds to incorporate budget pressure into the
 arm-selection reward.
 
-λ-dynamics (system_design §2.2, PLAN §3.5):
+λ-dynamics:
 
     λ_t = λ_0 · exp(α · burn_dev_t)
     burn_dev_t = (actual_burn_rate_t − target_burn_rate) / target_burn_rate
 
 ``burn_dev_t`` is **signed**: negative when under-spending, zero when
-on the linear burn plan, positive when over-spending. This matches the
-paper's symbol $b_{\text{dev}, t}$ (§Problem Formulation).
+on the linear burn plan, positive when over-spending.
 
 where:
 
@@ -51,15 +50,12 @@ class Wallet:
     Args:
         total_usdc:        starting budget. Once spend ≥ this, ``affordable()``
                            returns False for any positive cost.
-        lambda_0:          baseline cost-penalty multiplier. PLAN default = 1.0.
+        lambda_0:          baseline cost-penalty multiplier. Paper default = 1.0.
         alpha:             sensitivity of λ to burn-rate deviation. Higher α
-                           = sharper response. PLAN default = 2.0.
+                           = sharper response. Paper default = 2.0.
         target_burn_rate:  desired fraction of total budget to spend per round.
-                           Must lie in (0, 1]. With 10,000 rounds and a budget
-                           that should "last the run", target_burn_rate ≈ 1/10000
-                           = 1e-4. ``main.yaml`` uses 0.01 as a stress-test
-                           setting that implies "burn the wallet in ~100 rounds
-                           if you always pick premium".
+                           Must lie in (0, 1]. The paper configuration uses
+                           1e-4 for a 10,000-round linear spend plan.
     """
 
     total_usdc: float

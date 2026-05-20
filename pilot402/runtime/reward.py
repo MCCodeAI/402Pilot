@@ -1,6 +1,6 @@
-"""Reward calculator (system_design §2.6, PLAN §3.5).
+"""Reward calculator for utility and payment-aware reward.
 
-Reward formula (calibrated 2026-05-02, after design discussion):
+Reward formula:
 
     utility   = q − ν·f                                 ∈  [-ν, +1]
     λ_norm    = λ_t / (1 + λ_t)                         ∈  (0, 1)
@@ -20,18 +20,16 @@ Two reward channels are computed per round:
   comes from ``BudgetManager.get_lambda()`` and is mapped to a sigmoid-shape
   weight λ_norm ∈ (0, 1) so the reward is bounded in [-1, +1].
 
-Three deliberate design choices (paper §X "Reward design"):
+Design choices:
 
-1. **No latency term.** Earlier drafts had ``μ·l̃_t``. We removed it because
-   no provider in our experimental design specifies a latency profile, no
-   scenario manipulates latency, and empirically it contributed ~1% of
-   reward magnitude — a hyperparameter that earned its complexity poorly.
-   Latency-aware bandits are a natural follow-up paper but not this one.
+1. **No latency term.** The benchmark scenarios manipulate service quality,
+   failures, and realized cost, but not latency. Latency is logged for future
+   analysis and is intentionally not part of the reported reward.
 
 2. **Failure as a distinct utility term, not just q=0.** When P-flaky times
    out, q = 0 already (no answer to score). One could argue ν·f double-counts
    the same event. We keep ν·f because:
-   - P-flaky's *raison d'être* is to model unreliable services that share
+   - P-flaky models unreliable services that share
      cost + base model + prompt with P-mid; failure is the *only* observable
      dimension distinguishing them.
    - In real systems, a timeout has structural costs beyond q=0 — it forces
@@ -48,14 +46,7 @@ Three deliberate design choices (paper §X "Reward design"):
    utility-vs-cost, keeps the formula's two-tier structure clean:
    intrinsic value (utility) × budget weighting (λ_norm).
 
-3. **Sigmoid normalization of cost penalty.** Earlier drafts subtracted
-   ``λ_t·c̃_t`` directly with λ_t = exp(α·burn_dev) ∈ (0, ∞). This was
-   numerically asymmetric (utility ∈ [-1,1] vs cost penalty unbounded
-   above) and produced cumulative rewards as extreme as −32,000 for
-   Always-Premium over 5,000 rounds — visually grotesque and theoretically
-   inconvenient (standard bandit regret bounds require bounded reward).
-
-   The convex-combination form
+3. **Sigmoid normalization of cost penalty.** The convex-combination form
        PA_reward = (1−λ_norm)·utility − λ_norm·c̃
    with λ_norm = λ/(1+λ) = sigmoid(log λ) keeps reward in [-1, +1] and
    has a clean interpretation: λ_norm is the *fraction of decision weight*
@@ -63,9 +54,8 @@ Three deliberate design choices (paper §X "Reward design"):
    utility heavily"; high λ → "I'm overspending, weigh cost heavily".
 
 Cost normalizer ``c̃_t = c_t / max_provider_cost`` puts cost on [0, 1]
-matching utility's range. We use the most expensive provider (P-premium
-@ $0.01 after 2026-05-02 recalibration to a 5x mid:premium ratio) as the
-denominator.
+matching utility's range. The paper configuration uses P-premium's listed
+$0.01 price as the denominator.
 """
 
 from __future__ import annotations
@@ -79,10 +69,9 @@ from pilot402.core.types import EvaluatorBackend, QualityScore, Reward
 class RewardCalculator:
     """Stateless reward computation with sigmoid-bounded PA term.
 
-    Hyperparameter ``nu`` is fixed across a run (paper claim: we
-    deliberately do not tune it per provider). The cost normalizer is
-    baked in too — change it deliberately and bump a paper-relevant
-    version since reward magnitude affects the regret bound.
+    Hyperparameter ``nu`` is fixed across a run and is not tuned per provider.
+    The cost normalizer is fixed as part of the reward definition because it
+    affects both decision-time scoring and PA-gap values.
 
     Args:
         nu:               weight on the boolean failure flag. Default 0.5.
@@ -90,9 +79,7 @@ class RewardCalculator:
                           q=0 (a failed call has no scorable response), the
                           total utility on a failure round is −ν.
         max_provider_cost_usdc: denominator for cost normalization. Default
-                          $0.01 (P-premium's price as of 2026-05-02). If a
-                          future config adds a more expensive provider,
-                          bump this.
+                          $0.01, matching P-premium's listed paper price.
     """
 
     nu: float = 0.5

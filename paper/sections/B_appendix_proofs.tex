@@ -70,12 +70,14 @@ Theorem~\ref{thm:stationary-regret} uses (A2$^\prime$)--(A3$^\prime$).
 
 \begin{proposition}[Reward boundedness]
 \label{prop:reward-bounded}
-For every round $t$, the payment-aware reward satisfies $\rt\in[-1,+1]$.
+For every round $t$ with $0\le\nu\le1$, the payment-aware reward satisfies
+$\rt\in[-1,+1]$.
 \end{proposition}
 
 \begin{proof}
-Since $q_t\in[0,1]$, $f_t\in\{0,1\}$, and $\nu=0.5$, we have
-$|\ut|=|q_t-0.5f_t|\leq1$; also $\ctilde\in[0,1]$ and
+Since $q_t\in[0,1]$, $f_t\in\{0,1\}$, and $0\le\nu\le1$, we have
+$\ut=q_t$ when $f_t=0$ and $\ut=q_t-\nu\in[-1,1]$ when $f_t=1$.
+Thus $|\ut|\leq1$; also $\ctilde\in[0,1]$ and
 $\lamn\in(0,1)$. Hence
 $|\rt|\leq(1-\lamn)|\ut|+\lamn|\ctilde|\leq(1-\lamn)+\lamn=1$.
 \end{proof}
@@ -96,7 +98,7 @@ $\mu_c^{a,k}$.
 Let $\{\ut^{(i)}\}_{i=1}^n$ be the utility observations in cell $(a,k)$ after
 $n$ pulls. By (A1) and the strong law of large numbers,
 $S^{a,k}_t/n^{a,k}_t=n^{-1}\sum_i\ut^{(i)}\to\mu_u^{a,k}$ almost surely.
-Dividing the first expression in~(\ref{eq:posterior-mean-compact}) by
+Dividing the first expression in Eq.~\eqref{eq:posterior-mean-compact} by
 $n^{a,k}_t$ in numerator and denominator gives
 $\thetaq{a}{k}\to\mu_u^{a,k}$ because $\kappa_q/n^{a,k}_t\to0$. The cost
 posterior is identical with $\bar c_a,{S_c}^{a,k}_t,\kappa_c$ in place of
@@ -185,15 +187,15 @@ observed before sampling. Bucket visits are determined by the exogenous task
 stream in \S\ref{sec:problem}, so conditioning on a bucket subsequence does not
 introduce policy-dependent context selection; the wallet pressure and affordable
 set are predictable state shared by the policy-state comparator in
-(\ref{eq:policy-state-regret}). Therefore the per-round gap is the standard
+Eq.~\eqref{eq:policy-state-regret}. Therefore the per-round gap is the standard
 contextual Thompson-sampling regret for at most $K$ arms.
 
 Applying the Bayesian regret bound for Gaussian-prior Thompson sampling
 \citep[Theorem~1]{russo2014learning} to each bucket subsequence (equivalently,
-the K-armed Gaussian-prior specialization in \citealt[Ch.~36]{lattimore2020bandit})
-gives~(\ref{eq:cell-regret}). Summing over buckets and using Cauchy--Schwarz,
+the K-armed Gaussian-prior specialization in \citep[Ch.~36]{lattimore2020bandit})
+gives Eq.~\eqref{eq:cell-regret}. Summing over buckets and using Cauchy--Schwarz,
 $\sum_k\sqrt{T_k\log T_k}\leq\sqrt{K_bT\log T}$, gives
-(\ref{eq:stationary-regret}).
+Eq.~\eqref{eq:stationary-regret}.
 \end{proof}
 
 \subsection{Theorem~\ref{thm:adaptation}: adaptation after an abrupt change}
@@ -225,7 +227,7 @@ where the expectation is over observation noise for the fixed schedule.
 
 \begin{remark}[Two regimes]
 \label{rem:adapt-regimes}
-The bound~(\ref{eq:adaptation}) separates a prior term from a stale-data term.
+The bound~\eqref{eq:adaptation} separates a prior term from a stale-data term.
 When $\kappa_q\gg A+B$, the prior controls the bias. When
 $\kappa_q\ll A+B$, the leading term is $\Delta A/(A+B)$, which is reduced by
 discounting and by new post-shock pulls.
@@ -250,7 +252,7 @@ and the leading stale-data term is at most $\delta$ once
 
 \begin{proof}[Proof of Theorem~\ref{thm:adaptation}]
 For the fixed schedule, conditioning on the pull times does not change the mean
-of the included observations. From~(\ref{eq:posterior-mean-compact}),
+of the included observations. From Eq.~\eqref{eq:posterior-mean-compact},
 \[
 \theta^{a,k}_{q,t}=\frac{\kappa_q\mu_{0,q}+S^{a,k}_t}
 {\kappa_q+n^{a,k}_t}.
@@ -267,7 +269,7 @@ $\mathbb{E}[S^{a,k}_t]=A\mu_{\mathrm{old}}+B\mu_{\mathrm{new}}$. Hence
 \]
 Taking absolute values and using
 $|\mu_{\mathrm{old}}-\mu_{\mathrm{new}}|=\Delta$ gives
-(\ref{eq:adaptation}).
+Eq.~\eqref{eq:adaptation}.
 \end{proof}
 
 \begin{proof}[Proof of Corollary~\ref{cor:recovery}]
@@ -282,15 +284,15 @@ $n^{a,k}_{t^\star-1}\leq1/(1-\gamma)$, so
 {\gamma^\tau/(1-\gamma)+(1-\gamma^\tau)/(1-\gamma)}
 =\gamma^\tau .
 \]
-Substituting this into~(\ref{eq:adaptation}) yields the displayed bound; solving
+Substituting this into Eq.~\eqref{eq:adaptation} yields the displayed bound; solving
 $\Delta\gamma^\tau\leq\delta$ gives the stated horizon.
 \end{proof}
 
 \begin{remark}[Cost-posterior analogue]
 The same calculation applies to realized-cost shocks by replacing
-$(\mu_{\mathrm{old}},\mu_{\mathrm{new}},\mu_{0,q},\kappa_q,\gamma)$ with
-$(\mu^c_{\mathrm{old}},\mu^c_{\mathrm{new}},\bar c_a,\kappa_c,\gamma_c)$ and
-using the C-posterior statistic. We state the utility version to avoid
+$(\mu_{\mathrm{old}},\mu_{\mathrm{new}},\mu_{0,q},\kappa_q)$ with
+$(\mu^c_{\mathrm{old}},\mu^c_{\mathrm{new}},\bar c_a,\kappa_c)$ and
+using the C-posterior statistic under the same locked discount $\gamma$. We state the utility version to avoid
 duplicating notation; this is the algebra used for S3-style price changes once
 the changed arm is pulled again.
 \end{remark}

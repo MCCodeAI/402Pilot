@@ -31,10 +31,9 @@ from pilot402.core.types import ProviderId, ProviderSpec, ScenarioId
 
 
 class X402Settings(BaseSettings):
-    """Local Anvil DEVnet + x402 wallet (Phase 2+).
+    """Local Anvil devnet + x402 wallet settings.
 
-    Public testnet is explicitly out of scope (PLAN §3.2). Defaults point at
-    the local Anvil fork started by the run_experiment script.
+    Defaults point at the local Anvil fork used by the integration witness.
     """
 
     model_config = SettingsConfigDict(
@@ -109,14 +108,11 @@ class BudgetConfig(BaseModel):
 
 
 class RewardConfig(BaseModel):
-    """Reward calculator weights (system_design §2.6).
+    """Reward calculator weights.
 
-    ``nu`` is a constant across the paper to avoid the "you tuned the reward"
-    objection. ``lambda_t`` is dynamic and lives in ``BudgetConfig``.
-
-    History note: an earlier draft also exposed ``mu`` for a latency penalty.
-    The latency term was retired on 2026-05-02 (no provider in the design
-    specifies a latency profile, no scenario manipulates latency).
+    ``nu`` is fixed across the paper experiments. ``lambda_t`` is dynamic and
+    lives in ``BudgetConfig``. Latency is logged separately and is not part of
+    the reported reward.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")

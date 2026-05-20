@@ -1,4 +1,4 @@
-"""Cross-baseline pairwise significance for paper §6.3 Table 1.
+"""Cross-baseline pairwise significance for the paper's main-results table.
 
 Reads existing summary.jsonl files (no re-running of experiments) and
 computes, for each scenario × baseline pair:
@@ -237,7 +237,7 @@ def main(argv: list[str] | None = None) -> int:
     md.append("CI is 95% bootstrap; p-value is two-sided paired-z (n=30, normal ≈ t_29).")
     md.append("`d_z` is Cohen's standardised paired effect size.")
     md.append("")
-    md.append("**Significance markers** (for paper Table 1):")
+    md.append("**Significance markers** (for the paper's main-results table):")
     md.append("`****` p<10⁻⁴ &nbsp; `***` p<10⁻³ &nbsp; `**` p<0.01 &nbsp; "
               "`*` p<0.05 &nbsp; `ns` not significant.")
     md.append("")
@@ -260,10 +260,10 @@ def main(argv: list[str] | None = None) -> int:
             )
         md.append("")
 
-    # Quick "Table 1 markers" cheat sheet — paper main table only needs this.
+    # Quick marker cheat sheet — the paper main table only needs this.
     md.append("---")
     md.append("")
-    md.append("## Compact Table 1 markers (PA-gap only)")
+    md.append("## Compact main-table markers (PA-gap only)")
     md.append("")
     md.append("Use these to annotate PA-gap comparisons in the paper's main table.")
     md.append("")

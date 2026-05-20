@@ -8,9 +8,8 @@ Three named factories the paper compares against:
                             heuristic; cheap-tier failure rate isn't a
                             problem because mid is reliable.
 * ``always_premium()``    — pick P-premium. Pays maximum cost for maximum
-                            quality; bankrupts fastest. PLAN.md sizes the
-                            budget so this exhausts the wallet near round
-                            ~5,000.
+                            quality; with the paper budget, exhausts the
+                            wallet near round ~5,000.
 
 Edge case: if the target provider isn't in the affordable set (only
 possible if the budget is between two providers' prices), fall back to
