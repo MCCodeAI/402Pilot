@@ -291,27 +291,8 @@ The learned reallocations matter because the cheap safe policy under-serves task
 \paragraph{Statistical checks.}
 Paired-seed tests match these claims. The S3 improvements over Always-P-mid on quality, ROI, and PA-gap/$T$ are all significant ($p<10^{-20}$), and \padct{} has a significantly smaller PA-gap/$T$ than both learning baselines in S1 and S3. The S1 disadvantages against Always-P-mid and BudgetRule are also significant, which is why we treat them as the exploration cost of maintaining shock-ready posteriors rather than hide them. The one borderline cell is S2 PA-gap/$T$: \padct{} is numerically close to Always-P-cheap and Contextual BTS, while delivering much higher quality than those cheap-biased policies.
 
-\begin{table}[t]
-\centering
-\caption{Component ablations. Entries are PA-gap/$T$; lower is better.}
-\label{tab:ablation-mini}
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}Xccc@{}}
-\toprule
-Variant & S1 & S2 & S3 \\
-\midrule
-Full \padct{} & $0.133$ & $0.166$ & $0.121$ \\
-$-P$ no pressure & $0.855$ & $0.878$ & $0.259$ \\
-$-D$ no discount & $0.109$ & $0.170$ & $0.114$ \\
-$-TS$ greedy & $0.130$ & $0.175$ & $0.145$ \\
-$-C_{\mathrm{post}}$ spec cost & -- & -- & $0.144$ \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
 \paragraph{Ablation summary.}
-Table~\ref{tab:ablation-mini} shows which design choices fail under which market. The most severe failure is removing wallet pressure: the policy exhausts the wallet in S1/S2 and its PA-gap rises by more than sixfold. Discounting and cost learning matter in the shock regimes: without discounting, reliability recovery slows in S2, while a spec-only cost estimate misses the S3 promotion. Greedy selection is less stable across seeds and misses S3 in several runs; contextual bucketing mainly protects task-specific separation.
+The ablations identify the same failure modes as the main comparisons, but at the component level. The strongest diagnostic is wallet pressure: removing it raises PA-gap/$T$ from $0.133$ to $0.855$ in S1 and from $0.166$ to $0.878$ in S2, with mid-run budget exhaustion in both cases. Price adaptation depends on learning realized cost rather than trusting the specification price: replacing the cost posterior with fixed spec cost worsens S3 PA-gap/$T$ from $0.121$ to $0.144$. Greedy posterior means keep some average gaps close to \padct{} but are less stable across seeds and miss the S3 promotion in several runs, while contextual bucketing mainly protects task-specific separation.
 
 \section{Discussion and Conclusion}
 \label{sec:discussion}
