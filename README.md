@@ -76,21 +76,16 @@ oracle.
 ## Results
 
 PA-DCT is not designed to win one isolated metric in every static setting. Its
-goal is robust buyer behavior under changing market conditions. In the course
-report, PA-DCT remains budget-feasible, adapts away from the mid-tier outage in
-S2, and captures the premium price promotion in S3.
-
-The paper artifacts are available here:
-
-- [Course project report](docs/course_report.pdf)
-- [Technical supplement](docs/technical_report.pdf)
+goal is robust buyer behavior under changing market conditions. In the reported
+experiments, PA-DCT remains budget-feasible, adapts away from the mid-tier
+outage in S2, and captures the premium price promotion in S3.
 
 ## Repository Layout
 
 ```text
 402Pilot/
 ├── data/tasks/              # committed benchmark task subsets
-├── docs/                    # public reports and design docs
+├── docs/                    # design notes and retained documents
 ├── experiments/             # locked experiment configuration
 ├── infrastructure/x402/     # local x402 quote-pay-receipt witness
 ├── pilot402/                # core Python package
@@ -138,7 +133,7 @@ python -m scripts.run_scenario_sweep \
 ```
 
 The locked main configuration is [experiments/main.yaml](experiments/main.yaml).
-Full paper-scale sweeps replay the committed frozen records under
+Full benchmark-scale sweeps replay the committed frozen records under
 `data/pregen/`.
 
 ## Data Availability
@@ -151,4 +146,5 @@ fresh LLM calls.
 
 ## License
 
-MIT
+Research and educational use is permitted. Commercial use requires prior
+written authorization from Yin Li. See [LICENSE](LICENSE).

@@ -12,7 +12,7 @@ kept local and ignored by Git.
 ├── .gitignore                # local artifacts and generated outputs
 ├── README.md                 # external project overview
 ├── data/tasks/               # committed task subsets used by the benchmark
-├── docs/                     # public reports and design notes
+├── docs/                     # design notes and retained documents
 ├── experiments/              # locked YAML experiment configuration
 ├── infrastructure/x402/      # local x402 integration witness
 ├── pilot402/                 # Python package
@@ -85,14 +85,9 @@ against a local x402-style stack.
 
 ## `docs/`
 
-The public reports are:
-
-- `docs/course_report.pdf`
-- `docs/technical_report.pdf`
-
-Additional markdown files describe system design, experiment design, and the
-current code structure. LaTeX working sources are kept in the local-only
-`paper/` directory rather than committed here.
+Markdown files describe system design, experiment design, and the current code
+structure. LaTeX working sources are kept in the local-only `paper/` directory
+rather than committed here.
 
 ## Tests
 
