@@ -33,7 +33,7 @@ node_modules/
 # data/tasks/ and data/pregen/ are committed as reproducibility artifacts:
 # tasks define the benchmark subset, and pregen contains frozen replay records.
 data/calibration/
-results/
+/results/
 
 # Build / tooling caches
 build/

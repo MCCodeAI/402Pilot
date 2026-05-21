@@ -84,13 +84,12 @@ outage in S2, and captures the premium price promotion in S3.
 
 ```text
 402Pilot/
+├── artifacts/results/       # compact result summaries for verification
 ├── data/tasks/              # committed benchmark task subsets
 ├── docs/                    # design notes and retained documents
 ├── experiments/             # locked experiment configuration
 ├── infrastructure/x402/     # local x402 quote-pay-receipt witness
 ├── pilot402/                # core Python package
-├── results/hyperparam_sensitivity/
-│                            # retained compact sensitivity artifact
 ├── scripts/                 # experiment, metric, and witness entry points
 └── tests/                   # unit and integration tests
 ```
@@ -143,6 +142,10 @@ The task subsets in `data/tasks/` and the frozen replay records in
 contains 20,575 provider-response records plus the judge cache used for
 open-ended QA scoring. This lets readers rerun policy sweeps without making
 fresh LLM calls.
+
+Compact result summaries are committed under `artifacts/results/`. The full
+local `results/` tree is intentionally ignored because it contains per-round
+logs and intermediate run outputs.
 
 ## License
 

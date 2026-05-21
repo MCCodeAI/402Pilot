@@ -11,13 +11,12 @@ kept local and ignored by Git.
 ├── .env.example              # environment template, no secrets
 ├── .gitignore                # local artifacts and generated outputs
 ├── README.md                 # external project overview
+├── artifacts/results/        # compact result summaries for verification
 ├── data/tasks/               # committed task subsets used by the benchmark
 ├── docs/                     # design notes and retained documents
 ├── experiments/              # locked YAML experiment configuration
 ├── infrastructure/x402/      # local x402 integration witness
 ├── pilot402/                 # Python package
-├── results/hyperparam_sensitivity/
-│                             # compact reported sensitivity artifact
 ├── scripts/                  # experiment and analysis entry points
 ├── tests/                    # unit and integration tests
 └── pyproject.toml            # package and tool configuration
@@ -33,6 +32,10 @@ The following directories are intentionally local-only:
 
 `data/pregen/` is intentionally committed as the frozen replay artifact for
 reproducible experiments.
+
+`artifacts/results/` is intentionally committed as the compact result artifact.
+The full `results/` tree remains local-only because it contains per-round logs,
+intermediate outputs, and archived runs.
 
 ## `pilot402/`
 
@@ -56,6 +59,13 @@ while the x402 witness validates the quote-pay-receipt boundary locally.
 `data/pregen/` is also committed as the frozen replay artifact: it stores
 pre-generated provider responses plus judge-cache records, allowing policy
 sweeps to be reproduced without fresh LLM calls.
+
+## `artifacts/results/`
+
+This directory contains small, committed summaries derived from local runs:
+main-table aggregates, per-seed compact summaries, ablation summaries,
+significance tables, and the hyperparameter-sensitivity artifact. It is the
+public result artifact; the larger local `results/` directory is not committed.
 
 ## `experiments/`
 
