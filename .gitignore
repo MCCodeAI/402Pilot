@@ -29,6 +29,9 @@ node_modules/
 # Misc
 *.log
 
+# Local macOS double-click launchers.
+/*.command
+
 # 402Pilot bulk artifacts (gitignored, regenerable).
 # data/tasks/ and data/pregen/ are committed as reproducibility artifacts:
 # tasks define the benchmark subset, and pregen contains frozen replay records.
@@ -48,7 +51,6 @@ htmlcov/
 *.pptx
 *.docx
 docs/*.pdf
-!docs/technical_report.pdf
 
 # Local-only experiment outputs
 outputs/
