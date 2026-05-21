@@ -3,6 +3,7 @@
 %% sensitivity sweeps, detailed ablations, and the x402 witness.
 
 \documentclass[sigconf, nonacm]{acmart}
+\raggedbottom
 \settopmatter{printacmref=false, printccs=false, printfolios=true}
 \renewcommand\footnotetextcopyrightpermission[1]{}
 
@@ -292,25 +293,25 @@ Paired-seed tests match these claims. The S3 improvements over Always-P-mid on q
 
 \begin{table}[t]
 \centering
-\caption{Compact ablation evidence. Gap is PA-gap/$T$; ${}^{\dagger}$ marks mid-run bankruptcy.}
+\caption{Component ablations. Entries are PA-gap/$T$; lower is better.}
 \label{tab:ablation-mini}
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lccc@{}}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}Xccc@{}}
 \toprule
 Variant & S1 & S2 & S3 \\
 \midrule
 Full \padct{} & $0.133$ & $0.166$ & $0.121$ \\
-$-P$ no pressure & $0.855^{\dagger}$ & $0.878^{\dagger}$ & $0.259$ \\
+$-P$ no pressure & $0.855$ & $0.878$ & $0.259$ \\
 $-D$ no discount & $0.109$ & $0.170$ & $0.114$ \\
 $-TS$ greedy & $0.130$ & $0.175$ & $0.145$ \\
 $-C_{\mathrm{post}}$ spec cost & -- & -- & $0.144$ \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \paragraph{Ablation summary.}
-Table~\ref{tab:ablation-mini} grounds the component claims. Removing pressure ranking bankrupts S1/S2; no discount slows outage recovery; spec-only cost misses S3; and greedy selection raises variance and misses S3 in several seeds. Contextual bucketing mainly protects task-specific behavior.
+Table~\ref{tab:ablation-mini} shows which design choices fail under which market. The most severe failure is removing wallet pressure: the policy exhausts the wallet in S1/S2 and its PA-gap rises by more than sixfold. Discounting and cost learning matter in the shock regimes: without discounting, reliability recovery slows in S2, while a spec-only cost estimate misses the S3 promotion. Greedy selection is less stable across seeds and misses S3 in several runs; contextual bucketing mainly protects task-specific separation.
 
 \section{Discussion and Conclusion}
 \label{sec:discussion}
@@ -329,7 +330,6 @@ Code and evaluation materials are available at \url{https://github.com/MCCodeAI/
 \paragraph{Author contributions.}
 Yin Li led ideation, method design, experiments, implementation, analysis, and writing. Yanbo He contributed to paper discussions, result audit, and baseline optimization. Wanting Xiong contributed related work, project discussion, and audit.
 
-\balance
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
 
