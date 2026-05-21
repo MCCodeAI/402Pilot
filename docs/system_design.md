@@ -80,7 +80,7 @@ implementations.
      \mathrm{burn\_excess}_t = \max\big(0,\ \mathrm{burn\_rate}_t - \mathrm{target\_rate}\big). \]
   The Reward Calculator (§2.6) feeds this into the bounded form
   \(\lambda_{\mathrm{norm}} = \lambda_t / (1 + \lambda_t)\). \(\alpha = 2\)
-  is fixed across the paper.
+  is fixed across the benchmark.
 - **Contract.** Idempotent reads. In the sequential benchmark runner, write
   only via `record_spend(c)` after a paid call resolves, where `c` is the
   actual charged amount. A budget block or uncharged payment failure records
@@ -99,7 +99,7 @@ implementations.
   inside `select`. Provider-level outcome statistics are maintained
   outside the policy and encoded into the next round's context, keeping
   the policy interface aligned with the standard contextual-bandit update.
-- **Default.** PA-DCT (see method section in paper outline).
+- **Default.** PA-DCT (implemented in `pilot402/policies/padct.py`).
 
 ### 2.4 x402 Payment Executor
 - **Wraps.** An x402 client (real or mock). Exposed surface:
@@ -186,8 +186,9 @@ implementations.
   the term contributed ≈ 1% of cumulative reward magnitude — not enough
   to justify the extra hyperparameter. Latency is still observed and
   logged (it is part of the round record), just not part of the reward.
-- **Locked constants.** \(\nu = 0.5\) is fixed across the paper (sensitivity
-  analysis for \(\nu \in \{0.1, 0.5, 1.0\}\) lives in the appendix).
+- **Locked constants.** \(\nu = 0.5\) is fixed across the benchmark
+  (sensitivity analysis for \(\nu \in \{0.1, 0.5, 1.0\}\) is summarized in
+  `artifacts/results/hyperparam_sensitivity/`).
   \(\alpha = 2\) inside \(\lambda_t = \exp(\alpha \cdot \mathrm{burn\_excess})\).
   Neither is tuned per scenario or per method.
 
@@ -222,7 +223,7 @@ implementations.
 
 ## 4. What lives outside the system
 
-These are explicit non-goals for the layer (and the paper):
+These are explicit non-goals for the layer:
 
 - Custody, key management, cryptographic settlement guarantees.
 - Escrow, dispute, slashing, on-chain reputation.

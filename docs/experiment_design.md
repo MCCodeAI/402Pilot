@@ -1,12 +1,13 @@
 # Experiment Design — 402Pilot-Bench
 
-**Status:** historical design draft. The ACM paper is the source of truth for
-current scenario definitions and reported metrics.
+**Status:** retained design note. The runnable benchmark configuration in
+`experiments/main.yaml` is the source of truth for current scenario settings;
+compact benchmark summaries are committed under `artifacts/results/`.
 
-402Pilot-Bench is the single evaluation used in this paper. It comprises
+402Pilot-Bench is the core evaluation suite for this repository. It comprises
 three market scenarios, a fixed comparator set, four ablations of PA-DCT,
 and a fixed metric suite — all run against the same pre-generated response
-dataset. Every reported number comes from this one experimental framework.
+dataset. Every benchmark summary comes from this one experimental framework.
 
 ---
 
@@ -49,7 +50,7 @@ reasoning settings remain fixed.
 
 | Provider      | Type        | LLM          | Reasoning                      | Retrieval / Context strategy                | Other tools                                | Special behavior          |
 | ------------- | ----------- | ------------ | ------------------------------ | ------------------------------------------- | ------------------------------------------ | ------------------------- |
-| **P-cheap**   | Cheap       | Qwen3-8B     | ❌ disabled (non-thinking mode) | None — parametric memory only               | None                                       | —                         |
+| **P-cheap**   | Cheap       | qwen3.5-flash | ❌ disabled (non-thinking mode) | None — parametric memory only               | None                                       | —                         |
 | **P-mid**     | Medium      | GPT-5.4-mini | ❌ disabled                     | BM25, top-2 paragraphs from provided docs   | None                                       | —                         |
 | **P-premium** | Premium     | GPT-5.4      | ✅ CoT pipeline                 | Full document context injection             | Code execution sandbox (coding tasks only) | —                         |
 | **P-adv**     | Adversarial | GPT-5.4-mini | ❌ disabled                     | BM25, top-2 paragraphs (identical to P-mid) | None                                       | Adversarial system prompt |
@@ -171,7 +172,7 @@ defined in their loader modules.
 ### 1.4 Run length and budget
 
 - **T = 10,000** rounds per run.
-- **N = 30** seeds per (policy × scenario) cell; mean ± std reported.
+- **N = 30** seeds per (policy × scenario) cell; mean ± std summarized.
 - Wallet budget **B** sized so *Always-P-premium* exhausts wallet near round
 ~5,000. This forces budget-awareness to matter and creates a clean reference
 point for comparing budget longevity across policies.
@@ -200,7 +201,7 @@ price-promotion opportunity.
 ## 3. Comparators
 
 Three external comparators plus an offline upper bound. Learning variants of
-PA-DCT are reported as ablations in §5, not as separate comparators, to avoid
+PA-DCT are summarized as ablations in §5, not as separate comparators, to avoid
 double-counting and keep the results table clean.
 
 
@@ -220,7 +221,7 @@ ablations, but are not assigned dedicated fixed baselines.
 ## 4. Metrics
 
 Four metrics, each with a distinct purpose. All computed from the same
-per-round logs; reported per-scenario as mean ± std across 30 seeds.
+per-round logs; summarized per-scenario as mean ± std across 30 seeds.
 
 
 | Metric                | Definition                                                              | Role                                                          |
@@ -259,7 +260,7 @@ per-contribution attribution.
 
 ## 6. Statistical reporting
 
-- 30 seeds per cell. Report mean ± std in tables; 95% CIs on figures.
+- 30 seeds per cell. Summarize mean ± std in tables; 95% CIs on figures.
 - Pairwise significance: Welch's t-test, Bonferroni-corrected within each
 comparison table.
 - Headline results include effect size (relative improvement in ROI) in
@@ -273,8 +274,8 @@ addition to p-values.
 selection, using different seeds from the evaluation seeds.
 - PA-DCT hyperparameters are fixed across all scenarios after selection; no
 per-scenario tuning. The same rule applies to all ablations.
-- The hyperparameter grid and selection criterion are documented in the
-appendix.
+- The hyperparameter grid and selection criterion are reflected in the compact
+  sensitivity summaries under `artifacts/results/hyperparam_sensitivity/`.
 
 ---
 

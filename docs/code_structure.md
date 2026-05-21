@@ -1,7 +1,7 @@
 # Repository Layout
 
 This document describes the public GitHub layout. Internal working directories
-used during paper writing, local analysis logs, and visualization drafts are
+used during manuscript drafting, local analysis logs, and visualization drafts are
 kept local and ignored by Git.
 
 ## Top Level
@@ -24,7 +24,7 @@ kept local and ignored by Git.
 
 The following directories are intentionally local-only:
 
-- `paper/`: working LaTeX source
+- `paper/`: local manuscript LaTeX source
 - `logs/`: local analysis notes and generated markdown tables
 - `viz/`, `viz-explainer/`: visualization prototypes
 - `results/`: bulk experiment outputs
@@ -95,7 +95,7 @@ against a local x402-style stack.
 ## `docs/`
 
 Markdown files describe system design, experiment design, and the current code
-structure. LaTeX working sources are kept in the local-only `paper/` directory
+structure. LaTeX manuscript sources are kept in the local-only `paper/` directory
 rather than committed here.
 
 ## Tests

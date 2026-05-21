@@ -51,7 +51,7 @@ from pilot402.pregen.tasks.loader import DEFAULT_LIMITS
 # pay during pregen. Used by the progress bar's running spend estimate.
 # Values reflect ~1k-token average call (input + output) at 2026 pricing.
 _ESTIMATED_USD_PER_CALL: dict[ProviderId, float] = {
-    ProviderId.P_CHEAP: 0.0008,  # Qwen3-8B via DashScope
+    ProviderId.P_CHEAP: 0.0008,  # qwen3.5-flash via DashScope
     ProviderId.P_MID: 0.0008,  # GPT-5.4-mini
     ProviderId.P_PREMIUM: 0.012,  # GPT-5.4 (~15x mini)
     ProviderId.P_ADV: 0.0008,

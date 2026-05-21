@@ -1,13 +1,13 @@
-# 402Pilot-Bench full sweep — locked paper configuration.
+# 402Pilot-Bench full sweep — locked benchmark configuration.
 #
 # This file is loaded by `pilot402.core.config.load_config()` and proves that
 # the YAML schema connects end-to-end. Values below are the locked settings
-# used by the paper experiments.
+# used by the benchmark experiments.
 #
 # Environment-sourced sub-objects (x402, llm_keys, judge) MUST NOT appear here;
 # they are read from `.env`.
 
-# Retained for reproducible seed derivation in existing paper runs.
+# Retained for reproducible seed derivation in existing benchmark runs.
 run_id: "main_v0_placeholder"
 seed: 0
 num_rounds: 10000
@@ -56,7 +56,7 @@ budget:
   target_burn_rate: 0.0001
 
 reward:
-  # Constants across the paper to avoid the "you tuned the reward" objection
+  # Constants across the benchmark to avoid the "you tuned the reward" objection
   # (system_design §2.6).
   #
   # The latency term μ·l̃ was retired on 2026-05-02 — no provider in the

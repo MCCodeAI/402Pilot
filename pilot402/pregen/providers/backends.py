@@ -7,7 +7,7 @@ Three backends, each implementing ``LlmBackend``:
 * ``AnthropicBackend`` — used for the LLM-as-judge path; exposed here for
                           symmetry but the actual judge wrapper lives in
                           ``pilot402.eval.judge_backend.AnthropicJudgeClient``.
-* ``QwenBackend``      — drives Qwen3-8B via DashScope (P-cheap).
+* ``QwenBackend``      — drives qwen3.5-flash via DashScope (P-cheap).
 
 All three lazy-import their SDK in ``__post_init__``. Importing this module
 does NOT require ``openai`` / ``anthropic`` / ``dashscope`` to be installed;
@@ -190,7 +190,7 @@ class AnthropicBackend:
 
 
 # ---------------------------------------------------------------------------
-# DashScope (Qwen3-8B for P-cheap)
+# DashScope (qwen3.5-flash for P-cheap)
 # ---------------------------------------------------------------------------
 
 
@@ -267,7 +267,7 @@ class QwenBackend:
 
     def complete(self, request: LlmRequest) -> LlmResponse:
         # Retry on 429 (DashScope rate limit) with exponential backoff.
-        # Qwen3-8B's per-account RPS quota is much tighter than OpenAI's,
+        # DashScope's per-account RPS quota is much tighter than OpenAI's,
         # so 8-way concurrency easily saturates it.
         last_exc: RuntimeError | None = None
         for attempt in range(_MAX_RATE_LIMIT_RETRIES):
