@@ -52,6 +52,7 @@ htmlcov/
 *.pptx
 *.docx
 docs/*.pdf
+!docs/technical_report.pdf
 
 # Local-only experiment outputs
 outputs/
