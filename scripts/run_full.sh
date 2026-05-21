@@ -9,9 +9,8 @@
 # to continue. Worst-case loss per Ctrl+C is ~$0.10 from in-flight cells whose
 # LLM call paid but record didn't reach disk.
 #
-# Expected: ~3.5–4 hours wall clock, ~$50–80 spend (mostly Vercel/Gemini judge).
-# Cost details: see logs/replication_comparison.md and the cost discussion
-# from 2026-05-01.
+# Expected: ~3.5–4 hours wall clock, with external LLM/judge API spend.
+# Cost depends on provider pricing and judge configuration.
 
 set -euo pipefail
 

@@ -136,9 +136,12 @@ implementations.
 
 ### 2.6 Reward Calculator
 
-> Final design as of 2026-05-02. Full rationale, including why the latency
-> term was dropped and why we use a sigmoid convex combination instead of
-> a subtractive Lagrangian, is in `logs/reward_design_rationale.md`.
+> Final design as of 2026-05-02. The latency term was dropped because the
+> benchmark provider specifications do not include a latency profile, no
+> scenario manipulates latency, and the measured contribution was negligible
+> relative to quality, failures, and cost. The final reward uses a sigmoid
+> convex combination so payment pressure remains bounded while the utility
+> posterior stays independent of wallet state.
 
 - **Input.** Quality \(q_t \in [0,1]\), cost \(c_t\), failure flag
   \(f_t \in \{0,1\}\), and the current budget-pressure multiplier

@@ -30,9 +30,8 @@ node_modules/
 *.log
 
 # 402Pilot bulk artifacts (gitignored, regenerable).
-# data/tasks/ is committed: those JSONL files are small and define the
-# experimental subset; without them, reviewers cannot reproduce the run.
-data/pregen/
+# data/tasks/ and data/pregen/ are committed as reproducibility artifacts:
+# tasks define the benchmark subset, and pregen contains frozen replay records.
 data/calibration/
 results/
 
@@ -71,7 +70,7 @@ paper/*.synctex.gz
 paper/*.fls
 paper/*.fdb_latexmk
 
-# Local Codex skills: project-scoped, not published to GitHub or Overleaf.
+# Local Codex skills: project-scoped, not published to GitHub.
 skills/
 # Legacy location, kept ignored so skills are not accidentally reintroduced
 # under paper/.

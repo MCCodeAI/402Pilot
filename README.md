@@ -1,182 +1,153 @@
-# 402Pilot: An x402 Decision Layer for Autonomous Agent Micropayments
+# 402Pilot
 
-**402Pilot** is a decision layer that sits above x402-style micropayment protocols. It gives autonomous agents an online policy for deciding *which* paid service to call — balancing output quality against cost under a fixed wallet budget, without prior knowledge of provider behavior.
+402Pilot is a buyer-side decision layer for autonomous agent micropayments. It
+sits above x402-style payment execution and decides which paid provider an
+agent should call under a finite wallet, uncertain service quality, and
+changing provider reliability or prices.
 
-The core algorithm is **PA-DCT** (Payment-Aware Discounted Contextual Thompson sampling): a budget-aware, non-stationary contextual bandit that learns from reward feedback across irreversible per-call payments, with dual Q- and cost posteriors.
+The core policy is **PA-DCT**: Payment-Aware Discounted Contextual Thompson
+Sampling. PA-DCT maintains separate discounted posteriors over provider utility
+and realized cost, then ranks affordable providers using both task context and
+current wallet pressure.
 
----
+## Why This Exists
 
-## The Problem
+x402-style protocols make payment execution programmable: a service can publish
+a payable endpoint, an agent can receive payment requirements, and a request can
+settle per call. That still leaves a buyer-side question:
 
-x402 solves payment *execution*. It does not solve payment *decision*.
+> Given several payable services and a draining wallet, which one should the
+> agent buy now?
 
-An agent with a $50 wallet and five provider options — ranging from cheap-but-unreliable to premium-but-expensive, including an adversarial provider that sounds correct but isn't, and a flaky provider that times out 40% of the time — cannot rely on static rules to allocate spend well. The right choice depends on the task type, remaining budget, and how each provider has been performing lately.
+402Pilot treats that as an online learning problem. Each round reveals only the
+outcome of the provider that was actually paid for, and each payment is
+irreversible. The policy must therefore balance quality, cost, exploration, and
+adaptation to market changes.
 
-402Pilot learns this on the fly.
+## Method
 
----
+At each round, 402Pilot receives a task context and a set of quoted providers.
+The wallet filters this set to affordable providers. PA-DCT samples provider
+utility and cost beliefs for the current task bucket, scores each affordable
+arm, pays for the selected provider through the executor interface, and updates
+only from the chosen provider's receipt and service outcome.
 
-## Key Design Points
+The payment-aware score is:
 
-**Decision layer, not a protocol fork.** 402Pilot makes its selection decision before the HTTP request hits the paid endpoint. x402 handles settlement unchanged.
-
-**Bandit, not RL.** Only the chosen arm is observed per round (bandit feedback). Payments are irreversible. No long-horizon credit assignment is needed within a single service call.
-
-**PA-DCT reward signal.** Bounded in [-1, +1] via sigmoid weighting:
-
-```
-utility   = q − ν · f                                # tracks intrinsic provider quality
-λ_norm    = λ_t / (1 + λ_t)                          # sigmoid budget pressure ∈ (0, 1)
-PA_reward = (1 − λ_norm) · utility − λ_norm · c̃     # ranking criterion at decision time
-```
-
-`q` is task quality, `c̃` is normalized cost, `f` is a failure flag, `λ_t` is a budget-pressure multiplier that rises as the wallet depletes. Posterior updates use `utility` (λ-free), so the policy's beliefs track provider quality independently of decision-time budget pressure. The latency term in earlier drafts was retired — no provider in this benchmark specifies a latency profile, and ablations showed it contributed ~1% of reward magnitude.
-
-**Dual posteriors over (Q, cost).** Each (arm, task-type) bucket maintains separate Gaussian posteriors for Q (utility as the service-quality signal) and cost, both with discount factor γ=0.999. The cost posterior lets the policy detect price shocks (S3) the same way the Q-posterior detects degradation (S2).
-
-**Non-stationarity via discounted sufficient statistics.** Exponential discount on per-arm posteriors lets the policy adapt to provider drift without forgetting stable arms too quickly.
-
-If `latexmk` is missing:
-
-```bash
-cd paper
-pdflatex main && bibtex main && pdflatex main && pdflatex main
+```text
+utility   = q - nu * failure
+lambda_n  = lambda_t / (1 + lambda_t)
+score     = (1 - lambda_n) * utility_sample
+            - lambda_n * normalized_cost_sample
 ```
 
-Five heterogeneous provider agents, four evaluation buckets, three market scenarios, 30 seeds × 10,000 rounds per cell. All responses pre-generated from real LLM calls (20,575 frozen `PregenRecord`s); experiments replay from fixed fixtures for reproducibility.
+`lambda_t` increases when the wallet burns faster than the target schedule, so
+the same learned provider quality can lead to different choices depending on
+remaining budget.
 
-| Provider   | Model         | Special behavior                                |
-| ---------- | ------------- | ----------------------------------------------- |
-| P-cheap    | qwen3.5-flash | Uniform prompt                                  |
-| P-mid      | GPT-5.4-mini  | Uniform prompt                                  |
-| P-premium  | GPT-5.4       | Uniform prompt                                  |
-| P-adv      | GPT-5.4-mini  | Adversarial system prompt (fluent but wrong)    |
-| P-flaky    | GPT-5.4-mini  | 40% timeout injection                           |
+## Benchmark
 
-P-mid, P-adv, and P-flaky share the same cost tier ($0.002) and base model. A rule-based policy cannot distinguish them — PA-DCT must learn the distinction from reward feedback alone.
+402Pilot-Bench evaluates provider selection over frozen replay. Provider
+responses are pre-generated, scored, and replayed under paired seeds so that
+policy differences are not confounded by live API drift.
 
-| Scenario                | Event                                                                                              |
-| ----------------------- | -------------------------------------------------------------------------------------------------- |
-| **S1 — Stationary**     | No mid-run changes; baseline market.                                                               |
-| **S2 — Mid outage**     | P-mid fails 30% of the time during rounds 3,000–5,500 (timeout injection); fully recovers after.   |
-| **S3 — Premium promo**  | P-premium price drops at round 1,000 from $0.01 → $0.002 (matches mid); the agent has 9,000 rounds to detect the shift via the cost posterior and migrate. |
+The benchmark uses five provider pipelines:
 
----
+| Provider | Price | Role |
+| --- | ---: | --- |
+| P-cheap | 0.0005 USDC | low-cost baseline |
+| P-mid | 0.002 USDC | reliable mid-tier baseline |
+| P-premium | 0.01 USDC | strongest but initially expensive provider |
+| P-adv | 0.002 USDC | same tier as P-mid, adversarially prompted |
+| P-flaky | 0.002 USDC | same tier as P-mid, with billed timeouts |
 
-## Quickstart
+The reported experiments use three market scenarios:
 
-```bash
-# 1. Install in editable mode (Python ≥ 3.11)
-pip install -e .
+| Scenario | Event |
+| --- | --- |
+| S1 Stationary | no mid-run market change |
+| S2 Mid outage | P-mid fails during rounds 3,000-5,500 |
+| S3 Premium promo | P-premium drops from 0.01 to 0.002 USDC at round 1,000 |
 
-# 2. Run unit tests
-pytest
+Each main cell uses 30 paired seeds and 10,000 rounds with a 50 USDC wallet.
+Metrics include mean quality, budget use, ROI, and payment-aware gap to a replay
+oracle.
 
-# 3. Quick end-to-end smoke (S1/S2 via main sweep; optional S3 via dedicated out-dir)
-python -m scripts.run_scenario_sweep --num-seeds 3 --num-rounds 200 --out-dir results/smoke --scenarios S1 S2 S3
+## Results
 
-# 4. Full main sweep
-python -m scripts.run_scenario_sweep --num-seeds 30 --scenarios S1 S2
-python -m scripts.run_s3_promo
+PA-DCT is not designed to win one isolated metric in every static setting. Its
+goal is robust buyer behavior under changing market conditions. In the course
+report, PA-DCT remains budget-feasible, adapts away from the mid-tier outage in
+S2, and captures the premium price promotion in S3.
 
-# 5. Four core ablations across all scenarios
-python -m scripts.run_ablation_matrix
+The paper artifacts are available here:
 
-# 6. S3 cost-posterior diagnostic ablation
-python -m scripts.run_s3_promo_ablation --policies padct --skip-oracle
+- [Course project report](docs/course_report.pdf)
+- [Technical supplement](docs/technical_report.pdf)
 
-# 7. Compute the ablation metrics table from frozen JSONL logs
-python -m scripts.compute_ablation_metrics
-```
+## Repository Layout
 
-Configuration is in `experiments/main.yaml`. Pregen data lives in `data/pregen/*.jsonl`.
-
----
-
-## Comparators
-
-Seven baselines plus PA-DCT and an offline upper bound, all run on identical seeds:
-
-| Policy            | Type                                                          |
-| ----------------- | ------------------------------------------------------------- |
-| Random            | Uniform random over affordable arms                           |
-| Always-P-cheap    | Fixed (cheapest)                                              |
-| Always-P-mid      | Fixed (mid tier)                                              |
-| Always-P-premium  | Fixed (strongest non-adaptive)                                |
-| Budget rule       | Threshold heuristic over remaining budget                     |
-| Contextual DS-TS  | Drift-aware Thompson sampling without wallet pressure/cost posterior |
-| Contextual BTS    | Budgeted Thompson sampling with stationary cost posterior     |
-| **PA-DCT**        | **Ours** (dual-posterior contextual TS with budget penalty)   |
-| True Oracle       | Free-running with hindsight per-round arm peek (upper bound)  |
-
-**Ablations** (each removes one PA-DCT component, plus one S3 diagnostic):
-
-- **−P** (Payment-aware): policy ranks by raw utility instead of `(1−λ_norm)·u − λ_norm·c̃`
-- **−D** (Discount): γ = 1 (no forgetting)
-- **−C** (Contextual): single global bucket instead of per-task-type buckets
-- **−TS** (Thompson sampling): greedy on posterior mean instead of sampling
-- **−Cpost** (Cost posterior): pins realized cost to the spec price in S3
-
----
-
-## Headline Results
-
-PA-DCT has the most robust non-oracle trade-off profile across quality, ROI, and PA-gap. It is not the winner of every individual metric: cheap fixed routing maximizes ROI by under-spending, and some fixed/rule policies win isolated quality cells. The main result is that PA-DCT adapts under both reliability and price shocks while remaining jointly competitive across the evaluation panel. Detail:
-
-| Scenario | Full PA-DCT cum_PA | vs Oracle gap | Adaptation time          |
-| -------- | ------------------ | ------------- | ------------------------ |
-| S1       | 5512 ± 54          | 1325          | n/a (no shock)           |
-| S2       | 5147 ± 80          | 1662          | 1467 rounds (30/30)      |
-| S3       | 5911 ± 51          | 1206          | 200 rounds (30/30)       |
-
-Ablations reveal that **P** protects solvency, **D** primarily speeds up shock recovery, **C** is not a monotone aggregate win but helps S3 opportunity capture, **TS** reduces brittle seed behavior, and the cost posterior is necessary to exploit the S3 price drop. See `logs/ablation_5metrics_table.md` for the reproducible ablation metrics.
-
-For workshops, also set `\workshoptitle{...}` after `\title{...}`.
-
-## Notation reference
-
-```
+```text
 402Pilot/
-├── docs/               # Design documents
-│   ├── paper_outline.md
-│   ├── system_design.md
-│   ├── experiment_design.md
-│   └── code_structure.md
-├── pilot402/           # Python package
-│   ├── core/           # types, config, seeds, interfaces (Protocols)
-│   ├── pregen/         # frozen-fixture loaders for replay
-│   ├── policies/       # PADCTPolicy + 5 baselines
-│   ├── runtime/        # main bandit loop + Oracle loop
-│   └── scenarios.py    # S1 / S2 / S3 transforms
-├── experiments/        # Locked YAML configs
-├── scripts/            # CLI entry points (sweeps, ablations, metrics)
-├── data/               # Frozen pregen + tasks (gitignored bulk)
-├── results/            # Run outputs (gitignored)
-├── viz/                # Interactive explainer (React + Vite, GitHub Pages)
-├── logs/               # Design-decision docs + analysis writeups
-└── tests/              # unit and integration tests
+├── data/tasks/              # committed benchmark task subsets
+├── docs/                    # public reports and design docs
+├── experiments/             # locked experiment configuration
+├── infrastructure/x402/     # local x402 quote-pay-receipt witness
+├── pilot402/                # core Python package
+├── results/hyperparam_sensitivity/
+│                            # retained compact sensitivity artifact
+├── scripts/                 # experiment, metric, and witness entry points
+└── tests/                   # unit and integration tests
 ```
 
-Full module layout: [`docs/code_structure.md`](docs/code_structure.md). All paper-relevant decisions consolidated in [`logs/paper_design_decisions.md`](logs/paper_design_decisions.md). Anti-prior-art audit in [`logs/literature_review.md`](logs/literature_review.md).
+Local-only working directories such as `paper/`, `logs/`, `viz/`,
+`viz-explainer/`, and bulk `results/` outputs are intentionally ignored by Git.
+The frozen replay records under `data/pregen/` are committed as the
+reproducibility artifact.
 
----
+## Installation
 
-## Status
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
 
-| Component                      | Status        |
-| ------------------------------ | ------------- |
-| Pre-generation (LLM calls)     | ✅ Complete (20,575 records) |
-| Core implementation            | ✅ Complete |
-| Main sweep S1/S2/S3            | ✅ Complete (30 seeds × 7 policies) |
-| 4-component ablation matrix    | ✅ Complete (360 cells) |
-| 4 official metrics             | ✅ Computed |
-| Statistical significance       | ✅ Computed |
-| Hyperparameter sensitivity     | ✅ γ sweep reported in appendix |
-| Paper writing                  | 🟡 In progress |
-| Interactive viz (`viz/`)       | ✅ Built; data fixtures regenerated against locked sweeps |
-| Paper figures                  | ⏳ Deferred to paper finalization |
+The core package requires Python 3.11 or newer.
 
----
+## Running Tests
+
+```bash
+pytest
+```
+
+The x402 integration test is skipped by default because it requires the local
+Docker witness stack. See [infrastructure/x402/README.md](infrastructure/x402/README.md)
+for that setup.
+
+## Running Experiments
+
+A quick smoke run can be launched with:
+
+```bash
+python -m scripts.run_scenario_sweep \
+  --num-seeds 3 \
+  --num-rounds 200 \
+  --out-dir results/smoke \
+  --scenarios S1 S2 S3
+```
+
+The locked main configuration is [experiments/main.yaml](experiments/main.yaml).
+Full paper-scale sweeps replay the committed frozen records under
+`data/pregen/`.
+
+## Data Availability
+
+The task subsets in `data/tasks/` and the frozen replay records in
+`data/pregen/` are committed. The pre-generated artifact is about 11 MB and
+contains 20,575 provider-response records plus the judge cache used for
+open-ended QA scoring. This lets readers rerun policy sweeps without making
+fresh LLM calls.
 
 ## License
 
