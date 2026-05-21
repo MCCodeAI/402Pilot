@@ -290,8 +290,27 @@ The learned reallocations matter because the cheap safe policy under-serves task
 \paragraph{Statistical checks.}
 Paired-seed tests match these claims. The S3 improvements over Always-P-mid on quality, ROI, and PA-gap/$T$ are all significant ($p<10^{-20}$), and \padct{} has a significantly smaller PA-gap/$T$ than both learning baselines in S1 and S3. The S1 disadvantages against Always-P-mid and BudgetRule are also significant, which is why we treat them as the exploration cost of maintaining shock-ready posteriors rather than hide them. The one borderline cell is S2 PA-gap/$T$: \padct{} is numerically close to Always-P-cheap and Contextual BTS, while delivering much higher quality than those cheap-biased policies.
 
+\begin{table}[t]
+\centering
+\caption{Compact ablation evidence. Gap is PA-gap/$T$; ${}^{\dagger}$ marks mid-run bankruptcy.}
+\label{tab:ablation-mini}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Variant & S1 & S2 & S3 \\
+\midrule
+Full \padct{} & $0.133$ & $0.166$ & $0.121$ \\
+$-P$ no pressure & $0.855^{\dagger}$ & $0.878^{\dagger}$ & $0.259$ \\
+$-D$ no discount & $0.109$ & $0.170$ & $0.114$ \\
+$-TS$ greedy & $0.130$ & $0.175$ & $0.145$ \\
+$-C_{\mathrm{post}}$ spec cost & -- & -- & $0.144$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \paragraph{Ablation summary.}
-The component results have a clear failure-mode pattern. Removing payment-aware ranking causes mid-run bankruptcy in S1/S2; removing discounting slows reliability-shock recovery; pinning cost to the specification price prevents the policy from exploiting the S3 promotion; removing Thompson sampling increases seed-to-seed variance and misses the promotion in several seeds; and contextual bucketing mainly protects task-specific behavior rather than monotonically improving aggregate means. These roles match the intended failure modes for an autonomous buyer: budget control, non-stationary response in reliability and price, task heterogeneity, and stable exploration.
+Table~\ref{tab:ablation-mini} grounds the component claims. Removing pressure ranking bankrupts S1/S2; no discount slows outage recovery; spec-only cost misses S3; and greedy selection raises variance and misses S3 in several seeds. Contextual bucketing mainly protects task-specific behavior.
 
 \section{Discussion and Conclusion}
 \label{sec:discussion}
@@ -302,10 +321,13 @@ The main limitation is that the quantitative evaluation is controlled. Frozen re
 
 Overall, the evidence supports a simple conclusion: autonomous payment systems need learning at the buyer layer, not only safer settlement mechanisms. \padct{} is not universally optimal in a static market, but it is the policy in this comparison that keeps service quality, spending efficiency, and payment-aware objective jointly competitive when reliability and prices change.
 
-\paragraph{Supplementary materials and contributions.}
+\paragraph{Code and supplement.}
 The companion technical report contains the supplementary notation, proof scope, computation notes, detailed ablations, sensitivity sweeps, and local x402 quote--pay--receipt witness:
 \url{https://github.com/MCCodeAI/402Pilot/raw/main/docs/technical_report.pdf}.
-Code and evaluation materials are available at \url{https://github.com/MCCodeAI/402Pilot}. Yin Li led ideation, method design, experiments, implementation, analysis, and writing. Yanbo He contributed to paper discussions, result audit, and baseline optimization. Wanting Xiong contributed related work, project discussion, final report writing, and audit.
+Code and evaluation materials are available at \url{https://github.com/MCCodeAI/402Pilot}.
+
+\paragraph{Author contributions.}
+Yin Li led ideation, method design, experiments, implementation, analysis, and writing. Yanbo He contributed to paper discussions, result audit, and baseline optimization. Wanting Xiong contributed related work, project discussion, and audit.
 
 \balance
 \bibliographystyle{ACM-Reference-Format}
