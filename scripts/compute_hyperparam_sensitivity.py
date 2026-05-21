@@ -1,12 +1,12 @@
-"""Aggregate the hyperparameter sensitivity sweep into a paper-ready table.
+"""Aggregate the hyperparameter sensitivity sweep into a table-formatted summary.
 
 Consumes ``results/hyperparam_sensitivity/cells.jsonl`` (one row per
 (cell, policy, seed); written by ``run_hyperparam_sensitivity.py``) and
 emits:
 
-* a Markdown table to stdout, paper-appendix ready
+* a Markdown table to stdout
 * ``results/hyperparam_sensitivity/agg.json`` — per-cell mean ± SE of every
-  reported metric, in case downstream paper scripts want machine-readable
+  benchmark metric, in case downstream scripts want machine-readable
   input
 * optional ``results/hyperparam_sensitivity/sensitivity.png`` — a 4-panel
   matplotlib figure (one per perturbed param) plotting the headline

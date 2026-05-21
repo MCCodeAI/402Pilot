@@ -9,7 +9,7 @@ For each (scenario, policy) cell, aggregates the per-round logs into:
                 where R = sum_t payment_aware_reward, paired by seed
 
 Outputs:
-    - Markdown table to stdout (paper-ready ordering)
+    - Markdown table to stdout (table-formatted ordering)
     - Raw per-cell rows as JSONL at results/main_table/per_cell.jsonl
     - Aggregated stats as JSON at results/main_table/agg.json
 
@@ -190,8 +190,8 @@ def main(argv: list[str] | None = None) -> int:
     with (args.out_dir / "agg.json").open("w", encoding="utf-8") as fh:
         json.dump(aggregated, fh, indent=2)
 
-    # Pretty-print a paper-ready table.
-    print("Paper main-results table")
+    # Pretty-print a compact main-results table.
+    print("Main-results table")
     print("=" * 110)
     print(
         f"{'Policy':<24} | "

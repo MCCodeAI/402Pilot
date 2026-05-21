@@ -22,7 +22,7 @@ metadata when applicable, timestamp, and generation temperature.
 
 ## Reproducibility Scope
 
-These files are the replay substrate for the reported experiments. They let a
+These files are the replay substrate for the benchmark experiments. They let a
 reader rerun policy sweeps and metric computation without paying for fresh LLM
 generation or re-running the open-ended QA judge.
 

@@ -44,9 +44,10 @@ dist/
 .coverage
 htmlcov/
 
-# Slide decks and Word documents — kept local, not in git
+# Slide decks, Word documents, and local PDF exports — kept local, not in git
 *.pptx
 *.docx
+docs/*.pdf
 
 # Local-only experiment outputs
 outputs/

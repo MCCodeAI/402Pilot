@@ -1,4 +1,4 @@
-# Reported Result Artifacts
+# Benchmark Result Artifacts
 
 This directory contains compact outputs for checking the benchmark numbers
 without committing the full local `results/` tree.
@@ -6,7 +6,7 @@ without committing the full local `results/` tree.
 The full local run directory is about 11 GB and contains per-round logs, smoke
 tests, archived runs, and intermediate outputs. Those files are intentionally
 ignored by Git. The files here are the small summaries used for tables,
-statistical checks, ablation summaries, and sensitivity reporting.
+statistical checks, ablation summaries, and sensitivity analysis.
 
 ## Contents
 
@@ -17,7 +17,7 @@ statistical checks, ablation summaries, and sensitivity reporting.
 - `s3_cost_posterior_ablation/`: per-seed summary for the S3 cost-posterior
   diagnostic ablation.
 - `hyperparam_sensitivity/`: compact sensitivity sweep table and figure.
-- `tables/ablation_5metrics_table.md`: paper-ready ablation metric table.
+- `tables/ablation_5metrics_table.md`: table-formatted ablation metrics.
 - `tables/significance_table.md`: paired-seed significance table.
 
 These summaries are derived from the committed frozen replay records in

@@ -27,8 +27,7 @@ The following directories are intentionally local-only:
 - `paper/`: working LaTeX source
 - `logs/`: local analysis notes and generated markdown tables
 - `viz/`, `viz-explainer/`: visualization prototypes
-- `results/`: bulk experiment outputs, except the retained
-  `results/hyperparam_sensitivity/` artifact
+- `results/`: bulk experiment outputs
 
 `data/pregen/` is intentionally committed as the frozen replay artifact for
 reproducible experiments.
@@ -69,7 +68,7 @@ public result artifact; the larger local `results/` directory is not committed.
 
 ## `experiments/`
 
-`experiments/main.yaml` is the locked configuration used by the reported main
+`experiments/main.yaml` is the locked configuration used by the benchmark main
 sweeps. It defines the provider set, scenario defaults, budget, reward
 constants, and paths used by the scripts.
 
