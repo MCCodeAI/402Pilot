@@ -61,7 +61,7 @@ The benchmark uses five provider pipelines:
 | P-adv | 0.002 USDC | same tier as P-mid, adversarially prompted |
 | P-flaky | 0.002 USDC | same tier as P-mid, with billed timeouts |
 
-The reported experiments use three market scenarios:
+The benchmark experiments use three market scenarios:
 
 | Scenario | Event |
 | --- | --- |
@@ -76,7 +76,7 @@ oracle.
 ## Results
 
 PA-DCT is not designed to win one isolated metric in every static setting. Its
-goal is robust buyer behavior under changing market conditions. In the reported
+goal is robust buyer behavior under changing market conditions. In the benchmark
 experiments, PA-DCT remains budget-feasible, adapts away from the mid-tier
 outage in S2, and captures the premium price promotion in S3.
 
