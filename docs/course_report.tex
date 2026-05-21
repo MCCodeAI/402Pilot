@@ -13,6 +13,7 @@
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 \usepackage{balance}
+\usepackage{xurl}
 
 \newcommand{\ut}{u_t}
 \newcommand{\ctilde}{\tilde c_t}
@@ -182,7 +183,7 @@ After the chosen call, only the selected cell receives the new observation. At s
 s_a=(1-\lamn)\hatu{a}{k_t}
   - \lamn\,\mathrm{clip}(\hatc{a}{k_t}/c_{\max},0,1).
 \end{equation}
-The policy chooses the affordable arm with the largest sampled score. Wallet pressure shifts the decision toward cost control when burn rate is high, discounting lets stale evidence fade after market changes, and posterior sampling preserves exploration. All experiments use a single locked configuration: $\gamma=0.999$, $\nu=0.5$, $\alpha=2.0$, and $c_{\max}=\$0.01$. The companion technical report gives the full prior settings, proof scope, computation notes, and sensitivity sweeps.
+The policy chooses the affordable arm with the largest sampled score. Wallet pressure shifts the decision toward cost control when burn rate is high, discounting lets stale evidence fade after market changes, and posterior sampling preserves exploration. All experiments use a single locked configuration: $\gamma=0.999$, $\nu=0.5$, $\alpha=2.0$, and $c_{\max}=\$0.01$.
 
 \begin{algorithm}[t]
 \caption{\padct{} policy loop.}
@@ -206,7 +207,7 @@ The policy chooses the affordable arm with the largest sampled score. Wallet pre
 \section{Evaluation}
 \label{sec:eval}
 
-The evaluation asks whether a buyer-side decision layer helps when reliability or prices change after deployment. Live provider calls would add cost and confound policy effects with API drift, so 402Pilot-Bench uses frozen replay: responses are pre-generated and scored for each task--provider pair, and all policies replay the same task order, response-version draws, wallet budget, and scenario events under paired seeds. The technical report expands the scoring protocol, statistical tests, ablations, and local x402 quote--pay--receipt witness.
+The evaluation asks whether a buyer-side decision layer helps when reliability or prices change after deployment. Live provider calls would add cost and confound policy effects with API drift, so 402Pilot-Bench uses frozen replay: responses are pre-generated and scored for each task--provider pair, and all policies replay the same task order, response-version draws, wallet budget, and scenario events under paired seeds.
 
 \paragraph{Benchmark, providers, and scenarios.}
 The benchmark contains 823 effective tasks across coding (HumanEval~\citep{chen2021humaneval}), multi-hop QA (HotpotQA~\citep{yang2018hotpotqa}), closed-form web QA (TriviaQA-web~\citep{joshi2017triviaqa}), and open-ended QA (OpenAssistant~\citep{kopf2023openassistant}). It stores five response versions for each task--provider pair, yielding 20,575 scored responses after one documented TriviaQA exclusion. The five providers form a price--quality ladder (P-cheap/P-mid/P-premium) plus a same-price reference/decoy trio: P-mid is reliable, P-adv produces fluent wrong answers, and P-flaky returns billed timeouts. A selector that only reads static metadata cannot separate these three arms.
@@ -233,7 +234,7 @@ P-flaky   & $0.002$  & GPT-5.4-mini; billed timeouts \\
 \end{table}
 
 \paragraph{Comparators and metrics.}
-We compare \padct{} against Random, fixed-arm policies, BudgetRule, Contextual DS-TS, Contextual BTS, and a replay True Oracle. BudgetRule is a static cascade-style heuristic: premium above 50\% remaining budget, mid above 20\%, and cheap below that. Contextual DS-TS tracks discounted utility but lacks wallet pressure and cost learning; Contextual BTS learns utility and cost but does not discount and scores by a raw utility/cost ratio. Metrics are mean quality $\bar q_T$, budget use, ROI, PA-gap/$T$ to the replay True Oracle, and AdaptT for shock response. ROI is an efficiency diagnostic rather than the objective: a cheap policy can have high ROI while serving low-quality answers. All means average over the same 30 seed identifiers within each scenario, and claimed differences use paired-seed tests; full metric definitions and statistical details are in the technical report.
+We compare \padct{} against Random, fixed-arm policies, BudgetRule, Contextual DS-TS, Contextual BTS, and a replay True Oracle. BudgetRule is a static cascade-style heuristic: premium above 50\% remaining budget, mid above 20\%, and cheap below that. Contextual DS-TS tracks discounted utility but lacks wallet pressure and cost learning; Contextual BTS learns utility and cost but does not discount and scores by a raw utility/cost ratio. Metrics are mean quality $\bar q_T$, budget use, ROI, PA-gap/$T$ to the replay True Oracle, and AdaptT for shock response. ROI is an efficiency diagnostic rather than the objective: a cheap policy can have high ROI while serving low-quality answers. All means average over the same 30 seed identifiers within each scenario, and claimed differences use paired-seed tests.
 
 \begin{table*}[t]
 \centering
@@ -290,19 +291,21 @@ The learned reallocations matter because the cheap safe policy under-serves task
 Paired-seed tests match these claims. The S3 improvements over Always-P-mid on quality, ROI, and PA-gap/$T$ are all significant ($p<10^{-20}$), and \padct{} has a significantly smaller PA-gap/$T$ than both learning baselines in S1 and S3. The S1 disadvantages against Always-P-mid and BudgetRule are also significant, which is why we treat them as the exploration cost of maintaining shock-ready posteriors rather than hide them. The one borderline cell is S2 PA-gap/$T$: \padct{} is numerically close to Always-P-cheap and Contextual BTS, while delivering much higher quality than those cheap-biased policies.
 
 \paragraph{Ablation summary.}
-The detailed ablation table is moved to the companion technical report to preserve the six-page limit, but the conclusions are central. Removing payment-aware ranking causes mid-run bankruptcy in S1/S2; removing discounting slows reliability-shock recovery; pinning cost to the specification price prevents the policy from exploiting the S3 promotion; removing Thompson sampling increases seed-to-seed variance and misses the promotion in several seeds; and contextual bucketing mainly protects task-specific behavior rather than monotonically improving aggregate means. These roles match the intended failure modes for an autonomous buyer: budget control, non-stationary response in reliability and price, task heterogeneity, and stable exploration.
+Detailed ablations are omitted from the six-page body, but the conclusions are central. Removing payment-aware ranking causes mid-run bankruptcy in S1/S2; removing discounting slows reliability-shock recovery; pinning cost to the specification price prevents the policy from exploiting the S3 promotion; removing Thompson sampling increases seed-to-seed variance and misses the promotion in several seeds; and contextual bucketing mainly protects task-specific behavior rather than monotonically improving aggregate means. These roles match the intended failure modes for an autonomous buyer: budget control, non-stationary response in reliability and price, task heterogeneity, and stable exploration.
 
 \section{Discussion and Conclusion}
 \label{sec:discussion}
 
 402Pilot does not replace payment protocols; it supplies the missing buyer policy above them. The boundary is deliberately narrow: it assumes posted payable candidates, chooses only from the affordable set, learns only from chosen outcomes, and leaves discovery, authorization, settlement faults, and observability to the surrounding payment stack. This makes the learning problem compatible with x402-style execution while making wallet pressure and receipt-revealed cost first-class decision signals.
 
-The main limitation is that the quantitative evaluation is controlled. Frozen replay makes policy comparisons reproducible, but it does not measure live settlement latency, facilitator failures, congestion, or provider drift in deployment. The benchmark also covers a finite set of task types, providers, and scripted shocks. The companion technical report therefore keeps formal proof scope, sensitivity sweeps, detailed ablations, and a local x402 quote--pay--receipt witness outside this course report.
+The main limitation is that the quantitative evaluation is controlled. Frozen replay makes policy comparisons reproducible, but it does not measure live settlement latency, facilitator failures, congestion, or provider drift in deployment. The benchmark also covers a finite set of task types, providers, and scripted shocks.
 
 Overall, the evidence supports a simple conclusion: autonomous payment systems need learning at the buyer layer, not only safer settlement mechanisms. \padct{} is not universally optimal in a static market, but it is the policy in this comparison that keeps service quality, spending efficiency, and payment-aware objective jointly competitive when reliability and prices change.
 
 \paragraph{Artifacts and contributions.}
-The companion technical report is available as a \href{https://github.com/MCCodeAI/402Pilot/raw/main/docs/technical_report.pdf}{PDF}; code and artifacts are in the \href{https://github.com/MCCodeAI/402Pilot}{GitHub repository}. Yin Li led ideation, method design, experiments, implementation, analysis, and writing. Yanbo He contributed to paper discussions, result audit, baseline optimization, and code. Wanting Xiong contributed related work, project discussion, final report writing, and audit.
+The companion technical report contains the supplementary notation, proof scope, computation notes, detailed ablations, sensitivity sweeps, and local x402 quote--pay--receipt witness:
+\url{https://github.com/MCCodeAI/402Pilot/raw/main/docs/technical_report.pdf}.
+Code and artifacts are available at \url{https://github.com/MCCodeAI/402Pilot}. Yin Li led ideation, method design, experiments, implementation, analysis, and writing. Yanbo He contributed to paper discussions, result audit, baseline optimization, and code. Wanting Xiong contributed related work, project discussion, final report writing, and audit.
 
 \balance
 \bibliographystyle{ACM-Reference-Format}
