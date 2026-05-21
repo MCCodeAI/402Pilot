@@ -53,6 +53,13 @@ htmlcov/
 outputs/
 logs/.ablation_metrics_cache.json
 
+# Local working materials not published to GitHub.
+logs/
+paper/
+viz/
+viz-explainer/
+scripts/export_viz_data.py
+
 # LaTeX build artifacts
 paper/*.aux
 paper/*.bbl
