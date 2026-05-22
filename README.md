@@ -1,20 +1,23 @@
 # 402Pilot
 
-402Pilot is a buyer-side decision layer for autonomous agent micropayments. It
-sits above x402-style payment execution and decides which paid provider an
-agent should call under a finite wallet, uncertain service quality, and
-changing provider reliability or prices.
+402Pilot is a protocol-agnostic buyer-side decision layer for autonomous agent
+micropayments. It sits above x402-style payment execution and addresses
+agent-native payment decision-making: which paid provider an agent should call
+under a finite wallet, task context, uncertain service outcomes, and changing
+provider reliability or prices.
 
 The core policy is **PA-DCT**: Payment-Aware Discounted Contextual Thompson
-Sampling. PA-DCT maintains separate discounted posteriors over provider utility
-and realized cost, then ranks affordable providers using both task context and
-current wallet pressure.
+Sampling. PA-DCT maintains two discount-tracked posteriors for each
+provider-task bucket: a Q-posterior over service utility and a C-posterior over
+realized cost. It then ranks affordable providers using task context, posterior
+sampling, and current wallet pressure.
 
 ## Why This Exists
 
 x402-style protocols make payment execution programmable: a service can publish
 a payable endpoint, an agent can receive payment requirements, and a request can
-settle per call. That still leaves a buyer-side question:
+settle per call. Newer discovery and metadata flows can also expose services
+and prices as programmatic inputs. That still leaves a buyer-side question:
 
 > Given several payable services and a draining wallet, which one should the
 > agent buy now?
@@ -22,15 +25,17 @@ settle per call. That still leaves a buyer-side question:
 402Pilot treats that as an online learning problem. Each round reveals only the
 outcome of the provider that was actually paid for, and each payment is
 irreversible. The policy must therefore balance quality, cost, exploration, and
-adaptation to market changes.
+adaptation to market changes without relying on a human to retune provider
+choices after each shock.
 
 ## Method
 
 At each round, 402Pilot receives a task context and a set of quoted providers.
-The wallet filters this set to affordable providers. PA-DCT samples provider
-utility and cost beliefs for the current task bucket, scores each affordable
-arm, pays for the selected provider through the executor interface, and updates
-only from the chosen provider's receipt and service outcome.
+The wallet filters this set to affordable providers and exposes a
+wallet-pressure signal. PA-DCT samples provider utility and realized-cost
+beliefs for the current task bucket, scores each affordable arm, pays for the
+selected provider through the executor interface, and updates only from the
+chosen provider's receipt and service outcome.
 
 The payment-aware score is:
 
@@ -47,9 +52,11 @@ remaining budget.
 
 ## Benchmark
 
-402Pilot-Bench evaluates provider selection over frozen replay. Provider
-responses are pre-generated, scored, and replayed under paired seeds so that
-policy differences are not confounded by live API drift.
+402Pilot-Bench evaluates provider selection over frozen replay. It contains 823
+effective tasks across coding, multi-hop QA, closed-form web QA, and open-ended
+QA. Provider responses are pre-generated, scored, and replayed under paired
+seeds so that policy differences are not confounded by live API drift, repeated
+API cost, or sampling noise.
 
 The benchmark uses five provider pipelines:
 
@@ -66,19 +73,27 @@ The benchmark experiments use three market scenarios:
 | Scenario | Event |
 | --- | --- |
 | S1 Stationary | no mid-run market change |
-| S2 Mid outage | P-mid fails during rounds 3,000-5,500 |
+| S2 Mid outage | P-mid has 30% forced failures during rounds 3,000-5,500 |
 | S3 Premium promo | P-premium drops from 0.01 to 0.002 USDC at round 1,000 |
 
 Each main cell uses 30 paired seeds and 10,000 rounds with a 50 USDC wallet.
 Metrics include mean quality, budget use, ROI, and payment-aware gap to a replay
-oracle.
+True Oracle. The local x402 witness validates the quote-pay-receipt interface,
+but all paper measurements come from frozen replay.
 
 ## Results
 
 PA-DCT is not designed to win one isolated metric in every static setting. Its
 goal is robust buyer behavior under changing market conditions. In the benchmark
-experiments, PA-DCT remains budget-feasible, adapts away from the mid-tier
-outage in S2, and captures the premium price promotion in S3.
+experiments, PA-DCT is the only non-oracle policy without a clear failure mode
+across the quality, ROI, and payment-aware-gap panel, with the best mean rank
+(2.89/8) and worst-case rank (4/8) over rank-comparable cells.
+
+The main trade-off is explicit. In S1, PA-DCT pays an exploration cost and is not
+the stationary winner. In S2, it adapts away from the mid-tier outage, reaching
+mean quality 0.761 while spending 43% of the wallet. In S3, it captures the
+premium price promotion and achieves the best non-oracle payment-aware gap
+(0.121).
 
 ## Repository Layout
 
@@ -96,8 +111,8 @@ outage in S2, and captures the premium price promotion in S3.
 
 Local-only working directories such as `paper/`, `logs/`, `viz/`,
 `viz-explainer/`, and bulk `results/` outputs are intentionally ignored by Git.
-The frozen replay records under `data/pregen/` are committed as the
-reproducibility artifact.
+The frozen replay records under `data/pregen/` and compact result summaries
+under `artifacts/results/` are committed as reproducibility artifacts.
 
 ## Installation
 
@@ -138,10 +153,11 @@ Full benchmark-scale sweeps replay the committed frozen records under
 ## Data Availability
 
 The task subsets in `data/tasks/` and the frozen replay records in
-`data/pregen/` are committed. The pre-generated artifact is about 11 MB and
-contains 20,575 provider-response records plus the judge cache used for
-open-ended QA scoring. This lets readers rerun policy sweeps without making
-fresh LLM calls.
+`data/pregen/` are committed. The benchmark contains 823 effective tasks and
+the pre-generated artifact is about 11 MB. It stores five response versions for
+each task-provider pair, for 20,575 provider-response records, plus the judge
+cache used for open-ended QA scoring. This lets readers rerun policy sweeps
+without making fresh LLM calls.
 
 Compact result summaries are committed under `artifacts/results/`. The full
 local `results/` tree is intentionally ignored because it contains per-round
