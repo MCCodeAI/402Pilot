@@ -22,6 +22,16 @@ Policies in the repo:
                                     — BTS (Xia et al. 2015) extended to
                                       Gaussian Q/C posteriors and task buckets;
                                       learns cost but no discount.
+* ``lincbwk.LinCBwKPolicy``         — LinCBwK-style admissible adaptation
+                                      (Agrawal & Devanur 2016); per-(arm, bucket)
+                                      ridge regression on UCB(r) − μ·LCB(c) with
+                                      dual μ update.
+* ``pm_greedy.PMGreedyPolicy``      — Price-Metadata Greedy threshold cascade;
+                                      single-pass online adaptation of the
+                                      FrugalGPT cascade idea.
+* ``sw_ts.SWTSPolicy``              — Sliding-window Thompson Sampling
+                                      (Trovò et al. 2020); non-contextual,
+                                      drift via window forgetting.
 * ``padct.PADCTPolicy``             — PA-DCT (this paper's bandit algorithm).
 """
 
@@ -35,10 +45,13 @@ from pilot402.policies.fixed import (
     always_mid,
     always_premium,
 )
+from pilot402.policies.lincbwk import LinCBwKPolicy
 from pilot402.policies.padct import PADCTPolicy
+from pilot402.policies.pm_greedy import PMGreedyPolicy
 from pilot402.policies.posterior import GaussianPosterior
 from pilot402.policies.random import RandomPolicy
 from pilot402.policies.rule import BudgetRulePolicy
+from pilot402.policies.sw_ts import SWTSPolicy
 
 __all__ = [
     "BudgetRulePolicy",
@@ -46,8 +59,11 @@ __all__ = [
     "ContextualDSTSPolicy",
     "FixedPolicy",
     "GaussianPosterior",
+    "LinCBwKPolicy",
     "PADCTPolicy",
+    "PMGreedyPolicy",
     "RandomPolicy",
+    "SWTSPolicy",
     "always_cheapest",
     "always_mid",
     "always_premium",

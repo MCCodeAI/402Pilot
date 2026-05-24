@@ -20,8 +20,8 @@ ablatable:
    Per-round multiplicative discount γ < 1 on every (arm, bucket) cell's
    sufficient statistics — applied to BOTH quality and cost posteriors.
    Lets the bandit forget stale observations and adapt to non-stationary
-   providers in either dimension (S2: P-flaky timeout spike, S3:
-   P-premium price shock).
+   providers in either dimension (S2: P-mid reliability outage during
+   rounds 3000--5500, S3: P-premium price drop at round 1000).
 
 3. **Contextual (C)**:
    Separate posterior per (arm, context_bucket) where the bucket is the

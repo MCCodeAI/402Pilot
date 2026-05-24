@@ -61,6 +61,7 @@ logs/.ablation_metrics_cache.json
 # Local working materials not published to GitHub.
 logs/
 paper/
+translations/
 viz/
 viz-explainer/
 scripts/export_viz_data.py

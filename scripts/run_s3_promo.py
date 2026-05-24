@@ -7,18 +7,13 @@ posterior, detect the price shift, and migrate.
 
 Implemented via ``PremiumDropScenario(shock_round=1000, price_multiplier=0.2)``.
 
-Predicted outcomes (with dual-posterior PA-DCT, γ=0.999):
-  AlwaysMid PA       ≈ 5831 (mid price unchanged → no impact)
-  AlwaysPremium PA   ≈ ~1000-2400 (pre-shock $10 burn keeps it negative)
-  PA-DCT PA         ≈ 5500-5900 (depends on adaptation speed)
-  PA-DCT premium share trajectory: 4% → 30-60% over 9000 post-shock rounds
-                                    (visible learning curve)
-  PA-DCT task_success_rate ≈ 0.83-0.85 (rises post-shock as premium picks
-                                          increase mean q)
-
-Paper claim with this scenario: PA-DCT demonstrates ACTIVE adaptation to
-price shocks via the cost posterior. Need not beat AlwaysMid in cum_PA;
-the visible arm-share migration is the contribution.
+Paper claim with this scenario: in S3, PA-DCT attains the best non-oracle
+PA-gap/$T$ in Table~\\ref{tab:main} (0.121, lower than Always-P-mid at
+0.129) and migrates its premium share from ~4% pre-shock to ~60% by
+round 10000 (see Appendix D premium-share trajectory). The combined
+quality, ROI, and PA-gap/$T$ improvement over fixed-arm policies is
+what evidences active price-shock adaptation via the cost posterior;
+S3 numbers are taken as canonical from this run.
 
 Output: results/scenario_sweep_s3promo/
 """
@@ -40,8 +35,11 @@ from pilot402.policies import (
     BudgetRulePolicy,
     ContextualBTSPolicy,
     ContextualDSTSPolicy,
+    LinCBwKPolicy,
     PADCTPolicy,
+    PMGreedyPolicy,
     RandomPolicy,
+    SWTSPolicy,
     always_cheapest,
     always_mid,
     always_premium,
@@ -71,12 +69,27 @@ POLICY_ORDER = [
     "random",
     "always_cheapest", "always_mid", "always_premium",
     "budget_rule",
+    "pm_greedy",
+    "lincbwk",
     "contextual_dsts", "contextual_bts",
+    "sw_ts",
     "padct",
 ]
 
 
-def _make_policy(name: str, *, wallet, seed: int):
+def _pm_greedy_threshold() -> float:
+    import os
+    raw = os.environ.get("PM_GREEDY_THRESHOLD")
+    return float(raw) if raw else 0.7
+
+
+def _lincbwk_beta() -> float:
+    import os
+    raw = os.environ.get("LINCBWK_BETA")
+    return float(raw) if raw else 1.0
+
+
+def _make_policy(name: str, *, wallet, seed: int, scenario=None, num_rounds: int = 10000):
     if name == "random":          return RandomPolicy(rng=default_rng(seed * 7919 + 1))
     if name == "always_cheapest": return always_cheapest()
     if name == "always_mid":      return always_mid()
@@ -96,6 +109,29 @@ def _make_policy(name: str, *, wallet, seed: int):
         return ContextualBTSPolicy(
             rng=default_rng(seed * 5023 + 19),
             provider_costs=PROVIDER_PRICES,
+        )
+    if name == "lincbwk":
+        return LinCBwKPolicy(
+            wallet=wallet,
+            provider_ids=tuple(PROVIDER_PRICES.keys()),
+            total_rounds=num_rounds,
+            beta=_lincbwk_beta(),
+        )
+    if name == "pm_greedy":
+        if scenario is None:
+            raise ValueError("pm_greedy requires the scenario kwarg")
+        spec_prices = dict(PROVIDER_PRICES)
+        def _listed_price(round_idx: int, pid: ProviderId) -> float:
+            return scenario.effective_price(round_idx, pid, spec_prices[pid])
+        return PMGreedyPolicy(
+            listed_price_fn=_listed_price,
+            provider_ids=tuple(PROVIDER_PRICES.keys()),
+            threshold=_pm_greedy_threshold(),
+        )
+    if name == "sw_ts":
+        return SWTSPolicy(
+            rng=default_rng(seed * 5867 + 23),
+            provider_ids=tuple(PROVIDER_PRICES.keys()),
         )
     if name == "padct":
         return PADCTPolicy(
@@ -171,7 +207,13 @@ def _run_policy_cell(cfg, *, policy_name, seed, tasks, store, log_path):
         total_usdc=cfg.budget.total_usdc, lambda_0=cfg.budget.lambda_0,
         alpha=cfg.budget.alpha, target_burn_rate=cfg.budget.target_burn_rate,
     )
-    policy = _make_policy(policy_name, wallet=wallet, seed=seed)
+    policy = _make_policy(
+        policy_name,
+        wallet=wallet,
+        seed=seed,
+        scenario=scenario,
+        num_rounds=cfg.num_rounds,
+    )
     log_path.parent.mkdir(parents=True, exist_ok=True)
     # Truncate any leftover partial log instead of unlink so we work cleanly
     # on filesystems that allow create-but-not-delete (e.g. some FUSE mounts).

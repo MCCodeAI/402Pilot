@@ -57,15 +57,20 @@ def scenario_dir(scenario: str) -> Path:
 PADCT_KEYS = ("padct", "padcts")
 BASELINE_KEYS = ("random", "always_cheapest", "always_mid",
                  "always_premium", "budget_rule",
-                 "contextual_dsts", "contextual_bts")
+                 "pm_greedy", "lincbwk",
+                 "contextual_dsts", "contextual_bts",
+                 "sw_ts")
 BASELINE_LABEL = {
     "random":           "Random",
     "always_cheapest":  "AlwaysCheap",
     "always_mid":       "AlwaysMid",
     "always_premium":   "AlwaysPremium",
     "budget_rule":      "BudgetRule",
+    "pm_greedy":        "PMGreedy",
+    "lincbwk":          "LinCBwK",
     "contextual_dsts":  "ContextualDSTS",
     "contextual_bts":   "ContextualBTS",
+    "sw_ts":            "SWTS",
 }
 SCENARIOS = ["S1", "S2", "S3"]
 
@@ -261,18 +266,35 @@ def main(argv: list[str] | None = None) -> int:
         md.append("")
 
     # Quick marker cheat sheet — the paper main table only needs this.
+    # Split into two tables (heuristic vs learning) so the markdown fits
+    # the paper's 10-baseline main table width.
     md.append("---")
     md.append("")
     md.append("## Compact main-table markers (PA-gap only)")
     md.append("")
     md.append("Use these to annotate PA-gap comparisons in the paper's main table.")
     md.append("")
-    md.append("| Scenario | vs Random | vs AlwaysCheap | vs AlwaysMid | vs AlwaysPremium | vs BudgetRule | vs ContextualDSTS | vs ContextualBTS |")
-    md.append("|---|---|---|---|---|---|---|---|")
+    md.append("### Heuristic baselines")
+    md.append("")
+    md.append("| Scenario | vs Random | vs AlwaysCheap | vs AlwaysMid | vs AlwaysPremium | vs BudgetRule |")
+    md.append("|---|---|---|---|---|---|")
     for scen in SCENARIOS:
         cells = []
-        for bk in ("Random", "AlwaysCheap", "AlwaysMid", "AlwaysPremium",
-                   "BudgetRule", "ContextualDSTS", "ContextualBTS"):
+        for bk in ("Random", "AlwaysCheap", "AlwaysMid", "AlwaysPremium", "BudgetRule"):
+            r = next((r for r in rows
+                      if r["scenario"] == scen and r["baseline"] == bk
+                      and r["metric"] == "PA_gap_advantage"), None)
+            cells.append(r["stars"] if r else "—")
+        md.append(f"| {scen} | " + " | ".join(cells) + " |")
+
+    md.append("")
+    md.append("### Learning baselines (admissible)")
+    md.append("")
+    md.append("| Scenario | vs PMGreedy | vs LinCBwK | vs ContextualDSTS | vs ContextualBTS | vs SWTS |")
+    md.append("|---|---|---|---|---|---|")
+    for scen in SCENARIOS:
+        cells = []
+        for bk in ("PMGreedy", "LinCBwK", "ContextualDSTS", "ContextualBTS", "SWTS"):
             r = next((r for r in rows
                       if r["scenario"] == scen and r["baseline"] == bk
                       and r["metric"] == "PA_gap_advantage"), None)

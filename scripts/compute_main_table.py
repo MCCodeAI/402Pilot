@@ -8,6 +8,14 @@ For each (scenario, policy) cell, aggregates the per-round logs into:
     PA-gap/T  = (R_oracle - R_policy) / T         (lower is better)
                 where R = sum_t payment_aware_reward, paired by seed
 
+Default policy order matches the paper's main table (Table 3 of §6):
+SW-TS is *not* in the default set — it appears only in Appendix D
+because, without budget pressure, it bankrupts under all 30 seeds in
+S1 and S2 and is reported as a drift-only family representative
+rather than as a main-table comparator. Pass ``--include-appendix``
+(or list policies explicitly with ``--policies ...``) to add SW-TS
+when reproducing Appendix D numbers.
+
 Outputs:
     - Markdown table to stdout (table-formatted ordering)
     - Raw per-cell rows as JSONL at results/main_table/per_cell.jsonl
@@ -15,7 +23,8 @@ Outputs:
 
 Usage::
 
-    python -m scripts.compute_main_table
+    python -m scripts.compute_main_table                       # paper main table
+    python -m scripts.compute_main_table --include-appendix    # + SW-TS row
     python -m scripts.compute_main_table --policies contextual_dsts contextual_bts
 """
 
@@ -30,17 +39,29 @@ from pathlib import Path
 T = 10000
 B0 = 50.0
 
-POLICY_ORDER = [
+# Policy order that mirrors the paper's main table (§6, Table 3).
+# SW-TS is in APPENDIX_POLICIES, not here, because the paper relegates
+# it to Appendix D (no budget pressure → S1/S2 bankrupt under all seeds).
+MAIN_TABLE_POLICIES = [
     "random",
     "always_cheapest",
     "always_mid",
     "always_premium",
     "budget_rule",
+    "pm_greedy",
+    "lincbwk",
     "contextual_dsts",
     "contextual_bts",
     "padct",
     "oracle",
 ]
+
+# Policies reported in appendices rather than the main table. Add with
+# ``--include-appendix`` or by listing them in ``--policies``.
+APPENDIX_POLICIES = ["sw_ts"]
+
+# Back-compat alias for downstream callers that imported ``POLICY_ORDER``.
+POLICY_ORDER = MAIN_TABLE_POLICIES
 
 DISPLAY = {
     "random": "Random",
@@ -48,8 +69,11 @@ DISPLAY = {
     "always_mid": "Always-P-mid",
     "always_premium": "Always-P-premium",
     "budget_rule": "BudgetRule",
+    "pm_greedy": "PM-Greedy",
+    "lincbwk": "LinCBwK-Adapt.",
     "contextual_dsts": "Contextual DS-TS",
     "contextual_bts": "Contextual BTS",
+    "sw_ts": "SW-TS",
     "padct": "PA-DCT (ours)",
     "oracle": "True Oracle (UB)",
 }
@@ -108,10 +132,38 @@ def main(argv: list[str] | None = None) -> int:
                         default=Path("results/scenario_sweep"))
     parser.add_argument("--out-dir", type=Path,
                         default=Path("results/main_table"))
-    parser.add_argument("--policies", nargs="+", default=POLICY_ORDER)
+    parser.add_argument(
+        "--policies",
+        nargs="+",
+        default=None,
+        help=(
+            "Policies to include. Default = paper's main table (no SW-TS); "
+            "use --include-appendix to add SW-TS, or list policies explicitly."
+        ),
+    )
+    parser.add_argument(
+        "--include-appendix",
+        action="store_true",
+        help=(
+            "Append APPENDIX_POLICIES (SW-TS) to the default main-table "
+            "policy order. Ignored when --policies is given explicitly."
+        ),
+    )
     parser.add_argument("--scenarios", nargs="+", default=["S1", "S2", "S3"])
     parser.add_argument("--num-seeds", type=int, default=30)
     args = parser.parse_args(argv)
+
+    # Resolve effective policy order.
+    if args.policies is None:
+        args.policies = list(MAIN_TABLE_POLICIES)
+        if args.include_appendix:
+            # Insert appendix policies just before PA-DCT so the printed
+            # ordering still ends with PA-DCT and the oracle.
+            insert_at = args.policies.index("padct")
+            for p in APPENDIX_POLICIES:
+                if p not in args.policies:
+                    args.policies.insert(insert_at, p)
+                    insert_at += 1
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     per_cell_rows: list[dict] = []

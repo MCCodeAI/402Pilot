@@ -2,7 +2,11 @@
 
 For each scenario in {S1_STATIONARY, S2_DEGRADATION}:
 
-* 8 policies × N seeds × ``cfg.num_rounds`` rounds via ``run_one_seed``.
+* All non-oracle policies × N seeds × ``cfg.num_rounds`` rounds via
+  ``run_one_seed`` — currently 10 admissible policies: Random,
+  Always-{cheapest, mid, premium}, BudgetRule, PM-Greedy,
+  LinCBwK-Adapt., Contextual DS-TS, Contextual BTS, SW-TS, plus the
+  headline PA-DCT (11 with PA-DCT). Restrict with ``--policies``.
 * 1 True Oracle × N seeds × same rounds via ``run_true_oracle_seed``.
 
 Logs land at::
@@ -52,8 +56,11 @@ from pilot402.policies import (
     BudgetRulePolicy,
     ContextualBTSPolicy,
     ContextualDSTSPolicy,
+    LinCBwKPolicy,
     PADCTPolicy,
+    PMGreedyPolicy,
     RandomPolicy,
+    SWTSPolicy,
     always_cheapest,
     always_mid,
     always_premium,
@@ -86,13 +93,32 @@ POLICY_ORDER = [
     "always_mid",
     "always_premium",
     "budget_rule",
+    "pm_greedy",
+    "lincbwk",
     "contextual_dsts",
     "contextual_bts",
+    "sw_ts",
     "padct",
 ]
 
 
-def _make_policy(name: str, *, wallet, seed: int):
+# Hyperparameter sweep registry — read from environment for per-cell
+# overrides. Empty defaults preserve locked main-table values.
+#   PM_GREEDY_THRESHOLD: τ for PM-Greedy (default 0.7)
+#   LINCBWK_BETA:        β for LinCBwK (default 1.0)
+def _pm_greedy_threshold() -> float:
+    import os
+    raw = os.environ.get("PM_GREEDY_THRESHOLD")
+    return float(raw) if raw else 0.7
+
+
+def _lincbwk_beta() -> float:
+    import os
+    raw = os.environ.get("LINCBWK_BETA")
+    return float(raw) if raw else 1.0
+
+
+def _make_policy(name: str, *, wallet, seed: int, scenario=None, num_rounds: int = 10000):
     if name == "random":
         return RandomPolicy(rng=default_rng(seed * 7919 + 1))
     if name == "always_cheapest":
@@ -120,6 +146,35 @@ def _make_policy(name: str, *, wallet, seed: int):
         return ContextualBTSPolicy(
             rng=default_rng(seed * 5023 + 19),
             provider_costs=PROVIDER_PRICES,
+        )
+    if name == "lincbwk":
+        # LinCBwK-style admissible adaptation. Locked β=1.0 for the main
+        # table; β sweeps are driven via the LINCBWK_BETA env var for the
+        # Appendix-D robustness study.
+        return LinCBwKPolicy(
+            wallet=wallet,
+            provider_ids=tuple(PROVIDER_PRICES.keys()),
+            total_rounds=num_rounds,
+            beta=_lincbwk_beta(),
+        )
+    if name == "pm_greedy":
+        # PM-Greedy reads listed price metadata via the scenario object;
+        # for stationary cells, listed_price collapses to base_price.
+        if scenario is None:
+            raise ValueError("pm_greedy requires the scenario kwarg")
+        spec_prices = dict(PROVIDER_PRICES)
+        def _listed_price(round_idx: int, pid: ProviderId) -> float:
+            return scenario.effective_price(round_idx, pid, spec_prices[pid])
+        return PMGreedyPolicy(
+            listed_price_fn=_listed_price,
+            provider_ids=tuple(PROVIDER_PRICES.keys()),
+            threshold=_pm_greedy_threshold(),
+        )
+    if name == "sw_ts":
+        # SW-TS uses an independent RNG stream from PA-DCT/DS-TS/BTS.
+        return SWTSPolicy(
+            rng=default_rng(seed * 5867 + 23),
+            provider_ids=tuple(PROVIDER_PRICES.keys()),
         )
     if name == "padct":
         return PADCTPolicy(
@@ -256,7 +311,13 @@ def run_one_cell(
         alpha=cfg.budget.alpha,
         target_burn_rate=cfg.budget.target_burn_rate,
     )
-    policy = _make_policy(policy_name, wallet=wallet, seed=seed)
+    policy = _make_policy(
+        policy_name,
+        wallet=wallet,
+        seed=seed,
+        scenario=scenario,
+        num_rounds=cfg.num_rounds,
+    )
     encoder = NaiveEncoder()
     reward_calc = RewardCalculator(nu=cfg.reward.nu)
 
